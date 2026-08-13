@@ -45,3 +45,6 @@ next-env.d.ts
 # local SQLite database file (not committed; migrations in prisma/migrations/ are)
 /dev.db
 /dev.db-journal
+
+.vercel
+.env*
