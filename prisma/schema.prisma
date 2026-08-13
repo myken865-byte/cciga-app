@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model AdmissionSubmission {
+  id            String   @id @default(cuid())
+  reference     String   @unique
+  submittedAt   DateTime @default(now())
+  school        String
+  programSlug   String
+  firstName     String
+  lastName      String
+  dob           String?
+  email         String
+  phone         String
+  address       String?
+  documents     String
+  status        String   @default("nouveau")
+  adminNote     String?
+  updatedAt     DateTime @updatedAt
+
+  studentUserId Int?
+  student       User?    @relation(fields: [studentUserId], references: [id])
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String
+  roles        String
+  createdAt    DateTime @default(now())
+
+  admissionSubmissions AdmissionSubmission[]
+
+  programId String?
+  program   Program? @relation(fields: [programId], references: [id])
+
+  payments Payment[]
+
+  coursesTaught Course[]
+  grades        Grade[]
+  notifications Notification[]
+  attendances   Attendance[]
+
+  parentId Int?
+  parent   User?  @relation("ParentChildren", fields: [parentId], references: [id])
+  children User[] @relation("ParentChildren")
+}
+
+model Program {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  school              String
+  faculty             String
+  name                String
+  level               String
+  duration            String
+  description         String
+  admissionConditions String
+  tuitionFee          Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  students User[]
+  courses  Course[]
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  studentId Int
+  student   User     @relation(fields: [studentId], references: [id])
+  amount    Int
+  paidAt    DateTime @default(now())
+  note      String?
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id])
+  name        String
+  code        String?
+  description String
+  teacherId   Int?
+  teacher     User?    @relation(fields: [teacherId], references: [id])
+  dayOfWeek   Int?
+  startTime   String?
+  endTime     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  materials    CourseMaterial[]
+  assignments  Assignment[]
+  grades       Grade[]
+  attendances  Attendance[]
+}
+
+model CourseMaterial {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id])
+  title       String
+  description String
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+
+  grades Grade[]
+}
+
+model Grade {
+  id           String      @id @default(cuid())
+  studentId    Int
+  student      User        @relation(fields: [studentId], references: [id])
+  courseId     String
+  course       Course      @relation(fields: [courseId], references: [id])
+  assignmentId String?
+  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
+  score        Float
+  comment      String?
+  recordedAt   DateTime    @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  studentId Int
+  student   User     @relation(fields: [studentId], references: [id])
+  date      DateTime
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, studentId, date])
+}
+
+model News {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  excerpt   String
+  content   String
+  category  String
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  date        DateTime
+  location    String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  body      String
+  status    String   @default("nouveau")
+  createdAt DateTime @default(now())
+}
