@@ -48,3 +48,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# claude code internal lock files
+.claude/scheduled_tasks.lock
