@@ -3,6 +3,7 @@ import { getSchools } from "@/lib/content";
 import { parseRoles, hasRole } from "@/lib/roles";
 import { admissionStatusLabels, admissionStatuses } from "@/lib/admission-status";
 import { formatHTG } from "@/lib/currency";
+import { niveauList, niveauLabels } from "@/lib/niveaux";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,13 @@ export default async function AdminDashboardPage() {
     school,
     programCount: programs.filter((p) => p.school === school.slug).length,
     studentCount: students.filter((s) => s.program?.school === school.slug).length,
+  }));
+
+  const niveauBreakdown = niveauList.map((niveau) => ({
+    niveau,
+    classCount: programs.filter((p) => p.school === "ecole-classique" && p.niveau === niveau).length,
+    studentCount: students.filter((s) => s.program?.school === "ecole-classique" && s.program?.niveau === niveau)
+      .length,
   }));
 
   return (
@@ -65,7 +73,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <div className="mb-8 overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full text-left text-sm">
           <thead className="bg-background text-muted">
             <tr>
@@ -79,6 +87,27 @@ export default async function AdminDashboardPage() {
               <tr key={row.school.slug} className="border-t border-border">
                 <td className="px-4 py-3 font-medium text-foreground">{row.school.name}</td>
                 <td className="px-4 py-3 text-muted">{row.programCount}</td>
+                <td className="px-4 py-3 text-muted">{row.studentCount}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-background text-muted">
+            <tr>
+              <th className="px-4 py-3 font-semibold">École Classique — Niveau</th>
+              <th className="px-4 py-3 font-semibold">Classes</th>
+              <th className="px-4 py-3 font-semibold">Étudiants inscrits</th>
+            </tr>
+          </thead>
+          <tbody>
+            {niveauBreakdown.map((row) => (
+              <tr key={row.niveau} className="border-t border-border">
+                <td className="px-4 py-3 font-medium text-foreground">{niveauLabels[row.niveau]}</td>
+                <td className="px-4 py-3 text-muted">{row.classCount}</td>
                 <td className="px-4 py-3 text-muted">{row.studentCount}</td>
               </tr>
             ))}

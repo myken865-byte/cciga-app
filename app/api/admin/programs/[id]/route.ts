@@ -18,7 +18,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Programme introuvable." }, { status: 404 });
   }
 
-  const { school, faculty, name, level, duration, description, tuitionFee, admissionConditions } =
+  const { school, faculty, name, level, niveau, duration, description, tuitionFee, admissionConditions } =
     (await request.json()) ?? {};
 
   if (!school || !getSchools().some((s) => s.slug === school)) {
@@ -32,6 +32,7 @@ export async function PATCH(
     ? admissionConditions.filter((c) => typeof c === "string" && c.trim().length > 0)
     : [];
 
+  const validNiveaux = ["prescolaire", "primaire", "secondaire"];
   await prisma.program.update({
     where: { id },
     data: {
@@ -39,6 +40,7 @@ export async function PATCH(
       faculty,
       name,
       level,
+      niveau: school === "ecole-classique" && validNiveaux.includes(niveau) ? niveau : null,
       duration,
       description,
       tuitionFee: Number.isFinite(Number(tuitionFee)) ? Math.max(0, Math.round(Number(tuitionFee))) : 0,

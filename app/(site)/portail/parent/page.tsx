@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import PortalStub from "@/components/PortalStub";
 import { getSession } from "@/lib/auth";
 import { formatCcigaId } from "@/lib/cciga-id";
@@ -58,6 +59,12 @@ export default async function PortailParentPage() {
                       <h2 className="text-lg font-bold text-foreground">{child.name}</h2>
                       <span className="font-mono text-sm text-muted">{formatCcigaId(child.id)}</span>
                     </div>
+                    <Link
+                      href={`/portail/bulletin?student=${child.id}`}
+                      className="mb-4 inline-block text-sm text-primary hover:underline"
+                    >
+                      Voir le bulletin de {child.name} →
+                    </Link>
 
                     <div className="grid gap-4 sm:grid-cols-3">
                       <div>

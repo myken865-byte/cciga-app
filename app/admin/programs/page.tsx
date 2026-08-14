@@ -20,7 +20,7 @@ export default async function AdminProgramsPage() {
               <tr>
                 <th className="px-4 py-3 font-semibold">École</th>
                 <th className="px-4 py-3 font-semibold">Programme</th>
-                <th className="px-4 py-3 font-semibold">Niveau</th>
+                <th className="px-4 py-3 font-semibold">Niveau / Cycle</th>
                 <th className="px-4 py-3 font-semibold">Durée</th>
               </tr>
             </thead>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Program } from "@/lib/content";
 import { dayLabels } from "@/lib/schedule";
+import ProgramSelect from "@/components/ProgramSelect";
 
 interface Teacher {
   id: number;
@@ -86,13 +87,7 @@ export default function EditCourseForm({
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Programme</span>
-        <select className="input" value={programId} onChange={(e) => setProgramId(e.target.value)}>
-          {programs.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <ProgramSelect programs={programs} value={programId} onChange={setProgramId} />
       </label>
 
       <label className="block text-sm">

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import bcrypt from "bcryptjs";
+import { slugify } from "../lib/slugify";
 
 const adapter = new PrismaLibSql({
   url: process.env.DATABASE_URL ?? "file:./dev.db",
@@ -267,12 +268,223 @@ async function seedFaq() {
   console.log(`Seeded ${initialFaq.length} FAQ items.`);
 }
 
+type Niveau = "prescolaire" | "primaire" | "secondaire";
+
+interface ClasseEcoleClassique {
+  slug: string;
+  niveau: Niveau;
+  faculty: string;
+  name: string;
+  level: string;
+  duration: string;
+  description: string;
+  admissionConditions: string[];
+  tuitionFee: number;
+}
+
+const prescolaireConditions = [
+  "Acte de naissance de l'enfant",
+  "Certificat médical",
+  "Photos d'identité récentes",
+];
+const primaireConditions = [
+  "Bulletin scolaire de l'année précédente",
+  "Certificat médical",
+  "Photos d'identité récentes",
+];
+const secondaireConditions = [
+  "Bulletin scolaire de l'année précédente",
+  "Test de positionnement (français, mathématiques)",
+  "Entretien avec la famille",
+];
+
+const ecoleClassiqueNiveaux: ClasseEcoleClassique[] = [
+  // Préscolaire
+  {
+    slug: "prescolaire-petite-section",
+    niveau: "prescolaire",
+    faculty: "Cycle Préscolaire",
+    name: "Petite Section",
+    level: "Préscolaire",
+    duration: "1 an",
+    description: "Premier niveau du préscolaire — éveil, socialisation et découverte.",
+    admissionConditions: prescolaireConditions,
+    tuitionFee: 15000,
+  },
+  {
+    slug: "prescolaire-moyenne-section",
+    niveau: "prescolaire",
+    faculty: "Cycle Préscolaire",
+    name: "Moyenne Section",
+    level: "Préscolaire",
+    duration: "1 an",
+    description: "Deuxième niveau du préscolaire — développement du langage et de la motricité.",
+    admissionConditions: prescolaireConditions,
+    tuitionFee: 15000,
+  },
+  {
+    slug: "prescolaire-grande-section",
+    niveau: "prescolaire",
+    faculty: "Cycle Préscolaire",
+    name: "Grande Section",
+    level: "Préscolaire",
+    duration: "1 an",
+    description: "Dernier niveau du préscolaire — préparation à l'entrée au primaire.",
+    admissionConditions: prescolaireConditions,
+    tuitionFee: 15000,
+  },
+  // Primaire / École fondamentale (1re AF à 9e AF)
+  ...["1re", "2e", "3e", "4e", "5e", "6e", "7e", "8e", "9e"].map(
+    (ordinal, i): ClasseEcoleClassique => ({
+      slug: `primaire-${slugify(ordinal)}-af`,
+      niveau: "primaire",
+      faculty: "Cycle Primaire",
+      name: `${ordinal} AF`,
+      level: "Primaire / École fondamentale",
+      duration: "1 an",
+      description: `${ordinal} Année Fondamentale — cycle primaire du CCIGA.`,
+      admissionConditions: primaireConditions,
+      tuitionFee: 20000 + i * 500,
+    }),
+  ),
+  // Secondaire (en complément du programme catch-all existant "secondaire-general")
+  ...["NS1", "NS2", "NS3", "NS4"].map(
+    (ns): ClasseEcoleClassique => ({
+      slug: `secondaire-${ns.toLowerCase()}`,
+      niveau: "secondaire",
+      faculty: "Cycle Secondaire",
+      name: ns,
+      level: "Secondaire",
+      duration: "1 an",
+      description: `${ns} — cycle secondaire du CCIGA, préparation aux examens officiels.`,
+      admissionConditions: secondaireConditions,
+      tuitionFee: 25000,
+    }),
+  ),
+];
+
+async function seedEcoleClassiqueNiveaux() {
+  let created = 0;
+  for (const classe of ecoleClassiqueNiveaux) {
+    const existing = await prisma.program.findUnique({ where: { slug: classe.slug } });
+    if (existing) continue;
+    await prisma.program.create({
+      data: {
+        slug: classe.slug,
+        school: "ecole-classique",
+        faculty: classe.faculty,
+        name: classe.name,
+        level: classe.level,
+        niveau: classe.niveau,
+        duration: classe.duration,
+        description: classe.description,
+        admissionConditions: JSON.stringify(classe.admissionConditions),
+        tuitionFee: classe.tuitionFee,
+      },
+    });
+    created += 1;
+  }
+  if (created > 0) {
+    console.log(`Seeded ${created} École Classique niveau/classe programs.`);
+  } else {
+    console.log("École Classique niveau/classe programs already seeded.");
+  }
+}
+
+interface TestDemoStudent {
+  email: string;
+  name: string;
+  programSlug: string;
+  courseName: string;
+}
+
+const testDemoStudents: TestDemoStudent[] = [
+  {
+    email: "test.prescolaire@cciga.edu",
+    name: "TEST Élève Préscolaire",
+    programSlug: "prescolaire-petite-section",
+    courseName: "TEST Cours — Éveil et découverte",
+  },
+  {
+    email: "test.primaire@cciga.edu",
+    name: "TEST Élève Primaire",
+    programSlug: "primaire-5e-af",
+    courseName: "TEST Cours — Mathématiques",
+  },
+  {
+    email: "test.secondaire@cciga.edu",
+    name: "TEST Élève Secondaire",
+    programSlug: "secondaire-ns2",
+    courseName: "TEST Cours — Sciences",
+  },
+];
+
+async function seedTestNiveauDemoData() {
+  let created = 0;
+  for (const demo of testDemoStudents) {
+    const existing = await prisma.user.findUnique({ where: { email: demo.email } });
+    if (existing) continue;
+
+    const program = await prisma.program.findUnique({ where: { slug: demo.programSlug } });
+    if (!program) continue;
+
+    const passwordHash = await bcrypt.hash("TEST-demo-2026", 10);
+    const student = await prisma.user.create({
+      data: {
+        email: demo.email,
+        passwordHash,
+        name: demo.name,
+        roles: JSON.stringify(["STUDENT"]),
+        programId: program.id,
+      },
+    });
+
+    const course = await prisma.course.create({
+      data: {
+        programId: program.id,
+        name: demo.courseName,
+        description: "Cours de démonstration (données TEST) pour ce niveau.",
+        dayOfWeek: 1,
+        startTime: "08:00",
+        endTime: "09:00",
+      },
+    });
+
+    await prisma.grade.create({
+      data: {
+        studentId: student.id,
+        courseId: course.id,
+        score: 85,
+        comment: "TEST — note de démonstration.",
+      },
+    });
+
+    await prisma.attendance.create({
+      data: {
+        courseId: course.id,
+        studentId: student.id,
+        date: new Date(),
+        status: "present",
+      },
+    });
+
+    created += 1;
+  }
+  if (created > 0) {
+    console.log(`Seeded ${created} TEST demo students (one per new niveau).`);
+  } else {
+    console.log("TEST demo niveau data already seeded.");
+  }
+}
+
 async function main() {
   await seedAdmin();
   await seedPrograms();
   await seedNews();
   await seedEvents();
   await seedFaq();
+  await seedEcoleClassiqueNiveaux();
+  await seedTestNiveauDemoData();
 }
 
 main()

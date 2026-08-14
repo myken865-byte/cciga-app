@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { parseRoles } from "@/lib/roles";
+import { parseRoles, hasRole } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
+import { getPrograms } from "@/lib/content";
 import EditUserForm from "@/components/EditUserForm";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,10 @@ export default async function AdminUserDetailPage({
   const userId = Number(id);
   if (!Number.isInteger(userId)) notFound();
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const [user, programs] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    getPrograms(),
+  ]);
   if (!user) notFound();
 
   return (
@@ -28,7 +32,21 @@ export default async function AdminUserDetailPage({
         <p className="mb-4 font-mono text-sm text-muted">
           {formatCcigaId(user.id)} · {user.email}
         </p>
-        <EditUserForm userId={user.id} initialName={user.name} initialRoles={parseRoles(user.roles)} />
+        {hasRole(parseRoles(user.roles), "STUDENT") && (
+          <Link
+            href={`/portail/bulletin?student=${user.id}`}
+            className="mb-4 inline-block text-sm text-primary hover:underline"
+          >
+            Voir le bulletin →
+          </Link>
+        )}
+        <EditUserForm
+          userId={user.id}
+          initialName={user.name}
+          initialRoles={parseRoles(user.roles)}
+          initialProgramId={user.programId}
+          programs={programs}
+        />
       </div>
     </div>
   );

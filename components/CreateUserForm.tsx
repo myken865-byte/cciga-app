@@ -4,18 +4,27 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { roleList, roleLabels, type Role } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
+import type { Program } from "@/lib/content";
+import ProgramSelect from "@/components/ProgramSelect";
 
 interface StudentOption {
   id: number;
   name: string;
 }
 
-export default function CreateUserForm({ students }: { students: StudentOption[] }) {
+export default function CreateUserForm({
+  students,
+  programs,
+}: {
+  students: StudentOption[];
+  programs: Program[];
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
   const [childId, setChildId] = useState("");
+  const [programId, setProgramId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: number; password: string } | null>(null);
@@ -37,6 +46,7 @@ export default function CreateUserForm({ students }: { students: StudentOption[]
           email,
           roles,
           childId: roles.includes("PARENT") && childId ? Number(childId) : undefined,
+          programId: roles.includes("STUDENT") && programId ? programId : undefined,
         }),
       });
       const json = await res.json();
@@ -49,6 +59,7 @@ export default function CreateUserForm({ students }: { students: StudentOption[]
       setEmail("");
       setRoles([]);
       setChildId("");
+      setProgramId("");
       router.refresh();
     } catch {
       setError("Impossible de contacter le serveur.");
@@ -112,6 +123,19 @@ export default function CreateUserForm({ students }: { students: StudentOption[]
           ))}
         </div>
       </div>
+
+      {roles.includes("STUDENT") && (
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-foreground">Programme (niveau + classe)</span>
+          <ProgramSelect
+            programs={programs}
+            value={programId}
+            onChange={setProgramId}
+            includeEmpty
+            emptyLabel="Aucun (à assigner plus tard)"
+          />
+        </label>
+      )}
 
       {roles.includes("PARENT") && (
         <label className="block text-sm">

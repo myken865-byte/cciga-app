@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { School } from "@/lib/content";
+import { niveauList, niveauLabels, type Niveau } from "@/lib/niveaux";
 
 export default function CreateProgramForm({ schools }: { schools: School[] }) {
   const router = useRouter();
@@ -10,6 +11,8 @@ export default function CreateProgramForm({ schools }: { schools: School[] }) {
   const [faculty, setFaculty] = useState("");
   const [name, setName] = useState("");
   const [level, setLevel] = useState("");
+  const [niveau, setNiveau] = useState<Niveau | "">("");
+  const isEcoleClassique = school === "ecole-classique";
   const [duration, setDuration] = useState("");
   const [description, setDescription] = useState("");
   const [tuitionFee, setTuitionFee] = useState("");
@@ -35,7 +38,8 @@ export default function CreateProgramForm({ schools }: { schools: School[] }) {
           school,
           faculty,
           name,
-          level,
+          level: isEcoleClassique && niveau ? niveauLabels[niveau] : level,
+          niveau: isEcoleClassique ? niveau || undefined : undefined,
           duration,
           description,
           tuitionFee: tuitionFee ? Number(tuitionFee) : 0,
@@ -51,6 +55,7 @@ export default function CreateProgramForm({ schools }: { schools: School[] }) {
       setFaculty("");
       setName("");
       setLevel("");
+      setNiveau("");
       setDuration("");
       setDescription("");
       setTuitionFee("");
@@ -106,7 +111,23 @@ export default function CreateProgramForm({ schools }: { schools: School[] }) {
       <div className="grid grid-cols-2 gap-4">
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-foreground">Niveau</span>
-          <input required className="input" value={level} onChange={(e) => setLevel(e.target.value)} />
+          {isEcoleClassique ? (
+            <select
+              required
+              className="input"
+              value={niveau}
+              onChange={(e) => setNiveau(e.target.value as Niveau)}
+            >
+              <option value="">Choisir…</option>
+              {niveauList.map((n) => (
+                <option key={n} value={n}>
+                  {niveauLabels[n]}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input required className="input" value={level} onChange={(e) => setLevel(e.target.value)} />
+          )}
         </label>
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-foreground">Durée</span>

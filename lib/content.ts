@@ -20,6 +20,10 @@ import type {
 
 export type { School, SchoolSlug, StaffMember };
 
+import type { Niveau } from "@/lib/niveaux";
+export type { Niveau } from "@/lib/niveaux";
+export { niveauList, niveauLabels } from "@/lib/niveaux";
+
 export interface Program {
   id: string;
   slug: string;
@@ -27,6 +31,7 @@ export interface Program {
   faculty: string;
   name: string;
   level: string;
+  niveau: Niveau | null;
   duration: string;
   description: string;
   admissionConditions: string[];
@@ -41,6 +46,7 @@ function mapProgram(row: PrismaProgram): Program {
     faculty: row.faculty,
     name: row.name,
     level: row.level,
+    niveau: (row.niveau as Niveau | null) ?? null,
     duration: row.duration,
     description: row.description,
     admissionConditions: JSON.parse(row.admissionConditions || "[]"),
@@ -64,6 +70,14 @@ export async function getPrograms(): Promise<Program[]> {
 export async function getProgramsBySchool(school: SchoolSlug): Promise<Program[]> {
   const rows = await prisma.program.findMany({
     where: { school },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map(mapProgram);
+}
+
+export async function getProgramsByNiveau(niveau: Niveau): Promise<Program[]> {
+  const rows = await prisma.program.findMany({
+    where: { school: "ecole-classique", niveau },
     orderBy: { createdAt: "asc" },
   });
   return rows.map(mapProgram);

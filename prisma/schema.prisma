@@ -63,6 +63,7 @@ model Program {
   faculty             String
   name                String
   level               String
+  niveau              String?
   duration            String
   description         String
   admissionConditions String

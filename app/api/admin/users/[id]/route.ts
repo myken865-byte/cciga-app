@@ -19,7 +19,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Compte introuvable." }, { status: 404 });
   }
 
-  const { name, roles } = (await request.json()) ?? {};
+  const { name, roles, programId } = (await request.json()) ?? {};
 
   if (!name) {
     return NextResponse.json({ error: "Nom requis." }, { status: 400 });
@@ -34,9 +34,18 @@ export async function PATCH(
     );
   }
 
+  let newProgramId: string | null = null;
+  if (roles.includes("STUDENT") && programId) {
+    const program = await prisma.program.findUnique({ where: { id: programId } });
+    if (!program) {
+      return NextResponse.json({ error: "Programme invalide." }, { status: 400 });
+    }
+    newProgramId = program.id;
+  }
+
   await prisma.user.update({
     where: { id: userId },
-    data: { name, roles: JSON.stringify(roles) },
+    data: { name, roles: JSON.stringify(roles), programId: newProgramId },
   });
 
   return NextResponse.json({ ok: true });

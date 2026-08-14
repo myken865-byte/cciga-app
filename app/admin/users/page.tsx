@@ -2,12 +2,16 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { parseRoles, roleLabels, hasRole } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
+import { getPrograms } from "@/lib/content";
 import CreateUserForm from "@/components/CreateUserForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
-  const users = await prisma.user.findMany({ orderBy: { id: "asc" } });
+  const [users, programs] = await Promise.all([
+    prisma.user.findMany({ orderBy: { id: "asc" }, include: { program: true } }),
+    getPrograms(),
+  ]);
 
   const students = users
     .filter((u) => hasRole(parseRoles(u.roles), "STUDENT"))
@@ -26,6 +30,7 @@ export default async function AdminUsersPage() {
                 <th className="px-4 py-3 font-semibold">Nom</th>
                 <th className="px-4 py-3 font-semibold">Email</th>
                 <th className="px-4 py-3 font-semibold">Rôles</th>
+                <th className="px-4 py-3 font-semibold">Programme</th>
                 <th className="px-4 py-3 font-semibold">Enfant lié</th>
               </tr>
             </thead>
@@ -51,6 +56,7 @@ export default async function AdminUsersPage() {
                       ))}
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-muted">{user.program?.name ?? "—"}</td>
                   <td className="px-4 py-3 text-muted">
                     {hasRole(parseRoles(user.roles), "PARENT")
                       ? users.find((c) => c.parentId === user.id)?.name ?? "—"
@@ -60,7 +66,7 @@ export default async function AdminUsersPage() {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
                     Aucun compte pour le moment.
                   </td>
                 </tr>
@@ -69,7 +75,7 @@ export default async function AdminUsersPage() {
           </table>
         </div>
 
-        <CreateUserForm students={students} />
+        <CreateUserForm students={students} programs={programs} />
       </div>
     </div>
   );

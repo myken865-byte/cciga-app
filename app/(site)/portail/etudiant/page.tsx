@@ -48,6 +48,9 @@ export default async function PortailEtudiantPage() {
               <p className="text-sm text-muted">
                 {school?.name ?? user.program.school} · {user.program.level} · {user.program.duration}
               </p>
+              <Link href="/portail/bulletin" className="mt-2 inline-block text-sm text-primary hover:underline">
+                Voir mon bulletin →
+              </Link>
             </div>
             <div className="rounded-lg border border-border bg-surface p-6">
               <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-accent">

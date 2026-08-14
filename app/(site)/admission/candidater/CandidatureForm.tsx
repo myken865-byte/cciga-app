@@ -4,10 +4,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { schools } from "@/data/schools";
 import type { Program } from "@/lib/content";
+import { niveauList, niveauLabels, type Niveau } from "@/lib/niveaux";
 import { requiredAdmissionDocuments as requiredDocuments } from "@/lib/admission-documents";
 
 type FormData = {
   school: string;
+  niveau: string;
   programSlug: string;
   level: string;
   firstName: string;
@@ -21,6 +23,7 @@ type FormData = {
 
 const initialData: FormData = {
   school: "",
+  niveau: "",
   programSlug: "",
   level: "",
   firstName: "",
@@ -32,7 +35,13 @@ const initialData: FormData = {
   documents: [],
 };
 
-const steps = ["École", "Programme", "Informations", "Documents", "Récapitulatif"];
+const baseSteps = [
+  { id: "ecole", label: "École" },
+  { id: "programme", label: "Programme" },
+  { id: "informations", label: "Informations" },
+  { id: "documents", label: "Documents" },
+  { id: "recapitulatif", label: "Récapitulatif" },
+] as const;
 
 export default function CandidatureForm({ programs }: { programs: Program[] }) {
   const [step, setStep] = useState(0);
@@ -41,18 +50,30 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
   const [error, setError] = useState<string | null>(null);
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
 
+  const isEcoleClassique = data.school === "ecole-classique";
+  const steps = isEcoleClassique
+    ? [baseSteps[0], { id: "niveau" as const, label: "Niveau" }, ...baseSteps.slice(1)]
+    : baseSteps;
+  const currentStepId = steps[step]?.id;
+
   const availablePrograms = useMemo(
-    () => programs.filter((p) => p.school === data.school),
-    [data.school],
+    () =>
+      programs.filter(
+        (p) =>
+          p.school === data.school &&
+          (!isEcoleClassique || p.niveau === data.niveau),
+      ),
+    [data.school, data.niveau, isEcoleClassique, programs],
   );
 
   const selectedProgram = programs.find((p) => p.slug === data.programSlug);
   const selectedSchool = schools.find((s) => s.slug === data.school);
 
   function canProceed() {
-    if (step === 0) return !!data.school;
-    if (step === 1) return !!data.programSlug;
-    if (step === 2)
+    if (currentStepId === "ecole") return !!data.school;
+    if (currentStepId === "niveau") return !!data.niveau;
+    if (currentStepId === "programme") return !!data.programSlug;
+    if (currentStepId === "informations")
       return !!(data.firstName && data.lastName && data.email && data.phone);
     return true;
   }
@@ -124,9 +145,9 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
   return (
     <div>
       <ol className="mb-8 flex flex-wrap gap-2 text-xs font-medium">
-        {steps.map((label, i) => (
+        {steps.map(({ id, label }, i) => (
           <li
-            key={label}
+            key={id}
             className={`flex items-center gap-2 rounded-full px-3 py-1.5 ${
               i === step
                 ? "bg-primary text-white"
@@ -142,7 +163,7 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
       </ol>
 
       <div className="rounded-lg border border-border bg-surface p-6">
-        {step === 0 && (
+        {currentStepId === "ecole" && (
           <div>
             <h2 className="mb-4 text-lg font-semibold text-foreground">
               Choisissez une entité
@@ -153,7 +174,7 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
                   key={school.slug}
                   type="button"
                   onClick={() =>
-                    setData((d) => ({ ...d, school: school.slug, programSlug: "" }))
+                    setData((d) => ({ ...d, school: school.slug, niveau: "", programSlug: "" }))
                   }
                   className={`rounded-lg border p-4 text-left transition ${
                     data.school === school.slug
@@ -169,10 +190,37 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
           </div>
         )}
 
-        {step === 1 && (
+        {currentStepId === "niveau" && (
+          <div>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">Choisissez un niveau</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {niveauList.map((niveau: Niveau) => (
+                <button
+                  key={niveau}
+                  type="button"
+                  onClick={() =>
+                    setData((d) => ({ ...d, niveau, programSlug: "" }))
+                  }
+                  className={`rounded-lg border p-4 text-left transition ${
+                    data.niveau === niveau
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary"
+                  }`}
+                >
+                  <p className="font-semibold text-foreground">{niveauLabels[niveau]}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {currentStepId === "programme" && (
           <div>
             <h2 className="mb-4 text-lg font-semibold text-foreground">
               Choisissez un programme — {selectedSchool?.name}
+              {isEcoleClassique && data.niveau
+                ? ` (${niveauLabels[data.niveau as Niveau]})`
+                : ""}
             </h2>
             {availablePrograms.length === 0 ? (
               <p className="text-muted">Aucun programme disponible pour cette entité pour le moment.</p>
@@ -206,7 +254,7 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
           </div>
         )}
 
-        {step === 2 && (
+        {currentStepId === "informations" && (
           <div>
             <h2 className="mb-4 text-lg font-semibold text-foreground">Vos informations</h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -259,7 +307,7 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
           </div>
         )}
 
-        {step === 3 && (
+        {currentStepId === "documents" && (
           <div>
             <h2 className="mb-2 text-lg font-semibold text-foreground">Documents requis</h2>
             <p className="mb-4 text-sm text-muted">
@@ -287,11 +335,17 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
           </div>
         )}
 
-        {step === 4 && (
+        {currentStepId === "recapitulatif" && (
           <div>
             <h2 className="mb-4 text-lg font-semibold text-foreground">Récapitulatif</h2>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <Summary label="École" value={selectedSchool?.name ?? "—"} />
+              {isEcoleClassique && (
+                <Summary
+                  label="Niveau"
+                  value={data.niveau ? niveauLabels[data.niveau as Niveau] : "—"}
+                />
+              )}
               <Summary label="Programme" value={selectedProgram?.name ?? "—"} />
               <Summary label="Nom complet" value={`${data.firstName} ${data.lastName}`} />
               <Summary label="Email" value={data.email} />

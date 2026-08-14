@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { School, Program } from "@/lib/content";
+import { niveauList, niveauLabels, type Niveau } from "@/lib/niveaux";
 
 export default function EditProgramForm({
   program,
@@ -16,6 +17,8 @@ export default function EditProgramForm({
   const [faculty, setFaculty] = useState(program.faculty);
   const [name, setName] = useState(program.name);
   const [level, setLevel] = useState(program.level);
+  const [niveau, setNiveau] = useState<Niveau | "">(program.niveau ?? "");
+  const isEcoleClassique = school === "ecole-classique";
   const [duration, setDuration] = useState(program.duration);
   const [description, setDescription] = useState(program.description);
   const [tuitionFee, setTuitionFee] = useState(String(program.tuitionFee));
@@ -42,7 +45,8 @@ export default function EditProgramForm({
           school,
           faculty,
           name,
-          level,
+          level: isEcoleClassique && niveau ? niveauLabels[niveau] : level,
+          niveau: isEcoleClassique ? niveau || undefined : undefined,
           duration,
           description,
           tuitionFee: Number(tuitionFee) || 0,
@@ -91,7 +95,23 @@ export default function EditProgramForm({
       <div className="grid grid-cols-2 gap-4">
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-foreground">Niveau</span>
-          <input required className="input" value={level} onChange={(e) => setLevel(e.target.value)} />
+          {isEcoleClassique ? (
+            <select
+              required
+              className="input"
+              value={niveau}
+              onChange={(e) => setNiveau(e.target.value as Niveau)}
+            >
+              <option value="">Choisir…</option>
+              {niveauList.map((n) => (
+                <option key={n} value={n}>
+                  {niveauLabels[n]}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input required className="input" value={level} onChange={(e) => setLevel(e.target.value)} />
+          )}
         </label>
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-foreground">Durée</span>

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
-  const { name, email, roles, childId } = (await request.json()) ?? {};
+  const { name, email, roles, childId, programId } = (await request.json()) ?? {};
 
   if (!name || !email) {
     return NextResponse.json({ error: "Nom et email requis." }, { status: 400 });
@@ -41,11 +41,19 @@ export async function POST(request: Request) {
     }
   }
 
+  let program: Awaited<ReturnType<typeof prisma.program.findUnique>> = null;
+  if (roles.includes("STUDENT") && programId) {
+    program = await prisma.program.findUnique({ where: { id: programId } });
+    if (!program) {
+      return NextResponse.json({ error: "Programme invalide." }, { status: 400 });
+    }
+  }
+
   const temporaryPassword = randomBytes(9).toString("base64url");
   const passwordHash = await bcrypt.hash(temporaryPassword, 10);
 
   const user = await prisma.user.create({
-    data: { name, email, roles: JSON.stringify(roles), passwordHash },
+    data: { name, email, roles: JSON.stringify(roles), passwordHash, programId: program?.id },
   });
 
   if (child) {

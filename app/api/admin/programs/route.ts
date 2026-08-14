@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
-  const { school, faculty, name, level, duration, description, tuitionFee, admissionConditions } =
+  const { school, faculty, name, level, niveau, duration, description, tuitionFee, admissionConditions } =
     (await request.json()) ?? {};
 
   if (!school || !getSchools().some((s) => s.slug === school)) {
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
 
   const slug = await uniqueSlug(slugify(name));
 
+  const validNiveaux = ["prescolaire", "primaire", "secondaire"];
   const program = await prisma.program.create({
     data: {
       slug,
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
       faculty,
       name,
       level,
+      niveau: school === "ecole-classique" && validNiveaux.includes(niveau) ? niveau : null,
       duration,
       description,
       tuitionFee: Number.isFinite(Number(tuitionFee)) ? Math.max(0, Math.round(Number(tuitionFee))) : 0,
