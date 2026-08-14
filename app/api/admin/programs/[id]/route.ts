@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { getSchools } from "@/lib/content";
 import { resolveTeacherModel, cascadeTitulaireToCourses } from "@/lib/titulaire";
+import { resolveUniversiteFields } from "@/lib/universiteValidation";
+import { writeAuditLog } from "@/lib/auditLog";
 
 export async function PATCH(
   request: Request,
@@ -19,6 +21,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Programme introuvable." }, { status: 404 });
   }
 
+  const body = (await request.json()) ?? {};
   const {
     school,
     faculty,
@@ -31,12 +34,19 @@ export async function PATCH(
     description,
     tuitionFee,
     admissionConditions,
-  } = (await request.json()) ?? {};
+  } = body;
 
   if (!school || !getSchools().some((s) => s.slug === school)) {
     return NextResponse.json({ error: "École invalide." }, { status: 400 });
   }
-  if (!name || !faculty || !level || !duration || !description) {
+
+  const universite = await resolveUniversiteFields(school, body);
+  if (!universite.ok) {
+    return NextResponse.json({ error: universite.error }, { status: 400 });
+  }
+
+  const facultyName = school === "universite" ? (faculty || "").trim() || null : faculty;
+  if (!name || !facultyName || !level || !duration || !description) {
     return NextResponse.json({ error: "Tous les champs sont requis." }, { status: 400 });
   }
 
@@ -50,16 +60,23 @@ export async function PATCH(
     : [];
 
   const validNiveaux = ["prescolaire", "primaire", "secondaire"];
-  await prisma.program.update({
+  const updated = await prisma.program.update({
     where: { id },
     data: {
       school,
-      faculty,
+      faculty: facultyName!,
+      academicFacultyId: universite.value.academicFacultyId,
       name,
       level,
       niveau: school === "ecole-classique" && validNiveaux.includes(niveau) ? niveau : null,
       teacherModel: resolved.value.teacherModel,
       titulaireId: resolved.value.titulaireId,
+      programType: universite.value.programType,
+      programStatus: universite.value.programStatus,
+      authorizationRef: universite.value.authorizationRef,
+      authorizationDate: universite.value.authorizationDate,
+      authorizationDocumentRef: universite.value.authorizationDocumentRef,
+      passingGrade: universite.value.passingGrade,
       duration,
       description,
       tuitionFee: Number.isFinite(Number(tuitionFee)) ? Math.max(0, Math.round(Number(tuitionFee))) : 0,
@@ -69,6 +86,26 @@ export async function PATCH(
 
   if (resolved.value.teacherModel === "titulaire" && resolved.value.titulaireId !== program.titulaireId) {
     await cascadeTitulaireToCourses(id, resolved.value.titulaireId);
+  }
+
+  if (updated.programStatus !== program.programStatus) {
+    await writeAuditLog({
+      entityType: "Program",
+      entityId: id,
+      action: "status_change",
+      actorId: session.userId,
+      before: { programStatus: program.programStatus },
+      after: { programStatus: updated.programStatus },
+    });
+  } else {
+    await writeAuditLog({
+      entityType: "Program",
+      entityId: id,
+      action: "update",
+      actorId: session.userId,
+      before: program,
+      after: updated,
+    });
   }
 
   return NextResponse.json({ ok: true });

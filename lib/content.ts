@@ -26,17 +26,33 @@ export { niveauList, niveauLabels } from "@/lib/niveaux";
 import type { TeacherModel } from "@/lib/teacherModel";
 export type { TeacherModel } from "@/lib/teacherModel";
 export { teacherModelList, teacherModelLabels } from "@/lib/teacherModel";
+import type { ProgramType, ProgramStatus } from "@/lib/universite";
+export type { ProgramType, ProgramStatus } from "@/lib/universite";
+export {
+  programTypeList,
+  programTypeLabels,
+  programStatusList,
+  programStatusLabels,
+  isPubliclyVisible,
+} from "@/lib/universite";
 
 export interface Program {
   id: string;
   slug: string;
   school: SchoolSlug;
   faculty: string;
+  academicFacultyId: string | null;
   name: string;
   level: string;
   niveau: Niveau | null;
   teacherModel: TeacherModel | null;
   titulaireId: number | null;
+  programType: ProgramType | null;
+  programStatus: ProgramStatus | null;
+  authorizationRef: string | null;
+  authorizationDate: string | null;
+  authorizationDocumentRef: string | null;
+  passingGrade: number | null;
   duration: string;
   description: string;
   admissionConditions: string[];
@@ -49,11 +65,18 @@ function mapProgram(row: PrismaProgram): Program {
     slug: row.slug,
     school: row.school as SchoolSlug,
     faculty: row.faculty,
+    academicFacultyId: row.academicFacultyId ?? null,
     name: row.name,
     level: row.level,
     niveau: (row.niveau as Niveau | null) ?? null,
     teacherModel: (row.teacherModel as TeacherModel | null) ?? null,
     titulaireId: row.titulaireId ?? null,
+    programType: (row.programType as ProgramType | null) ?? null,
+    programStatus: (row.programStatus as ProgramStatus | null) ?? null,
+    authorizationRef: row.authorizationRef ?? null,
+    authorizationDate: row.authorizationDate ? row.authorizationDate.toISOString().slice(0, 10) : null,
+    authorizationDocumentRef: row.authorizationDocumentRef ?? null,
+    passingGrade: row.passingGrade ?? null,
     duration: row.duration,
     description: row.description,
     admissionConditions: JSON.parse(row.admissionConditions || "[]"),
@@ -98,6 +121,30 @@ export async function getProgramBySlug(slug: string): Promise<Program | undefine
 export async function getProgramById(id: string): Promise<Program | undefined> {
   const row = await prisma.program.findUnique({ where: { id } });
   return row ? mapProgram(row) : undefined;
+}
+
+export interface FacultyItem {
+  id: string;
+  name: string;
+}
+
+export async function getFaculties(school: SchoolSlug): Promise<FacultyItem[]> {
+  const rows = await prisma.faculty.findMany({ where: { school }, orderBy: { name: "asc" } });
+  return rows.map((f) => ({ id: f.id, name: f.name }));
+}
+
+/** Only programs that are Autorisé with both authorization and justificatif references — safe for public display. */
+export async function getPublicUniversitePrograms(): Promise<Program[]> {
+  const rows = await prisma.program.findMany({
+    where: {
+      school: "universite",
+      programStatus: "autorise",
+      authorizationRef: { not: null },
+      authorizationDocumentRef: { not: null },
+    },
+    orderBy: { name: "asc" },
+  });
+  return rows.map(mapProgram);
 }
 
 export interface NewsItem {

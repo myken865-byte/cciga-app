@@ -9,8 +9,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
-  const { programId, name, code, description, teacherId, dayOfWeek, startTime, endTime } =
-    (await request.json()) ?? {};
+  const {
+    programId,
+    name,
+    code,
+    description,
+    teacherId,
+    dayOfWeek,
+    startTime,
+    endTime,
+    semesterId,
+    credits,
+    coefficient,
+    groupLabel,
+  } = (await request.json()) ?? {};
 
   if (!programId || !name || !description) {
     return NextResponse.json({ error: "Programme, nom et description sont requis." }, { status: 400 });
@@ -19,6 +31,15 @@ export async function POST(request: Request) {
   const program = await prisma.program.findUnique({ where: { id: programId } });
   if (!program) {
     return NextResponse.json({ error: "Programme invalide." }, { status: 400 });
+  }
+
+  let resolvedSemesterId: string | undefined;
+  if (semesterId) {
+    const semester = await prisma.semester.findUnique({ where: { id: semesterId } });
+    if (!semester) {
+      return NextResponse.json({ error: "Semestre invalide." }, { status: 400 });
+    }
+    resolvedSemesterId = semester.id;
   }
 
   const slot = {
@@ -68,6 +89,10 @@ export async function POST(request: Request) {
       dayOfWeek: slot.dayOfWeek ?? undefined,
       startTime: slot.startTime ?? undefined,
       endTime: slot.endTime ?? undefined,
+      semesterId: resolvedSemesterId,
+      credits: credits !== undefined && credits !== "" ? Number(credits) : undefined,
+      coefficient: coefficient !== undefined && coefficient !== "" ? Number(coefficient) : undefined,
+      groupLabel: groupLabel || undefined,
     },
   });
 

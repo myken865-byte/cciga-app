@@ -524,6 +524,133 @@ async function seedTestTitulaireDemo() {
   }
 }
 
+interface UniversiteProgramSeed {
+  slug: string;
+  facultyName: string;
+  name: string;
+  programType: "licence" | "diplome";
+  duration: string;
+}
+
+const universiteFaculties = [
+  "Faculté des Sciences de la Santé",
+  "Faculté d'Agronomie et de l'Environnement",
+  "Faculté de Génie et des Technologies",
+  "Faculté des Sciences Juridiques et Politiques",
+  "Faculté des Sciences Économiques, Administratives et de Gestion",
+  "Faculté de Communication et de Journalisme",
+  "Faculté des Sciences de l'Éducation",
+  "Sciences de la Santé",
+  "Administration, Langues et Douane",
+];
+
+const universiteConditions = [
+  "Diplôme de fin d'études secondaires (Bac ou équivalent)",
+  "Relevé de notes des trois dernières années",
+  "Entretien d'admission",
+];
+
+// Programmes communiqués par CCIGA. La validation juridique définitive de chaque
+// intitulé, niveau et durée doit être effectuée à partir des actes officiels
+// délivrés par le MENFP/DESRS — voir programStatus "brouillon" ci-dessous.
+const universitePrograms: UniversiteProgramSeed[] = [
+  { slug: "licence-medecine", facultyName: "Faculté des Sciences de la Santé", name: "Médecine", programType: "licence", duration: "4 ans" },
+  { slug: "licence-odontologie", facultyName: "Faculté des Sciences de la Santé", name: "Odontologie", programType: "licence", duration: "4 ans" },
+  { slug: "licence-sciences-infirmieres", facultyName: "Faculté des Sciences de la Santé", name: "Sciences infirmières", programType: "licence", duration: "4 ans" },
+  { slug: "licence-agronomie", facultyName: "Faculté d'Agronomie et de l'Environnement", name: "Agronomie", programType: "licence", duration: "4 ans" },
+  // "genie-civil" already exists from the original seed — handled separately in seedUniversiteStructure().
+  { slug: "licence-droit", facultyName: "Faculté des Sciences Juridiques et Politiques", name: "Sciences juridiques (Droit)", programType: "licence", duration: "4 ans" },
+  { slug: "licence-sciences-administratives", facultyName: "Faculté des Sciences Économiques, Administratives et de Gestion", name: "Sciences administratives", programType: "licence", duration: "4 ans" },
+  { slug: "licence-sciences-comptables", facultyName: "Faculté des Sciences Économiques, Administratives et de Gestion", name: "Sciences comptables", programType: "licence", duration: "4 ans" },
+  { slug: "licence-gestion-des-affaires", facultyName: "Faculté des Sciences Économiques, Administratives et de Gestion", name: "Gestion des affaires", programType: "licence", duration: "4 ans" },
+  { slug: "licence-sciences-economiques", facultyName: "Faculté des Sciences Économiques, Administratives et de Gestion", name: "Sciences économiques", programType: "licence", duration: "4 ans" },
+  { slug: "licence-communication-journalisme", facultyName: "Faculté de Communication et de Journalisme", name: "Communication sociale et Journalisme", programType: "licence", duration: "4 ans" },
+  { slug: "licence-sciences-education", facultyName: "Faculté des Sciences de l'Éducation", name: "Sciences de l'éducation", programType: "licence", duration: "4 ans" },
+  { slug: "diplome-laboratoire-medical", facultyName: "Sciences de la Santé", name: "Laboratoire médical", programType: "diplome", duration: "2 ans" },
+  { slug: "diplome-pharmacologie", facultyName: "Sciences de la Santé", name: "Pharmacologie", programType: "diplome", duration: "2 ans" },
+  { slug: "diplome-physiotherapie", facultyName: "Sciences de la Santé", name: "Physiothérapie", programType: "diplome", duration: "2 ans" },
+  { slug: "diplome-secretariat-trilingue", facultyName: "Administration, Langues et Douane", name: "Secrétariat trilingue", programType: "diplome", duration: "2 ans" },
+  { slug: "diplome-assistance-administrative", facultyName: "Administration, Langues et Douane", name: "Assistance administrative", programType: "diplome", duration: "2 ans" },
+  { slug: "diplome-technique-douaniere", facultyName: "Administration, Langues et Douane", name: "Technique douanière", programType: "diplome", duration: "2 ans" },
+];
+
+async function seedUniversiteStructure() {
+  let facultiesCreated = 0;
+  const facultyIdByName = new Map<string, string>();
+  for (const name of universiteFaculties) {
+    const existing = await prisma.faculty.findUnique({ where: { school_name: { school: "universite", name } } });
+    if (existing) {
+      facultyIdByName.set(name, existing.id);
+      continue;
+    }
+    const created = await prisma.faculty.create({ data: { school: "universite", name } });
+    facultyIdByName.set(name, created.id);
+    facultiesCreated += 1;
+  }
+  if (facultiesCreated > 0) {
+    console.log(`Seeded ${facultiesCreated} université faculties/domaines.`);
+  } else {
+    console.log("Université faculties/domaines already seeded.");
+  }
+
+  // Fold the pre-existing "Génie Civil" program into the new mandated structure
+  // instead of duplicating it — preserves its history (slug, students, courses).
+  const genieCivil = await prisma.program.findUnique({ where: { slug: "genie-civil" } });
+  if (genieCivil && !genieCivil.programType) {
+    await prisma.program.update({
+      where: { id: genieCivil.id },
+      data: {
+        faculty: "Faculté de Génie et des Technologies",
+        academicFacultyId: facultyIdByName.get("Faculté de Génie et des Technologies"),
+        programType: "licence",
+        programStatus: "brouillon",
+        level: "Licence",
+      },
+    });
+    console.log("Génie Civil rattaché à la nouvelle structure (Faculté de Génie et des Technologies).");
+  }
+
+  // The two pre-existing programs that are NOT part of the mandated list are
+  // archived (never deleted) — preserves history while ensuring CCIGA never
+  // publicly advertises a programme outside the confirmed structure.
+  for (const slug of ["licence-informatique", "licence-gestion"]) {
+    const existing = await prisma.program.findUnique({ where: { slug } });
+    if (existing && existing.programStatus !== "archive") {
+      await prisma.program.update({ where: { id: existing.id }, data: { programStatus: "archive" } });
+      console.log(`Archivé (hors structure mandatée, historique conservé) : ${existing.name}.`);
+    }
+  }
+
+  let programsCreated = 0;
+  for (const p of universitePrograms) {
+    const existing = await prisma.program.findUnique({ where: { slug: p.slug } });
+    if (existing) continue;
+
+    await prisma.program.create({
+      data: {
+        slug: p.slug,
+        school: "universite",
+        faculty: p.facultyName,
+        academicFacultyId: facultyIdByName.get(p.facultyName),
+        name: p.name,
+        level: p.programType === "licence" ? "Licence" : "Diplôme",
+        programType: p.programType,
+        programStatus: "brouillon",
+        duration: p.duration,
+        description: `${p.name} — ${p.programType === "licence" ? "programme de licence" : "programme de diplôme"} de la ${p.facultyName}. Fiche en cours de complétion par l'administration (statut brouillon).`,
+        admissionConditions: JSON.stringify(universiteConditions),
+        tuitionFee: 0,
+      },
+    });
+    programsCreated += 1;
+  }
+  if (programsCreated > 0) {
+    console.log(`Seeded ${programsCreated} programmes universitaires (licence + diplôme).`);
+  } else {
+    console.log("Programmes universitaires (licence + diplôme) déjà seedés.");
+  }
+}
+
 async function main() {
   await seedAdmin();
   await seedPrograms();
@@ -533,6 +660,7 @@ async function main() {
   await seedEcoleClassiqueNiveaux();
   await seedTestNiveauDemoData();
   await seedTestTitulaireDemo();
+  await seedUniversiteStructure();
 }
 
 main()

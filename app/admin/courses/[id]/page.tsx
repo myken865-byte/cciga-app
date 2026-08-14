@@ -3,12 +3,15 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getPrograms } from "@/lib/content";
 import { parseRoles, hasRole } from "@/lib/roles";
+import { gradeStatusLabels, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
 import AttendanceForm from "@/components/AttendanceForm";
 import EditCourseForm from "@/components/EditCourseForm";
+import EvaluationCategoriesPanel from "@/components/EvaluationCategoriesPanel";
+import GradeWorkflowPanel from "@/components/GradeWorkflowPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -27,20 +30,43 @@ export default async function AdminCourseDetailPage({
     include: {
       program: { include: { students: true } },
       teacher: true,
+      semester: { include: { academicYear: true } },
       materials: { orderBy: { createdAt: "desc" } },
       assignments: { orderBy: { createdAt: "desc" } },
-      grades: { include: { student: true, assignment: true }, orderBy: { recordedAt: "desc" } },
+      evaluationCategories: { orderBy: { createdAt: "asc" } },
+      grades: {
+        include: { student: true, assignment: true, evaluationCategory: true },
+        orderBy: { recordedAt: "desc" },
+      },
     },
   });
   if (!course) notFound();
 
+  const isUniversite = course.program.school === "universite";
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
   const assignmentOptions = course.assignments.map((a) => ({ id: a.id, title: a.title }));
+  const categoryOptions = course.evaluationCategories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    weightPercent: c.weightPercent,
+  }));
 
-  const [programs, allUsers] = await Promise.all([getPrograms(), prisma.user.findMany()]);
+  const [programs, allUsers, semesters] = await Promise.all([
+    getPrograms(),
+    prisma.user.findMany(),
+    prisma.semester.findMany({ include: { academicYear: true }, orderBy: { order: "asc" } }),
+  ]);
   const teachers = allUsers
     .filter((u) => hasRole(parseRoles(u.roles), "TEACHER"))
     .map((u) => ({ id: u.id, name: u.name }));
+  const semesterOptions = semesters.map((s) => ({ id: s.id, label: `${s.academicYear.label} — ${s.name}` }));
+
+  const gradeCounts = { brouillon: 0, soumis: 0, valide: 0, publie: 0 };
+  for (const g of course.grades) {
+    if (g.status && g.status in gradeCounts) {
+      gradeCounts[g.status as GradeStatus] += 1;
+    }
+  }
 
   return (
     <div>
@@ -65,6 +91,15 @@ export default async function AdminCourseDetailPage({
             assignments={course.assignments}
           />
 
+          {isUniversite && (
+            <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+              {course.semester ? `${course.semester.academicYear.label} — ${course.semester.name}` : "Aucun semestre"}
+              {course.groupLabel && ` · ${course.groupLabel}`}
+              {course.credits !== null && ` · ${course.credits} crédit(s)`}
+              {course.coefficient !== null && ` · coefficient ${course.coefficient}`}
+            </div>
+          )}
+
           <div>
             <h2 className="mb-4 text-lg font-semibold text-foreground">Notes enregistrées</h2>
             {course.grades.length === 0 ? (
@@ -75,8 +110,9 @@ export default async function AdminCourseDetailPage({
                   <thead className="bg-background text-muted">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Étudiant</th>
-                      <th className="px-4 py-3 font-semibold">Devoir</th>
+                      <th className="px-4 py-3 font-semibold">{isUniversite ? "Catégorie" : "Devoir"}</th>
                       <th className="px-4 py-3 font-semibold">Note</th>
+                      {isUniversite && <th className="px-4 py-3 font-semibold">Statut</th>}
                       <th className="px-4 py-3 font-semibold">Date</th>
                     </tr>
                   </thead>
@@ -84,8 +120,15 @@ export default async function AdminCourseDetailPage({
                     {course.grades.map((g) => (
                       <tr key={g.id} className="border-t border-border">
                         <td className="px-4 py-3 text-foreground">{g.student.name}</td>
-                        <td className="px-4 py-3 text-muted">{g.assignment?.title ?? "Général"}</td>
+                        <td className="px-4 py-3 text-muted">
+                          {isUniversite ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}
+                        </td>
                         <td className="px-4 py-3 font-semibold text-foreground">{g.score}/100</td>
+                        {isUniversite && (
+                          <td className="px-4 py-3 text-muted">
+                            {g.status ? gradeStatusLabels[g.status as GradeStatus] : "—"}
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-muted">{formatDate(g.recordedAt)}</td>
                       </tr>
                     ))}
@@ -108,14 +151,28 @@ export default async function AdminCourseDetailPage({
               dayOfWeek: course.dayOfWeek,
               startTime: course.startTime,
               endTime: course.endTime,
+              semesterId: course.semesterId,
+              credits: course.credits,
+              coefficient: course.coefficient,
+              groupLabel: course.groupLabel,
             }}
             programs={programs}
             teachers={teachers}
+            semesters={semesterOptions}
           />
           <AttendanceForm courseId={course.id} students={students} />
           <AddCourseMaterialForm courseId={course.id} />
-          <AddAssignmentForm courseId={course.id} />
-          <RecordGradeForm courseId={course.id} students={students} assignments={assignmentOptions} />
+          {!isUniversite && <AddAssignmentForm courseId={course.id} />}
+          {isUniversite && <EvaluationCategoriesPanel courseId={course.id} categories={categoryOptions} />}
+          <RecordGradeForm
+            courseId={course.id}
+            students={students}
+            assignments={assignmentOptions}
+            categories={isUniversite ? categoryOptions : undefined}
+          />
+          {isUniversite && (
+            <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} isAdmin />
+          )}
         </div>
       </div>
     </div>

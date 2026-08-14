@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getPrograms, getSchools } from "@/lib/content";
+import { getPrograms, getSchools, isPubliclyVisible } from "@/lib/content";
 import ProgramCard from "@/components/ProgramCard";
 
 export const metadata: Metadata = {
@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 
 export default async function ProgrammesPage() {
   const schools = getSchools();
-  const programs = await getPrograms();
+  const allPrograms = await getPrograms();
+  // Université programs only appear here once officially Autorisé with a justificatif on file.
+  const programs = allPrograms.filter((p) => p.school !== "universite" || isPubliclyVisible(p));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 lg:px-6">

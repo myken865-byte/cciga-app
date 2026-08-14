@@ -41,7 +41,11 @@ export default async function StudentCoursePage({
   }
 
   const grades = await prisma.grade.findMany({
-    where: { courseId: id, studentId: user.id },
+    where: {
+      courseId: id,
+      studentId: user.id,
+      OR: [{ status: null }, { status: "publie" }],
+    },
     include: { assignment: true },
     orderBy: { recordedAt: "desc" },
   });

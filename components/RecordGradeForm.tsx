@@ -13,18 +13,28 @@ interface AssignmentOption {
   title: string;
 }
 
+interface CategoryOption {
+  id: string;
+  name: string;
+  weightPercent: number;
+}
+
 export default function RecordGradeForm({
   courseId,
   students,
   assignments,
+  categories,
 }: {
   courseId: string;
   students: StudentOption[];
   assignments: AssignmentOption[];
+  categories?: CategoryOption[];
 }) {
   const router = useRouter();
+  const isUniversite = categories !== undefined;
   const [studentId, setStudentId] = useState(students[0]?.id.toString() ?? "");
   const [assignmentId, setAssignmentId] = useState("");
+  const [evaluationCategoryId, setEvaluationCategoryId] = useState(categories?.[0]?.id ?? "");
   const [score, setScore] = useState("");
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +50,8 @@ export default function RecordGradeForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: Number(studentId),
-          assignmentId: assignmentId || undefined,
+          assignmentId: isUniversite ? undefined : assignmentId || undefined,
+          evaluationCategoryId: isUniversite ? evaluationCategoryId : undefined,
           score: Number(score),
           comment,
         }),
@@ -71,6 +82,17 @@ export default function RecordGradeForm({
     );
   }
 
+  if (isUniversite && categories.length === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-6">
+        <h2 className="mb-2 font-semibold text-foreground">Enregistrer une note</h2>
+        <p className="text-sm text-muted">
+          Définissez d&apos;abord au moins une catégorie d&apos;évaluation pour ce cours.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
       <h2 className="font-semibold text-foreground">Enregistrer une note</h2>
@@ -86,17 +108,35 @@ export default function RecordGradeForm({
         </select>
       </label>
 
-      <label className="block text-sm">
-        <span className="mb-1 block font-medium text-foreground">Devoir (optionnel)</span>
-        <select className="input" value={assignmentId} onChange={(e) => setAssignmentId(e.target.value)}>
-          <option value="">Note générale du cours</option>
-          {assignments.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      {isUniversite ? (
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-foreground">Catégorie d&apos;évaluation</span>
+          <select
+            required
+            className="input"
+            value={evaluationCategoryId}
+            onChange={(e) => setEvaluationCategoryId(e.target.value)}
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.weightPercent}%)
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-foreground">Devoir (optionnel)</span>
+          <select className="input" value={assignmentId} onChange={(e) => setAssignmentId(e.target.value)}>
+            <option value="">Note générale du cours</option>
+            {assignments.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.title}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Note (sur 100)</span>
@@ -104,6 +144,8 @@ export default function RecordGradeForm({
           required
           type="number"
           step="0.01"
+          min="0"
+          max="100"
           className="input"
           value={score}
           onChange={(e) => setScore(e.target.value)}

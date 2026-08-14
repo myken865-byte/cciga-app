@@ -29,7 +29,7 @@ export default async function PortailParentPage() {
       const [paidAgg, grades, absenceCount, observations, messages] = await Promise.all([
         prisma.payment.aggregate({ where: { studentId: child.id }, _sum: { amount: true } }),
         prisma.grade.findMany({
-          where: { studentId: child.id },
+          where: { studentId: child.id, OR: [{ status: null }, { status: "publie" }] },
           include: { course: true, assignment: true },
           orderBy: { recordedAt: "desc" },
           take: 5,

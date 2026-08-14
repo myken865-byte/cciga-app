@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { gradeStatusLabels, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
 import AttendanceForm from "@/components/AttendanceForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
+import GradeWorkflowPanel from "@/components/GradeWorkflowPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +32,8 @@ export default async function TeacherCoursePage({
       teacher: true,
       materials: { orderBy: { createdAt: "desc" } },
       assignments: { orderBy: { createdAt: "desc" } },
-      grades: { include: { student: true, assignment: true }, orderBy: { recordedAt: "desc" } },
+      evaluationCategories: { orderBy: { createdAt: "asc" } },
+      grades: { include: { student: true, assignment: true, evaluationCategory: true }, orderBy: { recordedAt: "desc" } },
     },
   });
 
@@ -38,8 +41,21 @@ export default async function TeacherCoursePage({
     notFound();
   }
 
+  const isUniversite = course.program.school === "universite";
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
   const assignmentOptions = course.assignments.map((a) => ({ id: a.id, title: a.title }));
+  const categoryOptions = course.evaluationCategories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    weightPercent: c.weightPercent,
+  }));
+
+  const gradeCounts = { brouillon: 0, soumis: 0, valide: 0, publie: 0 };
+  for (const g of course.grades) {
+    if (g.status && g.status in gradeCounts) {
+      gradeCounts[g.status as GradeStatus] += 1;
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
@@ -61,11 +77,30 @@ export default async function TeacherCoursePage({
         assignments={course.assignments}
       />
 
+      {isUniversite && categoryOptions.length > 0 && (
+        <div className="mt-4 rounded-lg border border-border bg-surface p-4 text-sm">
+          <p className="mb-1 font-semibold text-foreground">Catégories d&apos;évaluation</p>
+          <ul className="text-muted">
+            {categoryOptions.map((c) => (
+              <li key={c.id}>
+                {c.name} — {c.weightPercent}%
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <AttendanceForm courseId={course.id} students={students} />
         <AddCourseMaterialForm courseId={course.id} />
-        <AddAssignmentForm courseId={course.id} />
-        <RecordGradeForm courseId={course.id} students={students} assignments={assignmentOptions} />
+        {!isUniversite && <AddAssignmentForm courseId={course.id} />}
+        <RecordGradeForm
+          courseId={course.id}
+          students={students}
+          assignments={assignmentOptions}
+          categories={isUniversite ? categoryOptions : undefined}
+        />
+        {isUniversite && <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} isAdmin={false} />}
       </div>
 
       <div className="mt-8">
@@ -78,8 +113,9 @@ export default async function TeacherCoursePage({
               <thead className="bg-background text-muted">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Étudiant</th>
-                  <th className="px-4 py-3 font-semibold">Devoir</th>
+                  <th className="px-4 py-3 font-semibold">{isUniversite ? "Catégorie" : "Devoir"}</th>
                   <th className="px-4 py-3 font-semibold">Note</th>
+                  {isUniversite && <th className="px-4 py-3 font-semibold">Statut</th>}
                   <th className="px-4 py-3 font-semibold">Date</th>
                 </tr>
               </thead>
@@ -87,8 +123,15 @@ export default async function TeacherCoursePage({
                 {course.grades.map((g) => (
                   <tr key={g.id} className="border-t border-border">
                     <td className="px-4 py-3 text-foreground">{g.student.name}</td>
-                    <td className="px-4 py-3 text-muted">{g.assignment?.title ?? "Général"}</td>
+                    <td className="px-4 py-3 text-muted">
+                      {isUniversite ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}
+                    </td>
                     <td className="px-4 py-3 font-semibold text-foreground">{g.score}/100</td>
+                    {isUniversite && (
+                      <td className="px-4 py-3 text-muted">
+                        {g.status ? gradeStatusLabels[g.status as GradeStatus] : "—"}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-muted">{formatDate(g.recordedAt)}</td>
                   </tr>
                 ))}

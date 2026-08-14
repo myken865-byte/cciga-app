@@ -60,25 +60,70 @@ model User {
   observationsAbout    Observation[]   @relation("ObservationStudent")
   parentMessagesSent   ParentMessage[] @relation("ParentMessageSender")
   parentMessagesAbout  ParentMessage[] @relation("ParentMessageStudent")
+  gradesEntered        Grade[]         @relation("GradeEnteredBy")
+  gradesValidated      Grade[]         @relation("GradeValidatedBy")
+  auditLogs            AuditLog[]
+}
+
+model Faculty {
+  id        String   @id @default(cuid())
+  school    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  programs Program[]
+
+  @@unique([school, name])
+}
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  semesters Semester[]
+}
+
+model Semester {
+  id             String       @id @default(cuid())
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  name           String
+  order          Int          @default(1)
+  createdAt      DateTime     @default(now())
+
+  courses Course[]
 }
 
 model Program {
-  id                  String   @id @default(cuid())
-  slug                String   @unique
-  school              String
-  faculty             String
-  name                String
-  level               String
-  niveau              String?
-  teacherModel        String?
-  titulaireId         Int?
-  titulaire           User?    @relation("ClassTitulaire", fields: [titulaireId], references: [id])
-  duration            String
-  description         String
-  admissionConditions String
-  tuitionFee          Int      @default(0)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                       String    @id @default(cuid())
+  slug                     String    @unique
+  school                   String
+  faculty                  String
+  academicFacultyId        String?
+  academicFaculty          Faculty?  @relation(fields: [academicFacultyId], references: [id])
+  name                     String
+  level                    String
+  niveau                   String?
+  teacherModel             String?
+  titulaireId              Int?
+  titulaire                User?     @relation("ClassTitulaire", fields: [titulaireId], references: [id])
+  programType              String?
+  programStatus            String?
+  authorizationRef         String?
+  authorizationDate        DateTime?
+  authorizationDocumentRef String?
+  passingGrade             Int?
+  duration                 String
+  description              String
+  admissionConditions      String
+  tuitionFee               Int       @default(0)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   students     User[]
   courses      Course[]
@@ -95,24 +140,41 @@ model Payment {
 }
 
 model Course {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   programId   String
-  program     Program  @relation(fields: [programId], references: [id])
+  program     Program   @relation(fields: [programId], references: [id])
   name        String
   code        String?
   description String
   teacherId   Int?
-  teacher     User?    @relation(fields: [teacherId], references: [id])
+  teacher     User?     @relation(fields: [teacherId], references: [id])
   dayOfWeek   Int?
   startTime   String?
   endTime     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  semesterId  String?
+  semester    Semester? @relation(fields: [semesterId], references: [id])
+  credits     Int?
+  coefficient Float?
+  groupLabel  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  materials    CourseMaterial[]
-  assignments  Assignment[]
-  grades       Grade[]
-  attendances  Attendance[]
+  materials            CourseMaterial[]
+  assignments          Assignment[]
+  grades               Grade[]
+  attendances          Attendance[]
+  evaluationCategories EvaluationCategory[]
+}
+
+model EvaluationCategory {
+  id            String   @id @default(cuid())
+  courseId      String
+  course        Course   @relation(fields: [courseId], references: [id])
+  name          String
+  weightPercent Float
+  createdAt     DateTime @default(now())
+
+  grades Grade[]
 }
 
 model CourseMaterial {
@@ -137,16 +199,24 @@ model Assignment {
 }
 
 model Grade {
-  id           String      @id @default(cuid())
-  studentId    Int
-  student      User        @relation(fields: [studentId], references: [id])
-  courseId     String
-  course       Course      @relation(fields: [courseId], references: [id])
-  assignmentId String?
-  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
-  score        Float
-  comment      String?
-  recordedAt   DateTime    @default(now())
+  id                    String              @id @default(cuid())
+  studentId             Int
+  student               User                @relation(fields: [studentId], references: [id])
+  courseId              String
+  course                Course              @relation(fields: [courseId], references: [id])
+  assignmentId          String?
+  assignment            Assignment?         @relation(fields: [assignmentId], references: [id])
+  evaluationCategoryId  String?
+  evaluationCategory    EvaluationCategory? @relation(fields: [evaluationCategoryId], references: [id])
+  score                 Float
+  comment               String?
+  status                String?
+  enteredById           Int?
+  enteredBy             User?               @relation("GradeEnteredBy", fields: [enteredById], references: [id])
+  validatedById         Int?
+  validatedBy           User?               @relation("GradeValidatedBy", fields: [validatedById], references: [id])
+  publishedAt           DateTime?
+  recordedAt            DateTime            @default(now())
 }
 
 model Notification {
@@ -236,4 +306,17 @@ model ParentMessage {
   sender    User     @relation("ParentMessageSender", fields: [senderId], references: [id])
   body      String
   createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  action     String
+  actorId    Int?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  before     String?
+  after      String?
+  reason     String?
+  createdAt  DateTime @default(now())
 }

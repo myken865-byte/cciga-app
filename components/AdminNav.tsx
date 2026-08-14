@@ -10,6 +10,7 @@ const tabs = [
   { href: "/admin/admissions", label: "Candidatures" },
   { href: "/admin/programs", label: "Programmes" },
   { href: "/admin/courses", label: "Cours" },
+  { href: "/admin/universite", label: "Université" },
   { href: "/admin/finance", label: "Finances" },
   { href: "/admin/users", label: "Comptes" },
   { href: "/admin/news", label: "Contenu" },

@@ -11,12 +11,19 @@ interface Teacher {
   name: string;
 }
 
+interface SemesterOption {
+  id: string;
+  label: string;
+}
+
 export default function CreateCourseForm({
   programs,
   teachers,
+  semesters,
 }: {
   programs: Program[];
   teachers: Teacher[];
+  semesters?: SemesterOption[];
 }) {
   const router = useRouter();
   const [programId, setProgramId] = useState(programs[0]?.id ?? "");
@@ -27,11 +34,16 @@ export default function CreateCourseForm({
   const [dayOfWeek, setDayOfWeek] = useState("");
   const selectedProgram = programs.find((p) => p.id === programId);
   const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
+  const isUniversite = selectedProgram?.school === "universite";
   const titulaireName = isTitulaireModel
     ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
     : undefined;
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [semesterId, setSemesterId] = useState("");
+  const [credits, setCredits] = useState("");
+  const [coefficient, setCoefficient] = useState("");
+  const [groupLabel, setGroupLabel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState(false);
@@ -53,6 +65,10 @@ export default function CreateCourseForm({
           dayOfWeek: dayOfWeek === "" ? undefined : Number(dayOfWeek),
           startTime: startTime || undefined,
           endTime: endTime || undefined,
+          semesterId: isUniversite ? semesterId || undefined : undefined,
+          credits: isUniversite ? credits || undefined : undefined,
+          coefficient: isUniversite ? coefficient || undefined : undefined,
+          groupLabel: isUniversite ? groupLabel || undefined : undefined,
         }),
       });
       const json = await res.json();
@@ -68,6 +84,10 @@ export default function CreateCourseForm({
       setDayOfWeek("");
       setStartTime("");
       setEndTime("");
+      setSemesterId("");
+      setCredits("");
+      setCoefficient("");
+      setGroupLabel("");
       router.refresh();
     } catch {
       setError("Impossible de contacter le serveur.");
@@ -180,6 +200,36 @@ export default function CreateCourseForm({
           />
         </div>
       </div>
+
+      {isUniversite && (
+        <div className="space-y-3 rounded-md border border-border bg-background p-4">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Semestre</span>
+            <select className="input" value={semesterId} onChange={(e) => setSemesterId(e.target.value)}>
+              <option value="">Aucun</option>
+              {semesters?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Crédits</span>
+              <input type="number" min="0" className="input" value={credits} onChange={(e) => setCredits(e.target.value)} />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Coefficient</span>
+              <input type="number" min="0" step="0.1" className="input" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Groupe</span>
+              <input className="input" placeholder="Ex. Groupe A" value={groupLabel} onChange={(e) => setGroupLabel(e.target.value)} />
+            </label>
+          </div>
+        </div>
+      )}
 
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 

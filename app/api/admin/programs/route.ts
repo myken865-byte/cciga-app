@@ -4,6 +4,8 @@ import { requireAdminSession } from "@/lib/auth";
 import { getSchools } from "@/lib/content";
 import { slugify } from "@/lib/slugify";
 import { resolveTeacherModel } from "@/lib/titulaire";
+import { resolveUniversiteFields } from "@/lib/universiteValidation";
+import { writeAuditLog } from "@/lib/auditLog";
 
 async function uniqueSlug(base: string): Promise<string> {
   let slug = base || "programme";
@@ -21,6 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
+  const body = (await request.json()) ?? {};
   const {
     school,
     faculty,
@@ -33,12 +36,19 @@ export async function POST(request: Request) {
     description,
     tuitionFee,
     admissionConditions,
-  } = (await request.json()) ?? {};
+  } = body;
 
   if (!school || !getSchools().some((s) => s.slug === school)) {
     return NextResponse.json({ error: "École invalide." }, { status: 400 });
   }
-  if (!name || !faculty || !level || !duration || !description) {
+
+  const universite = await resolveUniversiteFields(school, body);
+  if (!universite.ok) {
+    return NextResponse.json({ error: universite.error }, { status: 400 });
+  }
+
+  const facultyName = school === "universite" ? (faculty || "").trim() || null : faculty;
+  if (!name || !facultyName || !level || !duration || !description) {
     return NextResponse.json({ error: "Tous les champs sont requis." }, { status: 400 });
   }
 
@@ -58,17 +68,32 @@ export async function POST(request: Request) {
     data: {
       slug,
       school,
-      faculty,
+      faculty: facultyName!,
+      academicFacultyId: universite.value.academicFacultyId,
       name,
       level,
       niveau: school === "ecole-classique" && validNiveaux.includes(niveau) ? niveau : null,
       teacherModel: resolved.value.teacherModel,
       titulaireId: resolved.value.titulaireId,
+      programType: universite.value.programType,
+      programStatus: universite.value.programStatus,
+      authorizationRef: universite.value.authorizationRef,
+      authorizationDate: universite.value.authorizationDate,
+      authorizationDocumentRef: universite.value.authorizationDocumentRef,
+      passingGrade: universite.value.passingGrade,
       duration,
       description,
       tuitionFee: Number.isFinite(Number(tuitionFee)) ? Math.max(0, Math.round(Number(tuitionFee))) : 0,
       admissionConditions: JSON.stringify(conditions),
     },
+  });
+
+  await writeAuditLog({
+    entityType: "Program",
+    entityId: program.id,
+    action: "create",
+    actorId: session.userId,
+    after: program,
   });
 
   return NextResponse.json({ slug: program.slug }, { status: 201 });

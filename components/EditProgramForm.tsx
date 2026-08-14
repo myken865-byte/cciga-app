@@ -5,9 +5,22 @@ import { useRouter } from "next/navigation";
 import type { School, Program } from "@/lib/content";
 import { niveauList, niveauLabels, type Niveau } from "@/lib/niveaux";
 import { teacherModelList, teacherModelLabels, type TeacherModel } from "@/lib/teacherModel";
+import {
+  programTypeList,
+  programTypeLabels,
+  programStatusList,
+  programStatusLabels,
+  type ProgramType,
+  type ProgramStatus,
+} from "@/lib/universite";
 
 interface Teacher {
   id: number;
+  name: string;
+}
+
+interface Faculty {
+  id: string;
   name: string;
 }
 
@@ -15,10 +28,12 @@ export default function EditProgramForm({
   program,
   schools,
   teachers,
+  faculties,
 }: {
   program: Program;
   schools: School[];
   teachers: Teacher[];
+  faculties: Faculty[];
 }) {
   const router = useRouter();
   const [school, setSchool] = useState<string>(program.school);
@@ -28,7 +43,17 @@ export default function EditProgramForm({
   const [niveau, setNiveau] = useState<Niveau | "">(program.niveau ?? "");
   const [teacherModel, setTeacherModel] = useState<TeacherModel | "">(program.teacherModel ?? "");
   const [titulaireId, setTitulaireId] = useState(program.titulaireId ? String(program.titulaireId) : "");
+  const [programType, setProgramType] = useState<ProgramType | "">(program.programType ?? "");
+  const [academicFacultyId, setAcademicFacultyId] = useState(program.academicFacultyId ?? "");
+  const [programStatus, setProgramStatus] = useState<ProgramStatus>(program.programStatus ?? "brouillon");
+  const [authorizationRef, setAuthorizationRef] = useState(program.authorizationRef ?? "");
+  const [authorizationDate, setAuthorizationDate] = useState(program.authorizationDate ?? "");
+  const [authorizationDocumentRef, setAuthorizationDocumentRef] = useState(
+    program.authorizationDocumentRef ?? "",
+  );
+  const [passingGrade, setPassingGrade] = useState(program.passingGrade ? String(program.passingGrade) : "");
   const isEcoleClassique = school === "ecole-classique";
+  const isUniversite = school === "universite";
   const [duration, setDuration] = useState(program.duration);
   const [description, setDescription] = useState(program.description);
   const [tuitionFee, setTuitionFee] = useState(String(program.tuitionFee));
@@ -48,17 +73,26 @@ export default function EditProgramForm({
         .map((line) => line.trim())
         .filter(Boolean);
 
+      const selectedFacultyName = faculties.find((f) => f.id === academicFacultyId)?.name;
+
       const res = await fetch(`/api/admin/programs/${program.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           school,
-          faculty,
+          faculty: isUniversite ? selectedFacultyName : faculty,
           name,
-          level: isEcoleClassique && niveau ? niveauLabels[niveau] : level,
+          level: isEcoleClassique && niveau ? niveauLabels[niveau] : isUniversite && programType ? programTypeLabels[programType] : level,
           niveau: isEcoleClassique ? niveau || undefined : undefined,
           teacherModel: isEcoleClassique ? teacherModel || undefined : undefined,
           titulaireId: isEcoleClassique && teacherModel === "titulaire" ? titulaireId || undefined : undefined,
+          programType: isUniversite ? programType || undefined : undefined,
+          academicFacultyId: isUniversite ? academicFacultyId || undefined : undefined,
+          programStatus: isUniversite ? programStatus : undefined,
+          authorizationRef: isUniversite ? authorizationRef || undefined : undefined,
+          authorizationDate: isUniversite ? authorizationDate || undefined : undefined,
+          authorizationDocumentRef: isUniversite ? authorizationDocumentRef || undefined : undefined,
+          passingGrade: isUniversite && passingGrade ? passingGrade : undefined,
           duration,
           description,
           tuitionFee: Number(tuitionFee) || 0,
@@ -94,10 +128,12 @@ export default function EditProgramForm({
         </select>
       </label>
 
-      <label className="block text-sm">
-        <span className="mb-1 block font-medium text-foreground">Faculté / Filière</span>
-        <input required className="input" value={faculty} onChange={(e) => setFaculty(e.target.value)} />
-      </label>
+      {!isUniversite && (
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-foreground">Faculté / Filière</span>
+          <input required className="input" value={faculty} onChange={(e) => setFaculty(e.target.value)} />
+        </label>
+      )}
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Nom du programme</span>
@@ -121,6 +157,8 @@ export default function EditProgramForm({
                 </option>
               ))}
             </select>
+          ) : isUniversite ? (
+            <input className="input bg-background" disabled value={programType ? programTypeLabels[programType] : ""} />
           ) : (
             <input required className="input" value={level} onChange={(e) => setLevel(e.target.value)} />
           )}
@@ -169,6 +207,104 @@ export default function EditProgramForm({
               </span>
             </label>
           )}
+        </div>
+      )}
+
+      {isUniversite && (
+        <div className="space-y-3 rounded-md border border-border bg-background p-4">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Catégorie</span>
+            <select
+              required
+              className="input"
+              value={programType}
+              onChange={(e) => setProgramType(e.target.value as ProgramType)}
+            >
+              <option value="">Choisir…</option>
+              {programTypeList.map((t) => (
+                <option key={t} value={t}>
+                  {programTypeLabels[t]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Faculté / Domaine</span>
+            <select
+              required
+              className="input"
+              value={academicFacultyId}
+              onChange={(e) => setAcademicFacultyId(e.target.value)}
+            >
+              <option value="">Choisir…</option>
+              {faculties.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Statut</span>
+            <select
+              className="input"
+              value={programStatus}
+              onChange={(e) => setProgramStatus(e.target.value as ProgramStatus)}
+            >
+              {programStatusList.map((s) => (
+                <option key={s} value={s}>
+                  {programStatusLabels[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Référence d&apos;autorisation</span>
+              <input
+                className="input"
+                value={authorizationRef}
+                onChange={(e) => setAuthorizationRef(e.target.value)}
+                placeholder="Ex. MENFP/DESRS-2025-..."
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Date d&apos;autorisation</span>
+              <input
+                type="date"
+                className="input"
+                value={authorizationDate}
+                onChange={(e) => setAuthorizationDate(e.target.value)}
+              />
+            </label>
+          </div>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Document justificatif (référence)</span>
+            <input
+              className="input"
+              value={authorizationDocumentRef}
+              onChange={(e) => setAuthorizationDocumentRef(e.target.value)}
+              placeholder="Ex. arrete-2025-014.pdf"
+            />
+          </label>
+          <p className="text-xs text-muted">
+            Un programme ne peut être marqué « Autorisé » sans référence ET document justificatif.
+          </p>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Seuil de réussite (sur 100, défaut 60)</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              className="input"
+              value={passingGrade}
+              onChange={(e) => setPassingGrade(e.target.value)}
+            />
+          </label>
         </div>
       )}
 

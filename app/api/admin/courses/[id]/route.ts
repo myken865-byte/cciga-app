@@ -18,8 +18,20 @@ export async function PATCH(
     return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
   }
 
-  const { programId, name, code, description, teacherId, dayOfWeek, startTime, endTime } =
-    (await request.json()) ?? {};
+  const {
+    programId,
+    name,
+    code,
+    description,
+    teacherId,
+    dayOfWeek,
+    startTime,
+    endTime,
+    semesterId,
+    credits,
+    coefficient,
+    groupLabel,
+  } = (await request.json()) ?? {};
 
   if (!programId || !name || !description) {
     return NextResponse.json({ error: "Programme, nom et description sont requis." }, { status: 400 });
@@ -28,6 +40,15 @@ export async function PATCH(
   const program = await prisma.program.findUnique({ where: { id: programId } });
   if (!program) {
     return NextResponse.json({ error: "Programme invalide." }, { status: 400 });
+  }
+
+  let resolvedSemesterId: string | null = null;
+  if (semesterId) {
+    const semester = await prisma.semester.findUnique({ where: { id: semesterId } });
+    if (!semester) {
+      return NextResponse.json({ error: "Semestre invalide." }, { status: 400 });
+    }
+    resolvedSemesterId = semester.id;
   }
 
   const slot = {
@@ -78,6 +99,10 @@ export async function PATCH(
       dayOfWeek: slot.dayOfWeek,
       startTime: slot.startTime,
       endTime: slot.endTime,
+      semesterId: resolvedSemesterId,
+      credits: credits !== undefined && credits !== "" ? Number(credits) : null,
+      coefficient: coefficient !== undefined && coefficient !== "" ? Number(coefficient) : null,
+      groupLabel: groupLabel || null,
     },
   });
 

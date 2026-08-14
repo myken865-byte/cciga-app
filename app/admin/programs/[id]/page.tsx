@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProgramById, getSchools } from "@/lib/content";
+import { getProgramById, getSchools, getFaculties } from "@/lib/content";
 import { prisma } from "@/lib/db";
 import { parseRoles, hasRole } from "@/lib/roles";
 import EditProgramForm from "@/components/EditProgramForm";
@@ -13,10 +13,11 @@ export default async function AdminProgramDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [program, allUsers, courses] = await Promise.all([
+  const [program, allUsers, courses, faculties] = await Promise.all([
     getProgramById(id),
     prisma.user.findMany(),
     prisma.course.findMany({ where: { programId: id }, include: { teacher: true } }),
+    getFaculties("universite"),
   ]);
   if (!program) notFound();
 
@@ -30,7 +31,7 @@ export default async function AdminProgramDetailPage({
         ← Tous les programmes
       </Link>
       <div className="mx-auto max-w-xl space-y-6">
-        <EditProgramForm program={program} schools={getSchools()} teachers={teachers} />
+        <EditProgramForm program={program} schools={getSchools()} teachers={teachers} faculties={faculties} />
 
         {program.teacherModel && (
           <div className="rounded-lg border border-border bg-surface p-6">

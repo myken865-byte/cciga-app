@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProgramBySlug, getProgramsBySchool, getSchoolBySlug } from "@/lib/content";
+import { getProgramBySlug, getProgramsBySchool, getSchoolBySlug, isPubliclyVisible } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +24,13 @@ export default async function ProgramDetailPage({
   const { slug } = await params;
   const program = await getProgramBySlug(slug);
   if (!program) notFound();
+  // Université programs are never publicly reachable until Autorisé with a justificatif on file.
+  if (program.school === "universite" && !isPubliclyVisible(program)) notFound();
 
   const school = getSchoolBySlug(program.school);
-  const related = (await getProgramsBySchool(program.school)).filter((p) => p.slug !== program.slug);
+  const related = (await getProgramsBySchool(program.school)).filter(
+    (p) => p.slug !== program.slug && (p.school !== "universite" || isPubliclyVisible(p)),
+  );
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-14 lg:px-6">

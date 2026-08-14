@@ -11,6 +11,11 @@ interface Teacher {
   name: string;
 }
 
+interface SemesterOption {
+  id: string;
+  label: string;
+}
+
 interface CourseInitial {
   id: string;
   programId: string;
@@ -21,16 +26,22 @@ interface CourseInitial {
   dayOfWeek: number | null;
   startTime: string | null;
   endTime: string | null;
+  semesterId: string | null;
+  credits: number | null;
+  coefficient: number | null;
+  groupLabel: string | null;
 }
 
 export default function EditCourseForm({
   course,
   programs,
   teachers,
+  semesters,
 }: {
   course: CourseInitial;
   programs: Program[];
   teachers: Teacher[];
+  semesters?: SemesterOption[];
 }) {
   const router = useRouter();
   const [programId, setProgramId] = useState(course.programId);
@@ -43,11 +54,16 @@ export default function EditCourseForm({
   );
   const selectedProgram = programs.find((p) => p.id === programId);
   const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
+  const isUniversite = selectedProgram?.school === "universite";
   const titulaireName = isTitulaireModel
     ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
     : undefined;
   const [startTime, setStartTime] = useState(course.startTime ?? "");
   const [endTime, setEndTime] = useState(course.endTime ?? "");
+  const [semesterId, setSemesterId] = useState(course.semesterId ?? "");
+  const [credits, setCredits] = useState(course.credits !== null ? String(course.credits) : "");
+  const [coefficient, setCoefficient] = useState(course.coefficient !== null ? String(course.coefficient) : "");
+  const [groupLabel, setGroupLabel] = useState(course.groupLabel ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -70,6 +86,10 @@ export default function EditCourseForm({
           dayOfWeek: dayOfWeek === "" ? undefined : Number(dayOfWeek),
           startTime: startTime || undefined,
           endTime: endTime || undefined,
+          semesterId: isUniversite ? semesterId || undefined : undefined,
+          credits: isUniversite ? credits || undefined : undefined,
+          coefficient: isUniversite ? coefficient || undefined : undefined,
+          groupLabel: isUniversite ? groupLabel || undefined : undefined,
         }),
       });
       const json = await res.json();
@@ -170,6 +190,36 @@ export default function EditCourseForm({
           />
         </div>
       </div>
+
+      {isUniversite && (
+        <div className="space-y-3 rounded-md border border-border bg-background p-4">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Semestre</span>
+            <select className="input" value={semesterId} onChange={(e) => setSemesterId(e.target.value)}>
+              <option value="">Aucun</option>
+              {semesters?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Crédits</span>
+              <input type="number" min="0" className="input" value={credits} onChange={(e) => setCredits(e.target.value)} />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Coefficient</span>
+              <input type="number" min="0" step="0.1" className="input" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Groupe</span>
+              <input className="input" placeholder="Ex. Groupe A" value={groupLabel} onChange={(e) => setGroupLabel(e.target.value)} />
+            </label>
+          </div>
+        </div>
+      )}
 
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {saved && (

@@ -25,11 +25,11 @@ export async function POST(
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
   }
 
-  const { studentId, assignmentId, score, comment } = (await request.json()) ?? {};
+  const { studentId, assignmentId, evaluationCategoryId, score, comment } = (await request.json()) ?? {};
 
   const parsedScore = Number(score);
-  if (!studentId || !Number.isFinite(parsedScore)) {
-    return NextResponse.json({ error: "Étudiant et note requis." }, { status: 400 });
+  if (!studentId || !Number.isFinite(parsedScore) || parsedScore < 0 || parsedScore > 100) {
+    return NextResponse.json({ error: "Étudiant et note (entre 0 et 100) requis." }, { status: 400 });
   }
 
   const student = await prisma.user.findUnique({ where: { id: Number(studentId) } });
@@ -37,21 +37,53 @@ export async function POST(
     return NextResponse.json({ error: "Étudiant invalide pour ce cours." }, { status: 400 });
   }
 
+  const isUniversite = course.program.school === "universite";
+
+  let resolvedCategoryId: string | undefined;
+  if (isUniversite) {
+    if (!evaluationCategoryId) {
+      return NextResponse.json(
+        { error: "Une catégorie d'évaluation est requise pour un cours universitaire." },
+        { status: 400 },
+      );
+    }
+    const category = await prisma.evaluationCategory.findUnique({ where: { id: evaluationCategoryId } });
+    if (!category || category.courseId !== id) {
+      return NextResponse.json({ error: "Catégorie d'évaluation invalide pour ce cours." }, { status: 400 });
+    }
+    resolvedCategoryId = category.id;
+
+    const existingForCategory = await prisma.grade.findFirst({
+      where: { studentId: student.id, evaluationCategoryId: resolvedCategoryId },
+    });
+    if (existingForCategory) {
+      return NextResponse.json(
+        { error: "Une note existe déjà pour cet étudiant dans cette catégorie d'évaluation." },
+        { status: 400 },
+      );
+    }
+  }
+
   const grade = await prisma.grade.create({
     data: {
       studentId: student.id,
       courseId: id,
-      assignmentId: assignmentId || undefined,
+      assignmentId: isUniversite ? undefined : assignmentId || undefined,
+      evaluationCategoryId: resolvedCategoryId,
       score: parsedScore,
       comment: comment || undefined,
+      status: isUniversite ? "brouillon" : undefined,
+      enteredById: session.userId,
     },
   });
 
-  await createNotification(student.id, {
-    type: "grade",
-    title: "Nouvelle note publiée",
-    body: `${course.name} : ${grade.score}/100`,
-  });
+  if (!isUniversite) {
+    await createNotification(student.id, {
+      type: "grade",
+      title: "Nouvelle note publiée",
+      body: `${course.name} : ${grade.score}/100`,
+    });
+  }
 
   return NextResponse.json({ id: grade.id }, { status: 201 });
 }

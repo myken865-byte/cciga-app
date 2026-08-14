@@ -1,20 +1,24 @@
 import Link from "next/link";
-import { getPrograms, getSchools } from "@/lib/content";
+import { getPrograms, getSchools, getFaculties } from "@/lib/content";
 import { prisma } from "@/lib/db";
 import { parseRoles, hasRole } from "@/lib/roles";
-import { teacherModelLabels } from "@/lib/teacherModel";
 import CreateProgramForm from "@/components/CreateProgramForm";
+import ProgramsTable from "@/components/ProgramsTable";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminProgramsPage() {
   const schools = getSchools();
-  const [programs, allUsers] = await Promise.all([getPrograms(), prisma.user.findMany()]);
-  const schoolsBySlug = new Map(schools.map((s) => [s.slug, s]));
+  const [programs, allUsers, faculties] = await Promise.all([
+    getPrograms(),
+    prisma.user.findMany(),
+    getFaculties("universite"),
+  ]);
   const teachers = allUsers
     .filter((u) => hasRole(parseRoles(u.roles), "TEACHER"))
     .map((u) => ({ id: u.id, name: u.name }));
   const teachersById = new Map(teachers.map((t) => [t.id, t.name]));
+  const facultiesById = new Map(faculties.map((f) => [f.id, f.name]));
 
   const missingTitulaire = programs.filter(
     (p) => p.teacherModel === "titulaire" && !p.titulaireId,
@@ -40,51 +44,16 @@ export default async function AdminProgramsPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface lg:col-span-2">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-background text-muted">
-              <tr>
-                <th className="px-4 py-3 font-semibold">École</th>
-                <th className="px-4 py-3 font-semibold">Programme</th>
-                <th className="px-4 py-3 font-semibold">Niveau / Cycle</th>
-                <th className="px-4 py-3 font-semibold">Modèle</th>
-                <th className="px-4 py-3 font-semibold">Titulaire</th>
-                <th className="px-4 py-3 font-semibold">Durée</th>
-              </tr>
-            </thead>
-            <tbody>
-              {programs.map((program) => (
-                <tr key={program.id} className="border-t border-border">
-                  <td className="px-4 py-3 text-muted">
-                    {schoolsBySlug.get(program.school)?.name ?? program.school}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/programs/${program.id}`} className="font-medium text-primary hover:underline">
-                      {program.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-muted">{program.level}</td>
-                  <td className="px-4 py-3 text-muted">
-                    {program.teacherModel ? teacherModelLabels[program.teacherModel].split(" (")[0] : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-muted">
-                    {program.titulaireId ? teachersById.get(program.titulaireId) ?? "—" : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-muted">{program.duration}</td>
-                </tr>
-              ))}
-              {programs.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
-                    Aucun programme pour le moment.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="lg:col-span-2">
+          <ProgramsTable
+            programs={programs}
+            schools={schools}
+            teachersById={teachersById}
+            facultiesById={facultiesById}
+          />
         </div>
 
-        <CreateProgramForm schools={schools} teachers={teachers} />
+        <CreateProgramForm schools={schools} teachers={teachers} faculties={faculties} />
       </div>
     </div>
   );
