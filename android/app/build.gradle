@@ -4,7 +4,7 @@ android {
     namespace = "ht.cciga.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ht.cciga.app"
+        applicationId "ht.cciga.app.test"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
