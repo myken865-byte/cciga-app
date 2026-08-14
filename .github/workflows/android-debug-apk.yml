@@ -40,10 +40,9 @@ jobs:
 
       - name: Verify APK (signature, alignment, package id)
         run: |
-          BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
-          if [ ! -d "$BUILD_TOOLS" ]; then
-            BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
-          fi
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          echo "sha256sum:"
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk
           "$BUILD_TOOLS/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
           "$BUILD_TOOLS/zipalign" -c -v 4 android/app/build/outputs/apk/debug/app-debug.apk
           "$BUILD_TOOLS/aapt2" dump badging android/app/build/outputs/apk/debug/app-debug.apk | head -5
