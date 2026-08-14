@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getPrograms } from "@/lib/content";
 import { parseRoles, hasRole } from "@/lib/roles";
-import { gradeStatusLabels, type GradeStatus } from "@/lib/universite";
+import { gradeStatusLabels, usesAuthorizationWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
@@ -43,6 +43,7 @@ export default async function AdminCourseDetailPage({
   if (!course) notFound();
 
   const isUniversite = course.program.school === "universite";
+  const usesWorkflow = usesAuthorizationWorkflow(course.program.school);
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
   const assignmentOptions = course.assignments.map((a) => ({ id: a.id, title: a.title }));
   const categoryOptions = course.evaluationCategories.map((c) => ({
@@ -110,9 +111,9 @@ export default async function AdminCourseDetailPage({
                   <thead className="bg-background text-muted">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Étudiant</th>
-                      <th className="px-4 py-3 font-semibold">{isUniversite ? "Catégorie" : "Devoir"}</th>
+                      <th className="px-4 py-3 font-semibold">{usesWorkflow ? "Catégorie" : "Devoir"}</th>
                       <th className="px-4 py-3 font-semibold">Note</th>
-                      {isUniversite && <th className="px-4 py-3 font-semibold">Statut</th>}
+                      {usesWorkflow && <th className="px-4 py-3 font-semibold">Statut</th>}
                       <th className="px-4 py-3 font-semibold">Date</th>
                     </tr>
                   </thead>
@@ -121,10 +122,10 @@ export default async function AdminCourseDetailPage({
                       <tr key={g.id} className="border-t border-border">
                         <td className="px-4 py-3 text-foreground">{g.student.name}</td>
                         <td className="px-4 py-3 text-muted">
-                          {isUniversite ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}
+                          {usesWorkflow ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}
                         </td>
                         <td className="px-4 py-3 font-semibold text-foreground">{g.score}/100</td>
-                        {isUniversite && (
+                        {usesWorkflow && (
                           <td className="px-4 py-3 text-muted">
                             {g.status ? gradeStatusLabels[g.status as GradeStatus] : "—"}
                           </td>
@@ -162,15 +163,15 @@ export default async function AdminCourseDetailPage({
           />
           <AttendanceForm courseId={course.id} students={students} />
           <AddCourseMaterialForm courseId={course.id} />
-          {!isUniversite && <AddAssignmentForm courseId={course.id} />}
-          {isUniversite && <EvaluationCategoriesPanel courseId={course.id} categories={categoryOptions} />}
+          {!usesWorkflow && <AddAssignmentForm courseId={course.id} />}
+          {usesWorkflow && <EvaluationCategoriesPanel courseId={course.id} categories={categoryOptions} />}
           <RecordGradeForm
             courseId={course.id}
             students={students}
             assignments={assignmentOptions}
-            categories={isUniversite ? categoryOptions : undefined}
+            categories={usesWorkflow ? categoryOptions : undefined}
           />
-          {isUniversite && (
+          {usesWorkflow && (
             <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} isAdmin />
           )}
         </div>

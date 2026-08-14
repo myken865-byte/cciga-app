@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProgramBySlug, getProgramsBySchool, getSchoolBySlug, isPubliclyVisible } from "@/lib/content";
+import {
+  getProgramBySlug,
+  getProgramsBySchool,
+  getSchoolBySlug,
+  isPubliclyVisible,
+  usesAuthorizationWorkflow,
+} from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +30,13 @@ export default async function ProgramDetailPage({
   const { slug } = await params;
   const program = await getProgramBySlug(slug);
   if (!program) notFound();
-  // Université programs are never publicly reachable until Autorisé with a justificatif on file.
-  if (program.school === "universite" && !isPubliclyVisible(program)) notFound();
+  // Université / École Professionnelle programmes are never publicly reachable
+  // until Autorisé with a justificatif on file.
+  if (usesAuthorizationWorkflow(program.school) && !isPubliclyVisible(program)) notFound();
 
   const school = getSchoolBySlug(program.school);
   const related = (await getProgramsBySchool(program.school)).filter(
-    (p) => p.slug !== program.slug && (p.school !== "universite" || isPubliclyVisible(p)),
+    (p) => p.slug !== program.slug && (!usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p)),
   );
 
   return (
@@ -57,6 +64,20 @@ export default async function ProgramDetailPage({
           <h2 className="mb-3 text-xl font-semibold text-foreground">Description</h2>
           <p className="mb-8 text-muted">{program.description}</p>
 
+          {program.skillsTargeted.length > 0 && (
+            <>
+              <h2 className="mb-3 text-xl font-semibold text-foreground">Compétences visées</h2>
+              <ul className="mb-8 space-y-2 text-muted">
+                {program.skillsTargeted.map((s) => (
+                  <li key={s} className="flex gap-2">
+                    <span className="text-accent">✓</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
           <h2 className="mb-3 text-xl font-semibold text-foreground">Conditions d&apos;admission</h2>
           <ul className="space-y-2 text-muted">
             {program.admissionConditions.map((c) => (
@@ -66,6 +87,27 @@ export default async function ProgramDetailPage({
               </li>
             ))}
           </ul>
+
+          {program.practicalWork && (
+            <>
+              <h2 className="mb-3 mt-8 text-xl font-semibold text-foreground">Travaux pratiques</h2>
+              <p className="text-muted">{program.practicalWork}</p>
+            </>
+          )}
+
+          {program.internship && (
+            <>
+              <h2 className="mb-3 mt-8 text-xl font-semibold text-foreground">Stage</h2>
+              <p className="text-muted">{program.internship}</p>
+            </>
+          )}
+
+          {program.certification && (
+            <>
+              <h2 className="mb-3 mt-8 text-xl font-semibold text-foreground">Certification</h2>
+              <p className="text-muted">{program.certification}</p>
+            </>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-6">

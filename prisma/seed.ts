@@ -651,6 +651,155 @@ async function seedUniversiteStructure() {
   }
 }
 
+interface EcoleProfessionnelleProgramSeed {
+  slug: string;
+  faculty: string;
+  name: string;
+  description: string;
+  skillsTargeted: string[];
+}
+
+const ecoleProfessionnelleConditions = [
+  "Avoir au moins 15 ans",
+  "Savoir lire et écrire",
+  "Entretien d'admission",
+];
+
+// Les 12 filières prioritaires communiquées par CCIGA. Aucune durée officielle
+// n'est fixée tant que la référence INFP réelle n'est pas enregistrée — voir
+// programStatus "brouillon" ci-dessous, et lib/universiteValidation.ts qui
+// interdit tout statut "autorise" sans référence + justificatif.
+const ecoleProfessionnelleProgramsSeed: EcoleProfessionnelleProgramSeed[] = [
+  {
+    slug: "coupe-et-confection",
+    faculty: "Filière Métiers de Service",
+    name: "Coupe et Confection",
+    description: "Formation professionnelle en couture : prise de mesures, patronage, confection et réparation de vêtements.",
+    skillsTargeted: ["Prise de mesures et patronage", "Techniques de couture et de confection", "Réparation et retouche de vêtements"],
+  },
+  {
+    slug: "informatique-bureautique",
+    faculty: "Filière Métiers Administratifs et Numériques",
+    name: "Informatique Bureautique",
+    description: "Formation pratique aux outils bureautiques : Windows, Word, Excel, PowerPoint, Internet, saisie et gestion de documents.",
+    skillsTargeted: ["Maîtrise de Windows et des outils Microsoft Office", "Saisie et mise en forme de documents", "Recherche et gestion de l'information sur Internet"],
+  },
+  {
+    slug: "electricite-batiment",
+    faculty: "Filière Métiers Techniques et Industriels",
+    name: "Électricité Bâtiment",
+    description: "Formation en installations électriques domestiques : câblage, entretien et sécurité.",
+    skillsTargeted: ["Câblage et installations électriques domestiques", "Entretien et dépannage", "Normes de sécurité électrique"],
+  },
+  {
+    slug: "plomberie-installations-sanitaires",
+    faculty: "Filière Métiers Techniques et Industriels",
+    name: "Plomberie et Installations Sanitaires",
+    description: "Formation en tuyauterie, drainage, sanitaires, alimentation et évacuation d'eau.",
+    skillsTargeted: ["Installation de tuyauterie et de sanitaires", "Systèmes de drainage et d'évacuation", "Alimentation en eau et entretien"],
+  },
+  {
+    slug: "cuisine-et-patisserie",
+    faculty: "Filière Métiers de Service",
+    name: "Cuisine et Pâtisserie",
+    description: "Formation en préparation des aliments, pâtisserie, hygiène et service de restauration.",
+    skillsTargeted: ["Techniques culinaires et de pâtisserie", "Hygiène et sécurité alimentaire", "Service et présentation en restauration"],
+  },
+  {
+    slug: "mecanique-automobile",
+    faculty: "Filière Métiers Techniques et Industriels",
+    name: "Mécanique Automobile",
+    description: "Formation en diagnostic, entretien courant et réparation des véhicules.",
+    skillsTargeted: ["Diagnostic mécanique", "Entretien courant des véhicules", "Réparation des systèmes automobiles"],
+  },
+  {
+    slug: "refrigeration-climatisation",
+    faculty: "Filière Métiers Techniques et Industriels",
+    name: "Réfrigération et Climatisation",
+    description: "Formation en installation, entretien et réparation des équipements frigorifiques.",
+    skillsTargeted: ["Installation d'équipements frigorifiques", "Entretien et dépannage", "Réparation des systèmes de climatisation"],
+  },
+  {
+    slug: "secretariat-assistance-administrative",
+    faculty: "Filière Métiers Administratifs et Numériques",
+    name: "Secrétariat et Assistance Administrative",
+    description: "Formation en accueil, correspondance, classement, archives et gestion de bureau.",
+    skillsTargeted: ["Accueil et communication professionnelle", "Rédaction de correspondance", "Classement, archives et gestion de bureau"],
+  },
+  {
+    slug: "comptabilite-informatisee",
+    faculty: "Filière Métiers Administratifs et Numériques",
+    name: "Comptabilité Informatisée",
+    description: "Formation en caisse, facturation, opérations comptables, rapports et logiciels de gestion.",
+    skillsTargeted: ["Gestion de caisse et facturation", "Opérations comptables courantes", "Utilisation de logiciels de comptabilité"],
+  },
+  {
+    slug: "maconnerie-construction-batiment",
+    faculty: "Filière Métiers Techniques et Industriels",
+    name: "Maçonnerie et Construction Bâtiment",
+    description: "Formation en fondations, murs, béton, finitions et sécurité sur chantier.",
+    skillsTargeted: ["Réalisation de fondations et de murs", "Techniques de bétonnage et de finition", "Sécurité sur chantier"],
+  },
+  {
+    slug: "menuiserie-et-ebenisterie",
+    faculty: "Filière Métiers Techniques et Industriels",
+    name: "Menuiserie et Ébénisterie",
+    description: "Formation en fabrication et réparation de portes, fenêtres, meubles et ouvrages en bois.",
+    skillsTargeted: ["Fabrication d'ouvrages en bois", "Réparation de meubles et menuiseries", "Finitions et assemblage"],
+  },
+  {
+    slug: "soudure-construction-metallique",
+    faculty: "Filière Métiers Techniques et Industriels",
+    name: "Soudure et Construction Métallique",
+    description: "Formation en soudage, découpe, assemblage et fabrication de structures métalliques.",
+    skillsTargeted: ["Techniques de soudage et de découpe", "Assemblage de structures métalliques", "Sécurité en atelier de soudure"],
+  },
+];
+
+async function seedEcoleProfessionnelleStructure() {
+  // The two pre-existing programs that are NOT part of the 12 mandated
+  // filières are archived (never deleted) — preserves history while ensuring
+  // CCIGA never publicly advertises a filière outside the confirmed list.
+  for (const slug of ["technicien-reseaux", "assistant-comptable"]) {
+    const existing = await prisma.program.findUnique({ where: { slug } });
+    if (existing && existing.programStatus !== "archive") {
+      await prisma.program.update({ where: { id: existing.id }, data: { programStatus: "archive" } });
+      console.log(`Archivé (hors liste des 12 filières prioritaires, historique conservé) : ${existing.name}.`);
+    }
+  }
+
+  let created = 0;
+  for (const p of ecoleProfessionnelleProgramsSeed) {
+    const existing = await prisma.program.findUnique({ where: { slug: p.slug } });
+    if (existing) continue;
+
+    await prisma.program.create({
+      data: {
+        slug: p.slug,
+        school: "ecole-professionnelle",
+        faculty: p.faculty,
+        name: p.name,
+        level: "Certificat professionnel",
+        programStatus: "brouillon",
+        skillsTargeted: JSON.stringify(p.skillsTargeted),
+        practicalWork: "Ateliers pratiques encadrés tout au long de la formation.",
+        internship: "Stage pratique en entreprise ou atelier partenaire (modalités à confirmer).",
+        certification: "Certificat CCIGA — reconnaissance officielle INFP en attente de validation.",
+        duration: "Durée à déterminer (validation INFP en attente)",
+        description: p.description,
+        admissionConditions: JSON.stringify(ecoleProfessionnelleConditions),
+        tuitionFee: 0,
+      },
+    });
+    created += 1;
+  }
+  if (created > 0) {
+    console.log(`Seeded ${created} filières École Professionnelle (statut brouillon).`);
+  } else {
+    console.log("Filières École Professionnelle déjà seedées.");
+  }
+}
+
 async function main() {
   await seedAdmin();
   await seedPrograms();
@@ -661,6 +810,7 @@ async function main() {
   await seedTestNiveauDemoData();
   await seedTestTitulaireDemo();
   await seedUniversiteStructure();
+  await seedEcoleProfessionnelleStructure();
 }
 
 main()

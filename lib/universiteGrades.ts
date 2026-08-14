@@ -54,6 +54,13 @@ export function computeSemesterAverage(results: CourseResult[]): number | null {
   return Math.round((weightedSum / totalCredits) * 100) / 100;
 }
 
+/** Simple (unweighted) average across a program's courses — used where no credit system applies (École Professionnelle). */
+export function computeSimpleAverage(results: { finalGrade: number | null }[]): number | null {
+  const graded = results.filter((r): r is { finalGrade: number } => r.finalGrade !== null);
+  if (graded.length === 0) return null;
+  return Math.round((graded.reduce((sum, r) => sum + r.finalGrade, 0) / graded.length) * 100) / 100;
+}
+
 export type AcademicDecision = "reussi" | "echec" | "indetermine";
 
 export const academicDecisionLabels: Record<AcademicDecision, string> = {

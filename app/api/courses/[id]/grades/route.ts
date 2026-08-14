@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { hasRole } from "@/lib/roles";
 import { createNotification } from "@/lib/notifications";
+import { usesAuthorizationWorkflow } from "@/lib/universite";
 
 export async function POST(
   request: Request,
@@ -37,13 +38,13 @@ export async function POST(
     return NextResponse.json({ error: "Étudiant invalide pour ce cours." }, { status: 400 });
   }
 
-  const isUniversite = course.program.school === "universite";
+  const usesWorkflow = usesAuthorizationWorkflow(course.program.school);
 
   let resolvedCategoryId: string | undefined;
-  if (isUniversite) {
+  if (usesWorkflow) {
     if (!evaluationCategoryId) {
       return NextResponse.json(
-        { error: "Une catégorie d'évaluation est requise pour un cours universitaire." },
+        { error: "Une catégorie d'évaluation est requise pour ce cours." },
         { status: 400 },
       );
     }
@@ -68,16 +69,16 @@ export async function POST(
     data: {
       studentId: student.id,
       courseId: id,
-      assignmentId: isUniversite ? undefined : assignmentId || undefined,
+      assignmentId: usesWorkflow ? undefined : assignmentId || undefined,
       evaluationCategoryId: resolvedCategoryId,
       score: parsedScore,
       comment: comment || undefined,
-      status: isUniversite ? "brouillon" : undefined,
+      status: usesWorkflow ? "brouillon" : undefined,
       enteredById: session.userId,
     },
   });
 
-  if (!isUniversite) {
+  if (!usesWorkflow) {
     await createNotification(student.id, {
       type: "grade",
       title: "Nouvelle note publiée",

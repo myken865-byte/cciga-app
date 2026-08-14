@@ -35,6 +35,18 @@ export function isProgramStatus(value: unknown): value is ProgramStatus {
 
 export const DEFAULT_PASSING_GRADE = 60;
 
+/**
+ * Schools whose programmes carry the authorization workflow (programStatus,
+ * authorizationRef/Date/DocumentRef) and the evaluation-category / grade
+ * publication workflow (brouillon→soumis→validé→publié). École Classique is
+ * deliberately excluded — its grading stays the original flat model.
+ */
+export const AUTHORIZATION_WORKFLOW_SCHOOLS = ["universite", "ecole-professionnelle"];
+
+export function usesAuthorizationWorkflow(school: string): boolean {
+  return AUTHORIZATION_WORKFLOW_SCHOOLS.includes(school);
+}
+
 export interface AuthorizationFields {
   programStatus: ProgramStatus | null;
   authorizationRef: string | null;

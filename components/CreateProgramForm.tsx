@@ -48,8 +48,14 @@ export default function CreateProgramForm({
   const [authorizationDate, setAuthorizationDate] = useState("");
   const [authorizationDocumentRef, setAuthorizationDocumentRef] = useState("");
   const [passingGrade, setPassingGrade] = useState("");
+  const [skillsText, setSkillsText] = useState("");
+  const [practicalWork, setPracticalWork] = useState("");
+  const [internship, setInternship] = useState("");
+  const [certification, setCertification] = useState("");
   const isEcoleClassique = school === "ecole-classique";
   const isUniversite = school === "universite";
+  const isEcoleProfessionnelle = school === "ecole-professionnelle";
+  const usesAuthorizationWorkflow = isUniversite || isEcoleProfessionnelle;
   const [duration, setDuration] = useState("");
   const [description, setDescription] = useState("");
   const [tuitionFee, setTuitionFee] = useState("");
@@ -64,6 +70,10 @@ export default function CreateProgramForm({
     setError(null);
     try {
       const admissionConditions = conditionsText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const skillsTargeted = skillsText
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean);
@@ -83,11 +93,15 @@ export default function CreateProgramForm({
           titulaireId: isEcoleClassique && teacherModel === "titulaire" ? titulaireId || undefined : undefined,
           programType: isUniversite ? programType || undefined : undefined,
           academicFacultyId: isUniversite ? academicFacultyId || undefined : undefined,
-          programStatus: isUniversite ? programStatus : undefined,
-          authorizationRef: isUniversite ? authorizationRef || undefined : undefined,
-          authorizationDate: isUniversite ? authorizationDate || undefined : undefined,
-          authorizationDocumentRef: isUniversite ? authorizationDocumentRef || undefined : undefined,
-          passingGrade: isUniversite && passingGrade ? passingGrade : undefined,
+          programStatus: usesAuthorizationWorkflow ? programStatus : undefined,
+          authorizationRef: usesAuthorizationWorkflow ? authorizationRef || undefined : undefined,
+          authorizationDate: usesAuthorizationWorkflow ? authorizationDate || undefined : undefined,
+          authorizationDocumentRef: usesAuthorizationWorkflow ? authorizationDocumentRef || undefined : undefined,
+          passingGrade: usesAuthorizationWorkflow && passingGrade ? passingGrade : undefined,
+          skillsTargeted: isEcoleProfessionnelle ? skillsTargeted : undefined,
+          practicalWork: isEcoleProfessionnelle ? practicalWork || undefined : undefined,
+          internship: isEcoleProfessionnelle ? internship || undefined : undefined,
+          certification: isEcoleProfessionnelle ? certification || undefined : undefined,
           duration,
           description,
           tuitionFee: tuitionFee ? Number(tuitionFee) : 0,
@@ -113,6 +127,10 @@ export default function CreateProgramForm({
       setAuthorizationDate("");
       setAuthorizationDocumentRef("");
       setPassingGrade("");
+      setSkillsText("");
+      setPracticalWork("");
+      setInternship("");
+      setCertification("");
       setDuration("");
       setDescription("");
       setTuitionFee("");
@@ -236,6 +254,46 @@ export default function CreateProgramForm({
         </div>
       )}
 
+      {isEcoleProfessionnelle && (
+        <div className="space-y-3 rounded-md border border-border bg-background p-4">
+          <h3 className="text-sm font-semibold text-foreground">Fiche professionnelle</h3>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">
+              Compétences visées (une par ligne)
+            </span>
+            <textarea
+              rows={3}
+              className="input"
+              value={skillsText}
+              onChange={(e) => setSkillsText(e.target.value)}
+              placeholder={"Prise de mesures et patronage\nTechniques de couture"}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Travaux pratiques</span>
+            <textarea
+              rows={2}
+              className="input"
+              value={practicalWork}
+              onChange={(e) => setPracticalWork(e.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Stage</span>
+            <textarea
+              rows={2}
+              className="input"
+              value={internship}
+              onChange={(e) => setInternship(e.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Certification délivrée</span>
+            <input className="input" value={certification} onChange={(e) => setCertification(e.target.value)} />
+          </label>
+        </div>
+      )}
+
       {isUniversite && (
         <div className="space-y-3 rounded-md border border-border bg-background p-4">
           <label className="block text-sm">
@@ -276,7 +334,11 @@ export default function CreateProgramForm({
               </span>
             )}
           </label>
+        </div>
+      )}
 
+      {usesAuthorizationWorkflow && (
+        <div className="space-y-3 rounded-md border border-border bg-background p-4">
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-foreground">Statut</span>
             <select
@@ -299,7 +361,7 @@ export default function CreateProgramForm({
                 className="input"
                 value={authorizationRef}
                 onChange={(e) => setAuthorizationRef(e.target.value)}
-                placeholder="Ex. MENFP/DESRS-2025-..."
+                placeholder={isUniversite ? "Ex. MENFP/DESRS-2025-..." : "Ex. INFP-2025-..."}
               />
             </label>
             <label className="block text-sm">

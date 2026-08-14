@@ -108,7 +108,7 @@ export default function ProgramsTable({
                     ? teachersById.get(program.titulaireId) ?? "—"
                     : program.academicFacultyId
                       ? facultiesById.get(program.academicFacultyId) ?? "—"
-                      : "—"}
+                      : program.faculty}
                 </td>
                 <td className="px-4 py-3 text-muted">
                   {program.programStatus ? programStatusLabels[program.programStatus] : "—"}

@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/db";
-import { isProgramType, isProgramStatus, type ProgramType, type ProgramStatus } from "@/lib/universite";
+import {
+  isProgramType,
+  isProgramStatus,
+  usesAuthorizationWorkflow,
+  type ProgramType,
+  type ProgramStatus,
+} from "@/lib/universite";
 
 export interface ResolvedUniversiteFields {
   academicFacultyId: string | null;
@@ -12,15 +18,17 @@ export interface ResolvedUniversiteFields {
 }
 
 /**
- * Validates the université-only Program fields. Non-université schools always
- * resolve to all-null (these fields are meaningless for École Classique /
- * École Professionnelle, same pattern as resolveTeacherModel in lib/titulaire.ts).
+ * Validates the authorization-workflow Program fields, shared by Université
+ * and École Professionnelle. Other schools always resolve to all-null (same
+ * pattern as resolveTeacherModel in lib/titulaire.ts).
  *
- * Enforces: programType is licence|diplome only (never maîtrise/doctorat —
- * there's no such option to select in the first place); a faculté/domaine
- * belonging to school="universite" must be selected; a status of "autorise"
- * requires both an authorization reference AND a justificatif reference to be
- * present — a programme can never go live publicly without both.
+ * Université-only: programType (licence|diplome — never maîtrise/doctorat,
+ * there's no such option to select) and a Faculté/Domaine (academicFacultyId)
+ * belonging to school="universite" are required.
+ *
+ * Shared by both schools: a status of "autorise" requires both an
+ * authorization reference AND a justificatif reference to be present — a
+ * programme can never go live publicly without both.
  */
 export async function resolveUniversiteFields(
   school: string,
@@ -34,7 +42,7 @@ export async function resolveUniversiteFields(
     passingGrade?: unknown;
   },
 ): Promise<{ ok: true; value: ResolvedUniversiteFields } | { ok: false; error: string }> {
-  if (school !== "universite") {
+  if (!usesAuthorizationWorkflow(school)) {
     return {
       ok: true,
       value: {
@@ -49,16 +57,22 @@ export async function resolveUniversiteFields(
     };
   }
 
-  if (!isProgramType(input.programType)) {
-    return { ok: false, error: "Type de programme invalide : choisissez Licence ou Diplôme." };
-  }
+  let programType: ProgramType | null = null;
+  let academicFacultyId: string | null = null;
 
-  if (!input.academicFacultyId) {
-    return { ok: false, error: "Une faculté ou un domaine est requis pour un programme universitaire." };
-  }
-  const faculty = await prisma.faculty.findUnique({ where: { id: String(input.academicFacultyId) } });
-  if (!faculty || faculty.school !== "universite") {
-    return { ok: false, error: "Faculté ou domaine invalide." };
+  if (school === "universite") {
+    if (!isProgramType(input.programType)) {
+      return { ok: false, error: "Type de programme invalide : choisissez Licence ou Diplôme." };
+    }
+    if (!input.academicFacultyId) {
+      return { ok: false, error: "Une faculté ou un domaine est requis pour un programme universitaire." };
+    }
+    const faculty = await prisma.faculty.findUnique({ where: { id: String(input.academicFacultyId) } });
+    if (!faculty || faculty.school !== "universite") {
+      return { ok: false, error: "Faculté ou domaine invalide." };
+    }
+    programType = input.programType;
+    academicFacultyId = faculty.id;
   }
 
   const status: ProgramStatus = isProgramStatus(input.programStatus) ? input.programStatus : "brouillon";
@@ -95,8 +109,8 @@ export async function resolveUniversiteFields(
   return {
     ok: true,
     value: {
-      academicFacultyId: faculty.id,
-      programType: input.programType,
+      academicFacultyId,
+      programType,
       programStatus: status,
       authorizationRef,
       authorizationDate,

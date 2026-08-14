@@ -34,6 +34,10 @@ export async function PATCH(
     description,
     tuitionFee,
     admissionConditions,
+    skillsTargeted,
+    practicalWork,
+    internship,
+    certification,
   } = body;
 
   if (!school || !getSchools().some((s) => s.slug === school)) {
@@ -58,6 +62,9 @@ export async function PATCH(
   const conditions: string[] = Array.isArray(admissionConditions)
     ? admissionConditions.filter((c) => typeof c === "string" && c.trim().length > 0)
     : [];
+  const skills: string[] = Array.isArray(skillsTargeted)
+    ? skillsTargeted.filter((s) => typeof s === "string" && s.trim().length > 0)
+    : [];
 
   const validNiveaux = ["prescolaire", "primaire", "secondaire"];
   const updated = await prisma.program.update({
@@ -77,6 +84,10 @@ export async function PATCH(
       authorizationDate: universite.value.authorizationDate,
       authorizationDocumentRef: universite.value.authorizationDocumentRef,
       passingGrade: universite.value.passingGrade,
+      skillsTargeted: skills.length > 0 ? JSON.stringify(skills) : null,
+      practicalWork: typeof practicalWork === "string" && practicalWork.trim() ? practicalWork.trim() : null,
+      internship: typeof internship === "string" && internship.trim() ? internship.trim() : null,
+      certification: typeof certification === "string" && certification.trim() ? certification.trim() : null,
       duration,
       description,
       tuitionFee: Number.isFinite(Number(tuitionFee)) ? Math.max(0, Math.round(Number(tuitionFee))) : 0,

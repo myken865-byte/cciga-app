@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { gradeStatusLabels, type GradeStatus } from "@/lib/universite";
+import { gradeStatusLabels, usesAuthorizationWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
 import AttendanceForm from "@/components/AttendanceForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
@@ -41,7 +41,7 @@ export default async function TeacherCoursePage({
     notFound();
   }
 
-  const isUniversite = course.program.school === "universite";
+  const usesWorkflow = usesAuthorizationWorkflow(course.program.school);
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
   const assignmentOptions = course.assignments.map((a) => ({ id: a.id, title: a.title }));
   const categoryOptions = course.evaluationCategories.map((c) => ({
@@ -77,7 +77,7 @@ export default async function TeacherCoursePage({
         assignments={course.assignments}
       />
 
-      {isUniversite && categoryOptions.length > 0 && (
+      {usesWorkflow && categoryOptions.length > 0 && (
         <div className="mt-4 rounded-lg border border-border bg-surface p-4 text-sm">
           <p className="mb-1 font-semibold text-foreground">Catégories d&apos;évaluation</p>
           <ul className="text-muted">
@@ -93,14 +93,14 @@ export default async function TeacherCoursePage({
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <AttendanceForm courseId={course.id} students={students} />
         <AddCourseMaterialForm courseId={course.id} />
-        {!isUniversite && <AddAssignmentForm courseId={course.id} />}
+        {!usesWorkflow && <AddAssignmentForm courseId={course.id} />}
         <RecordGradeForm
           courseId={course.id}
           students={students}
           assignments={assignmentOptions}
-          categories={isUniversite ? categoryOptions : undefined}
+          categories={usesWorkflow ? categoryOptions : undefined}
         />
-        {isUniversite && <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} isAdmin={false} />}
+        {usesWorkflow && <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} isAdmin={false} />}
       </div>
 
       <div className="mt-8">
@@ -113,9 +113,9 @@ export default async function TeacherCoursePage({
               <thead className="bg-background text-muted">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Étudiant</th>
-                  <th className="px-4 py-3 font-semibold">{isUniversite ? "Catégorie" : "Devoir"}</th>
+                  <th className="px-4 py-3 font-semibold">{usesWorkflow ? "Catégorie" : "Devoir"}</th>
                   <th className="px-4 py-3 font-semibold">Note</th>
-                  {isUniversite && <th className="px-4 py-3 font-semibold">Statut</th>}
+                  {usesWorkflow && <th className="px-4 py-3 font-semibold">Statut</th>}
                   <th className="px-4 py-3 font-semibold">Date</th>
                 </tr>
               </thead>
@@ -124,10 +124,10 @@ export default async function TeacherCoursePage({
                   <tr key={g.id} className="border-t border-border">
                     <td className="px-4 py-3 text-foreground">{g.student.name}</td>
                     <td className="px-4 py-3 text-muted">
-                      {isUniversite ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}
+                      {usesWorkflow ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}
                     </td>
                     <td className="px-4 py-3 font-semibold text-foreground">{g.score}/100</td>
-                    {isUniversite && (
+                    {usesWorkflow && (
                       <td className="px-4 py-3 text-muted">
                         {g.status ? gradeStatusLabels[g.status as GradeStatus] : "—"}
                       </td>

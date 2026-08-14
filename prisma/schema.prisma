@@ -11,24 +11,24 @@ datasource db {
 }
 
 model AdmissionSubmission {
-  id            String   @id @default(cuid())
-  reference     String   @unique
-  submittedAt   DateTime @default(now())
-  school        String
-  programSlug   String
-  firstName     String
-  lastName      String
-  dob           String?
-  email         String
-  phone         String
-  address       String?
-  documents     String
-  status        String   @default("nouveau")
-  adminNote     String?
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(cuid())
+  reference   String   @unique
+  submittedAt DateTime @default(now())
+  school      String
+  programSlug String
+  firstName   String
+  lastName    String
+  dob         String?
+  email       String
+  phone       String
+  address     String?
+  documents   String
+  status      String   @default("nouveau")
+  adminNote   String?
+  updatedAt   DateTime @updatedAt
 
   studentUserId Int?
-  student       User?    @relation(fields: [studentUserId], references: [id])
+  student       User? @relation(fields: [studentUserId], references: [id])
 }
 
 model User {
@@ -118,6 +118,10 @@ model Program {
   authorizationDate        DateTime?
   authorizationDocumentRef String?
   passingGrade             Int?
+  skillsTargeted           String?
+  practicalWork            String?
+  internship               String?
+  certification            String?
   duration                 String
   description              String
   admissionConditions      String
@@ -199,24 +203,24 @@ model Assignment {
 }
 
 model Grade {
-  id                    String              @id @default(cuid())
-  studentId             Int
-  student               User                @relation(fields: [studentId], references: [id])
-  courseId              String
-  course                Course              @relation(fields: [courseId], references: [id])
-  assignmentId          String?
-  assignment            Assignment?         @relation(fields: [assignmentId], references: [id])
-  evaluationCategoryId  String?
-  evaluationCategory    EvaluationCategory? @relation(fields: [evaluationCategoryId], references: [id])
-  score                 Float
-  comment               String?
-  status                String?
-  enteredById           Int?
-  enteredBy             User?               @relation("GradeEnteredBy", fields: [enteredById], references: [id])
-  validatedById         Int?
-  validatedBy           User?               @relation("GradeValidatedBy", fields: [validatedById], references: [id])
-  publishedAt           DateTime?
-  recordedAt            DateTime            @default(now())
+  id                   String              @id @default(cuid())
+  studentId            Int
+  student              User                @relation(fields: [studentId], references: [id])
+  courseId             String
+  course               Course              @relation(fields: [courseId], references: [id])
+  assignmentId         String?
+  assignment           Assignment?         @relation(fields: [assignmentId], references: [id])
+  evaluationCategoryId String?
+  evaluationCategory   EvaluationCategory? @relation(fields: [evaluationCategoryId], references: [id])
+  score                Float
+  comment              String?
+  status               String?
+  enteredById          Int?
+  enteredBy            User?               @relation("GradeEnteredBy", fields: [enteredById], references: [id])
+  validatedById        Int?
+  validatedBy          User?               @relation("GradeValidatedBy", fields: [validatedById], references: [id])
+  publishedAt          DateTime?
+  recordedAt           DateTime            @default(now())
 }
 
 model Notification {
