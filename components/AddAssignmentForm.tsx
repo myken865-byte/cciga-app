@@ -16,7 +16,7 @@ export default function AddAssignmentForm({ courseId }: { courseId: string }) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/courses/${courseId}/assignments`, {
+      const res = await fetch(`/api/courses/${courseId}/assignments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description, dueDate: dueDate || undefined }),

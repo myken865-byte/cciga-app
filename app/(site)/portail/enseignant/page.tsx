@@ -20,6 +20,13 @@ export default async function PortailEnseignantPage() {
       })
     : [];
 
+  const titulaireOf = session
+    ? await prisma.program.findMany({
+        where: { titulaireId: session.userId },
+        include: { students: true },
+      })
+    : [];
+
   const scheduledCourses = courses
     .filter(hasSchedule)
     .sort((a, b) => (a.dayOfWeek! - b.dayOfWeek!) || a.startTime!.localeCompare(b.startTime!));
@@ -28,6 +35,27 @@ export default async function PortailEnseignantPage() {
     <div>
       {session && (
         <div className="mx-auto max-w-2xl px-4 pt-10 lg:px-6">
+          {titulaireOf.length > 0 && (
+            <div className="mb-4 rounded-lg border border-border bg-surface p-6">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">
+                Mes classes (titulaire)
+              </h2>
+              <ul className="space-y-2">
+                {titulaireOf.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      href={`/portail/enseignant/classe/${p.id}`}
+                      className="flex items-center justify-between rounded-md border border-border p-3 text-sm hover:border-primary"
+                    >
+                      <span className="font-medium text-foreground">{p.name}</span>
+                      <span className="text-muted">{p.students.length} élève(s)</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="rounded-lg border border-border bg-surface p-6">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">
               Mes cours

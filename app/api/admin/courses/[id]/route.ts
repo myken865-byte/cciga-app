@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
+import { slotsOverlap } from "@/lib/schedule";
 
 export async function PATCH(
   request: Request,
@@ -29,13 +30,41 @@ export async function PATCH(
     return NextResponse.json({ error: "Programme invalide." }, { status: 400 });
   }
 
+  const slot = {
+    dayOfWeek: dayOfWeek === undefined || dayOfWeek === null || dayOfWeek === "" ? null : Number(dayOfWeek),
+    startTime: startTime || null,
+    endTime: endTime || null,
+  };
+
   let resolvedTeacherId: number | null = null;
-  if (teacherId) {
+
+  if (program.teacherModel === "titulaire") {
+    if (!program.titulaireId) {
+      return NextResponse.json(
+        { error: "Assignez d'abord un titulaire à cette classe avant d'y modifier un cours." },
+        { status: 400 },
+      );
+    }
+    resolvedTeacherId = program.titulaireId;
+  } else if (teacherId) {
     const teacher = await prisma.user.findUnique({ where: { id: Number(teacherId) } });
     if (!teacher) {
       return NextResponse.json({ error: "Enseignant invalide." }, { status: 400 });
     }
     resolvedTeacherId = teacher.id;
+
+    if (slot.dayOfWeek !== null && slot.startTime && slot.endTime) {
+      const otherCourses = await prisma.course.findMany({
+        where: { teacherId: resolvedTeacherId, dayOfWeek: slot.dayOfWeek, id: { not: id } },
+      });
+      const conflict = otherCourses.find((c) => slotsOverlap(slot, c));
+      if (conflict) {
+        return NextResponse.json(
+          { error: `Cet enseignant a déjà un cours à cet horaire (${conflict.name}).` },
+          { status: 400 },
+        );
+      }
+    }
   }
 
   await prisma.course.update({
@@ -46,9 +75,9 @@ export async function PATCH(
       code: code || null,
       description,
       teacherId: resolvedTeacherId,
-      dayOfWeek: dayOfWeek === undefined || dayOfWeek === null || dayOfWeek === "" ? null : Number(dayOfWeek),
-      startTime: startTime || null,
-      endTime: endTime || null,
+      dayOfWeek: slot.dayOfWeek,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
     },
   });
 

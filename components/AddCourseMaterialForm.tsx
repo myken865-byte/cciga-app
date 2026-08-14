@@ -15,7 +15,7 @@ export default function AddCourseMaterialForm({ courseId }: { courseId: string }
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/courses/${courseId}/materials`, {
+      const res = await fetch(`/api/courses/${courseId}/materials`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, body }),

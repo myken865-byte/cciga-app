@@ -269,10 +269,12 @@ async function seedFaq() {
 }
 
 type Niveau = "prescolaire" | "primaire" | "secondaire";
+type TeacherModel = "titulaire" | "matiere";
 
 interface ClasseEcoleClassique {
   slug: string;
   niveau: Niveau;
+  teacherModel: TeacherModel;
   faculty: string;
   name: string;
   level: string;
@@ -303,6 +305,7 @@ const ecoleClassiqueNiveaux: ClasseEcoleClassique[] = [
   {
     slug: "prescolaire-petite-section",
     niveau: "prescolaire",
+    teacherModel: "titulaire",
     faculty: "Cycle Préscolaire",
     name: "Petite Section",
     level: "Préscolaire",
@@ -314,6 +317,7 @@ const ecoleClassiqueNiveaux: ClasseEcoleClassique[] = [
   {
     slug: "prescolaire-moyenne-section",
     niveau: "prescolaire",
+    teacherModel: "titulaire",
     faculty: "Cycle Préscolaire",
     name: "Moyenne Section",
     level: "Préscolaire",
@@ -325,6 +329,7 @@ const ecoleClassiqueNiveaux: ClasseEcoleClassique[] = [
   {
     slug: "prescolaire-grande-section",
     niveau: "prescolaire",
+    teacherModel: "titulaire",
     faculty: "Cycle Préscolaire",
     name: "Grande Section",
     level: "Préscolaire",
@@ -333,11 +338,12 @@ const ecoleClassiqueNiveaux: ClasseEcoleClassique[] = [
     admissionConditions: prescolaireConditions,
     tuitionFee: 15000,
   },
-  // Primaire / École fondamentale (1re AF à 9e AF)
+  // Primaire / École fondamentale (1re AF à 9e AF) — titulaire jusqu'à 6e AF, matière ensuite
   ...["1re", "2e", "3e", "4e", "5e", "6e", "7e", "8e", "9e"].map(
     (ordinal, i): ClasseEcoleClassique => ({
       slug: `primaire-${slugify(ordinal)}-af`,
       niveau: "primaire",
+      teacherModel: i < 6 ? "titulaire" : "matiere",
       faculty: "Cycle Primaire",
       name: `${ordinal} AF`,
       level: "Primaire / École fondamentale",
@@ -352,6 +358,7 @@ const ecoleClassiqueNiveaux: ClasseEcoleClassique[] = [
     (ns): ClasseEcoleClassique => ({
       slug: `secondaire-${ns.toLowerCase()}`,
       niveau: "secondaire",
+      teacherModel: "matiere",
       faculty: "Cycle Secondaire",
       name: ns,
       level: "Secondaire",
@@ -365,9 +372,19 @@ const ecoleClassiqueNiveaux: ClasseEcoleClassique[] = [
 
 async function seedEcoleClassiqueNiveaux() {
   let created = 0;
+  let backfilled = 0;
   for (const classe of ecoleClassiqueNiveaux) {
     const existing = await prisma.program.findUnique({ where: { slug: classe.slug } });
-    if (existing) continue;
+    if (existing) {
+      if (!existing.teacherModel) {
+        await prisma.program.update({
+          where: { id: existing.id },
+          data: { teacherModel: classe.teacherModel },
+        });
+        backfilled += 1;
+      }
+      continue;
+    }
     await prisma.program.create({
       data: {
         slug: classe.slug,
@@ -376,6 +393,7 @@ async function seedEcoleClassiqueNiveaux() {
         name: classe.name,
         level: classe.level,
         niveau: classe.niveau,
+        teacherModel: classe.teacherModel,
         duration: classe.duration,
         description: classe.description,
         admissionConditions: JSON.stringify(classe.admissionConditions),
@@ -388,6 +406,9 @@ async function seedEcoleClassiqueNiveaux() {
     console.log(`Seeded ${created} École Classique niveau/classe programs.`);
   } else {
     console.log("École Classique niveau/classe programs already seeded.");
+  }
+  if (backfilled > 0) {
+    console.log(`Backfilled teacherModel on ${backfilled} existing classe programs.`);
   }
 }
 
@@ -477,6 +498,32 @@ async function seedTestNiveauDemoData() {
   }
 }
 
+async function seedTestTitulaireDemo() {
+  const email = "test.titulaire@cciga.edu";
+  const program = await prisma.program.findUnique({ where: { slug: "prescolaire-petite-section" } });
+  if (!program) return;
+
+  let teacher = await prisma.user.findUnique({ where: { email } });
+  if (!teacher) {
+    const passwordHash = await bcrypt.hash("TEST-demo-2026", 10);
+    teacher = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        name: "TEST Titulaire Préscolaire",
+        roles: JSON.stringify(["TEACHER"]),
+      },
+    });
+    console.log("Seeded 1 TEST titulaire teacher.");
+  }
+
+  if (program.titulaireId !== teacher.id) {
+    await prisma.program.update({ where: { id: program.id }, data: { titulaireId: teacher.id } });
+    await prisma.course.updateMany({ where: { programId: program.id }, data: { teacherId: teacher.id } });
+    console.log(`Assigned TEST titulaire to ${program.name}.`);
+  }
+}
+
 async function main() {
   await seedAdmin();
   await seedPrograms();
@@ -485,6 +532,7 @@ async function main() {
   await seedFaq();
   await seedEcoleClassiqueNiveaux();
   await seedTestNiveauDemoData();
+  await seedTestTitulaireDemo();
 }
 
 main()

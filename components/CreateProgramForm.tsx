@@ -4,14 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { School } from "@/lib/content";
 import { niveauList, niveauLabels, type Niveau } from "@/lib/niveaux";
+import { teacherModelList, teacherModelLabels, type TeacherModel } from "@/lib/teacherModel";
 
-export default function CreateProgramForm({ schools }: { schools: School[] }) {
+interface Teacher {
+  id: number;
+  name: string;
+}
+
+export default function CreateProgramForm({ schools, teachers }: { schools: School[]; teachers: Teacher[] }) {
   const router = useRouter();
   const [school, setSchool] = useState<string>(schools[0]?.slug ?? "");
   const [faculty, setFaculty] = useState("");
   const [name, setName] = useState("");
   const [level, setLevel] = useState("");
   const [niveau, setNiveau] = useState<Niveau | "">("");
+  const [teacherModel, setTeacherModel] = useState<TeacherModel | "">("");
+  const [titulaireId, setTitulaireId] = useState("");
   const isEcoleClassique = school === "ecole-classique";
   const [duration, setDuration] = useState("");
   const [description, setDescription] = useState("");
@@ -40,6 +48,8 @@ export default function CreateProgramForm({ schools }: { schools: School[] }) {
           name,
           level: isEcoleClassique && niveau ? niveauLabels[niveau] : level,
           niveau: isEcoleClassique ? niveau || undefined : undefined,
+          teacherModel: isEcoleClassique ? teacherModel || undefined : undefined,
+          titulaireId: isEcoleClassique && teacherModel === "titulaire" ? titulaireId || undefined : undefined,
           duration,
           description,
           tuitionFee: tuitionFee ? Number(tuitionFee) : 0,
@@ -56,6 +66,8 @@ export default function CreateProgramForm({ schools }: { schools: School[] }) {
       setName("");
       setLevel("");
       setNiveau("");
+      setTeacherModel("");
+      setTitulaireId("");
       setDuration("");
       setDescription("");
       setTuitionFee("");
@@ -134,6 +146,46 @@ export default function CreateProgramForm({ schools }: { schools: School[] }) {
           <input required className="input" value={duration} onChange={(e) => setDuration(e.target.value)} />
         </label>
       </div>
+
+      {isEcoleClassique && (
+        <div className="rounded-md border border-border bg-background p-4">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Modèle d&apos;enseignement</span>
+            <select
+              className="input"
+              value={teacherModel}
+              onChange={(e) => {
+                setTeacherModel(e.target.value as TeacherModel);
+                setTitulaireId("");
+              }}
+            >
+              <option value="">Choisir…</option>
+              {teacherModelList.map((tm) => (
+                <option key={tm} value={tm}>
+                  {teacherModelLabels[tm]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {teacherModel === "titulaire" && (
+            <label className="mt-3 block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Titulaire de classe</span>
+              <select className="input" value={titulaireId} onChange={(e) => setTitulaireId(e.target.value)}>
+                <option value="">Aucun (à assigner plus tard)</option>
+                {teachers.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-muted">
+                Le titulaire sera automatiquement responsable de toutes les matières de cette classe.
+              </span>
+            </label>
+          )}
+        </div>
+      )}
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Description</span>

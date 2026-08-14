@@ -25,6 +25,11 @@ export default function CreateCourseForm({
   const [description, setDescription] = useState("");
   const [teacherId, setTeacherId] = useState("");
   const [dayOfWeek, setDayOfWeek] = useState("");
+  const selectedProgram = programs.find((p) => p.id === programId);
+  const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
+  const titulaireName = isTitulaireModel
+    ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
+    : undefined;
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -44,7 +49,7 @@ export default function CreateCourseForm({
           name,
           code,
           description,
-          teacherId: teacherId || undefined,
+          teacherId: isTitulaireModel ? undefined : teacherId || undefined,
           dayOfWeek: dayOfWeek === "" ? undefined : Number(dayOfWeek),
           startTime: startTime || undefined,
           endTime: endTime || undefined,
@@ -116,17 +121,33 @@ export default function CreateCourseForm({
         />
       </label>
 
-      <label className="block text-sm">
-        <span className="mb-1 block font-medium text-foreground">Enseignant</span>
-        <select className="input" value={teacherId} onChange={(e) => setTeacherId(e.target.value)}>
-          <option value="">Aucun enseignant assigné</option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      {isTitulaireModel ? (
+        <div className="rounded-md border border-border bg-background p-3 text-sm">
+          <span className="block font-medium text-foreground">Enseignant</span>
+          {titulaireName ? (
+            <span className="text-muted">
+              {titulaireName} (titulaire de la classe — assigné automatiquement à toutes les matières)
+            </span>
+          ) : (
+            <span className="text-red-600">
+              Aucun titulaire n&apos;est assigné à cette classe. Assignez-en un depuis la fiche du programme
+              avant de créer un cours.
+            </span>
+          )}
+        </div>
+      ) : (
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-foreground">Enseignant</span>
+          <select className="input" value={teacherId} onChange={(e) => setTeacherId(e.target.value)}>
+            <option value="">Aucun enseignant assigné</option>
+            {teachers.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div>
         <span className="mb-1 block text-sm font-medium text-foreground">
@@ -164,7 +185,7 @@ export default function CreateCourseForm({
 
       <button
         type="submit"
-        disabled={submitting || programs.length === 0}
+        disabled={submitting || programs.length === 0 || (isTitulaireModel && !titulaireName)}
         className="rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-light disabled:opacity-50"
       >
         {submitting ? "Création…" : "Créer le cours"}

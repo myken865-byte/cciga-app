@@ -54,6 +54,12 @@ model User {
   parentId Int?
   parent   User?  @relation("ParentChildren", fields: [parentId], references: [id])
   children User[] @relation("ParentChildren")
+
+  titulaireOf          Program[]       @relation("ClassTitulaire")
+  observationsAuthored Observation[]   @relation("ObservationAuthor")
+  observationsAbout    Observation[]   @relation("ObservationStudent")
+  parentMessagesSent   ParentMessage[] @relation("ParentMessageSender")
+  parentMessagesAbout  ParentMessage[] @relation("ParentMessageStudent")
 }
 
 model Program {
@@ -64,6 +70,9 @@ model Program {
   name                String
   level               String
   niveau              String?
+  teacherModel        String?
+  titulaireId         Int?
+  titulaire           User?    @relation("ClassTitulaire", fields: [titulaireId], references: [id])
   duration            String
   description         String
   admissionConditions String
@@ -71,8 +80,9 @@ model Program {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  students User[]
-  courses  Course[]
+  students     User[]
+  courses      Course[]
+  observations Observation[]
 }
 
 model Payment {
@@ -203,5 +213,27 @@ model Message {
   subject   String
   body      String
   status    String   @default("nouveau")
+  createdAt DateTime @default(now())
+}
+
+model Observation {
+  id        String   @id @default(cuid())
+  studentId Int
+  student   User     @relation("ObservationStudent", fields: [studentId], references: [id])
+  authorId  Int
+  author    User     @relation("ObservationAuthor", fields: [authorId], references: [id])
+  programId String
+  program   Program  @relation(fields: [programId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model ParentMessage {
+  id        String   @id @default(cuid())
+  studentId Int
+  student   User     @relation("ParentMessageStudent", fields: [studentId], references: [id])
+  senderId  Int
+  sender    User     @relation("ParentMessageSender", fields: [senderId], references: [id])
+  body      String
   createdAt DateTime @default(now())
 }

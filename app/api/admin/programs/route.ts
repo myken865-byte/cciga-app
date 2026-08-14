@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { getSchools } from "@/lib/content";
 import { slugify } from "@/lib/slugify";
+import { resolveTeacherModel } from "@/lib/titulaire";
 
 async function uniqueSlug(base: string): Promise<string> {
   let slug = base || "programme";
@@ -20,14 +21,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
-  const { school, faculty, name, level, niveau, duration, description, tuitionFee, admissionConditions } =
-    (await request.json()) ?? {};
+  const {
+    school,
+    faculty,
+    name,
+    level,
+    niveau,
+    teacherModel,
+    titulaireId,
+    duration,
+    description,
+    tuitionFee,
+    admissionConditions,
+  } = (await request.json()) ?? {};
 
   if (!school || !getSchools().some((s) => s.slug === school)) {
     return NextResponse.json({ error: "École invalide." }, { status: 400 });
   }
   if (!name || !faculty || !level || !duration || !description) {
     return NextResponse.json({ error: "Tous les champs sont requis." }, { status: 400 });
+  }
+
+  const resolved = await resolveTeacherModel(school, teacherModel, titulaireId);
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.error }, { status: 400 });
   }
 
   const conditions: string[] = Array.isArray(admissionConditions)
@@ -45,6 +62,8 @@ export async function POST(request: Request) {
       name,
       level,
       niveau: school === "ecole-classique" && validNiveaux.includes(niveau) ? niveau : null,
+      teacherModel: resolved.value.teacherModel,
+      titulaireId: resolved.value.titulaireId,
       duration,
       description,
       tuitionFee: Number.isFinite(Number(tuitionFee)) ? Math.max(0, Math.round(Number(tuitionFee))) : 0,

@@ -23,6 +23,9 @@ export type { School, SchoolSlug, StaffMember };
 import type { Niveau } from "@/lib/niveaux";
 export type { Niveau } from "@/lib/niveaux";
 export { niveauList, niveauLabels } from "@/lib/niveaux";
+import type { TeacherModel } from "@/lib/teacherModel";
+export type { TeacherModel } from "@/lib/teacherModel";
+export { teacherModelList, teacherModelLabels } from "@/lib/teacherModel";
 
 export interface Program {
   id: string;
@@ -32,6 +35,8 @@ export interface Program {
   name: string;
   level: string;
   niveau: Niveau | null;
+  teacherModel: TeacherModel | null;
+  titulaireId: number | null;
   duration: string;
   description: string;
   admissionConditions: string[];
@@ -47,6 +52,8 @@ function mapProgram(row: PrismaProgram): Program {
     name: row.name,
     level: row.level,
     niveau: (row.niveau as Niveau | null) ?? null,
+    teacherModel: (row.teacherModel as TeacherModel | null) ?? null,
+    titulaireId: row.titulaireId ?? null,
     duration: row.duration,
     description: row.description,
     admissionConditions: JSON.parse(row.admissionConditions || "[]"),

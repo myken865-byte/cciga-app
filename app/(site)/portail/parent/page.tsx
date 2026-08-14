@@ -6,6 +6,8 @@ import { formatCcigaId } from "@/lib/cciga-id";
 import { formatHTG } from "@/lib/currency";
 import { prisma } from "@/lib/db";
 import { getSchoolBySlug } from "@/lib/content";
+import ObservationsPanel from "@/components/ObservationsPanel";
+import ParentMessageThread from "@/components/ParentMessageThread";
 
 export const metadata: Metadata = { title: "Portail Parent" };
 
@@ -24,7 +26,7 @@ export default async function PortailParentPage() {
 
   const childSummaries = await Promise.all(
     children.map(async (child) => {
-      const [paidAgg, grades, absenceCount] = await Promise.all([
+      const [paidAgg, grades, absenceCount, observations, messages] = await Promise.all([
         prisma.payment.aggregate({ where: { studentId: child.id }, _sum: { amount: true } }),
         prisma.grade.findMany({
           where: { studentId: child.id },
@@ -33,10 +35,20 @@ export default async function PortailParentPage() {
           take: 5,
         }),
         prisma.attendance.count({ where: { studentId: child.id, status: "absent" } }),
+        prisma.observation.findMany({
+          where: { studentId: child.id },
+          include: { author: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.parentMessage.findMany({
+          where: { studentId: child.id },
+          include: { sender: true },
+          orderBy: { createdAt: "asc" },
+        }),
       ]);
       const paid = paidAgg._sum.amount ?? 0;
       const fee = child.program?.tuitionFee ?? 0;
-      return { child, paid, fee, balance: fee - paid, grades, absenceCount };
+      return { child, paid, fee, balance: fee - paid, grades, absenceCount, observations, messages };
     }),
   );
 
@@ -51,7 +63,7 @@ export default async function PortailParentPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {childSummaries.map(({ child, paid, fee, balance, grades, absenceCount }) => {
+              {childSummaries.map(({ child, paid, fee, balance, grades, absenceCount, observations, messages }) => {
                 const school = child.program ? getSchoolBySlug(child.program.school) : undefined;
                 return (
                   <div key={child.id} className="rounded-lg border border-border bg-surface p-6">
@@ -121,6 +133,30 @@ export default async function PortailParentPage() {
                           ))}
                         </ul>
                       )}
+                    </div>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <ObservationsPanel
+                        studentId={child.id}
+                        canAdd={false}
+                        observations={observations.map((o) => ({
+                          id: o.id,
+                          body: o.body,
+                          authorName: o.author.name,
+                          createdAt: formatDate(o.createdAt),
+                        }))}
+                      />
+                      <ParentMessageThread
+                        studentId={child.id}
+                        canSend
+                        messages={messages.map((m) => ({
+                          id: m.id,
+                          body: m.body,
+                          senderName: m.sender.name,
+                          isSelf: m.senderId === session?.userId,
+                          createdAt: formatDate(m.createdAt),
+                        }))}
+                      />
                     </div>
                   </div>
                 );

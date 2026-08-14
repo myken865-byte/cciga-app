@@ -22,3 +22,9 @@ export function formatSchedule(slot: ScheduleSlot): string | null {
   if (!hasSchedule(slot) || slot.dayOfWeek === null) return null;
   return `${dayLabels[slot.dayOfWeek] ?? "?"} ${slot.startTime}–${slot.endTime}`;
 }
+
+export function slotsOverlap(a: ScheduleSlot, b: ScheduleSlot): boolean {
+  if (!hasSchedule(a) || !hasSchedule(b)) return false;
+  if (a.dayOfWeek !== b.dayOfWeek) return false;
+  return a.startTime! < b.endTime! && b.startTime! < a.endTime!;
+}

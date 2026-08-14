@@ -35,7 +35,7 @@ export default function RecordGradeForm({
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/courses/${courseId}/grades`, {
+      const res = await fetch(`/api/courses/${courseId}/grades`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

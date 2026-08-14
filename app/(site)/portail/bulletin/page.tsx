@@ -30,6 +30,12 @@ export default async function BulletinPage({
         where: { id: requestedId, parentId: session.userId },
       });
       if (child) targetId = requestedId;
+    } else if (hasRole(session.roles, "TEACHER")) {
+      const student = await prisma.user.findUnique({
+        where: { id: requestedId },
+        include: { program: true },
+      });
+      if (student?.program?.titulaireId === session.userId) targetId = requestedId;
     }
   }
 
@@ -52,8 +58,8 @@ export default async function BulletinPage({
       <div className="mx-auto max-w-2xl px-4 py-14 text-center lg:px-6">
         <h1 className="mb-2 text-2xl font-bold text-foreground">Bulletin</h1>
         <p className="text-muted">
-          Vous n&apos;avez pas accès à ce bulletin. Seul l&apos;élève concerné, ses parents liés
-          ou l&apos;administration peuvent le consulter.
+          Vous n&apos;avez pas accès à ce bulletin. Seul l&apos;élève concerné, ses parents liés,
+          son titulaire de classe ou l&apos;administration peuvent le consulter.
         </p>
       </div>
     );

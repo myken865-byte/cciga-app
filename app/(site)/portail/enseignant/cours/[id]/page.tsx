@@ -4,6 +4,9 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import CourseContentView from "@/components/CourseContentView";
 import AttendanceForm from "@/components/AttendanceForm";
+import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
+import AddAssignmentForm from "@/components/AddAssignmentForm";
+import RecordGradeForm from "@/components/RecordGradeForm";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +39,7 @@ export default async function TeacherCoursePage({
   }
 
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
+  const assignmentOptions = course.assignments.map((a) => ({ id: a.id, title: a.title }));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
@@ -57,8 +61,11 @@ export default async function TeacherCoursePage({
         assignments={course.assignments}
       />
 
-      <div className="mt-8">
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <AttendanceForm courseId={course.id} students={students} />
+        <AddCourseMaterialForm courseId={course.id} />
+        <AddAssignmentForm courseId={course.id} />
+        <RecordGradeForm courseId={course.id} students={students} assignments={assignmentOptions} />
       </div>
 
       <div className="mt-8">

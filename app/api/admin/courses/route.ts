@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
+import { slotsOverlap } from "@/lib/schedule";
 
 export async function POST(request: Request) {
   const session = await requireAdminSession();
@@ -20,13 +21,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Programme invalide." }, { status: 400 });
   }
 
+  const slot = {
+    dayOfWeek: dayOfWeek === undefined || dayOfWeek === null || dayOfWeek === "" ? null : Number(dayOfWeek),
+    startTime: startTime || null,
+    endTime: endTime || null,
+  };
+
   let resolvedTeacherId: number | undefined;
-  if (teacherId) {
+
+  if (program.teacherModel === "titulaire") {
+    if (!program.titulaireId) {
+      return NextResponse.json(
+        { error: "Assignez d'abord un titulaire à cette classe avant d'y créer un cours." },
+        { status: 400 },
+      );
+    }
+    resolvedTeacherId = program.titulaireId;
+  } else if (teacherId) {
     const teacher = await prisma.user.findUnique({ where: { id: Number(teacherId) } });
     if (!teacher) {
       return NextResponse.json({ error: "Enseignant invalide." }, { status: 400 });
     }
     resolvedTeacherId = teacher.id;
+
+    if (slot.dayOfWeek !== null && slot.startTime && slot.endTime) {
+      const otherCourses = await prisma.course.findMany({
+        where: { teacherId: resolvedTeacherId, dayOfWeek: slot.dayOfWeek },
+      });
+      const conflict = otherCourses.find((c) => slotsOverlap(slot, c));
+      if (conflict) {
+        return NextResponse.json(
+          { error: `Cet enseignant a déjà un cours à cet horaire (${conflict.name}).` },
+          { status: 400 },
+        );
+      }
+    }
   }
 
   const course = await prisma.course.create({
@@ -36,9 +65,9 @@ export async function POST(request: Request) {
       code: code || undefined,
       description,
       teacherId: resolvedTeacherId,
-      dayOfWeek: dayOfWeek === undefined || dayOfWeek === null ? undefined : Number(dayOfWeek),
-      startTime: startTime || undefined,
-      endTime: endTime || undefined,
+      dayOfWeek: slot.dayOfWeek ?? undefined,
+      startTime: slot.startTime ?? undefined,
+      endTime: slot.endTime ?? undefined,
     },
   });
 
