@@ -32,14 +32,24 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Build debug APK
+      - name: Clean build debug APK
         working-directory: android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean assembleDebug --no-daemon
+
+      - name: Verify APK (signature, alignment, package id)
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
+          if [ ! -d "$BUILD_TOOLS" ]; then
+            BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          fi
+          "$BUILD_TOOLS/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          "$BUILD_TOOLS/zipalign" -c -v 4 android/app/build/outputs/apk/debug/app-debug.apk
+          "$BUILD_TOOLS/aapt2" dump badging android/app/build/outputs/apk/debug/app-debug.apk | head -5
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cciga-app-debug-apk
+          name: cciga-app-debug-signed-sdk34
           path: android/app/build/outputs/apk/debug/app-debug.apk
