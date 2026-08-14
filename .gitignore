@@ -51,3 +51,6 @@ next-env.d.ts
 
 # claude code internal lock files
 .claude/scheduled_tasks.lock
+
+# downloaded build artifacts
+/apk-output
