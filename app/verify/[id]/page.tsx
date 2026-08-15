@@ -18,9 +18,8 @@ export default async function VerifyDocumentPage({
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-4 py-14">
-      <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-lg font-bold text-white">
-        CG
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-12 w-12 rounded-md object-contain" />
       <h1 className="mb-6 mt-4 text-xl font-bold text-foreground">Vérification de document CCIGA</h1>
 
       {!doc ? (

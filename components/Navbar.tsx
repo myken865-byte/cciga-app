@@ -49,9 +49,8 @@ export default function Navbar() {
           {sector ? (
             <SectorLogo sector={sector} className="h-10 w-10 object-contain" />
           ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-white">
-              CG
-            </span>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-9 w-9 rounded-md object-contain" />
           )}
           <span className="text-lg font-bold text-primary">CCIGA</span>
         </Link>

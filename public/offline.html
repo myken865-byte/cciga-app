@@ -24,13 +24,8 @@
     width: 64px;
     height: 64px;
     border-radius: 16px;
-    background: #c99a2e;
-    color: #0f2d52;
-    font-weight: 700;
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    object-fit: contain;
+    display: block;
     margin: 0 auto 20px auto;
   }
   h1 {
@@ -60,7 +55,7 @@
 </head>
 <body>
   <div class="card">
-    <div class="logo">CG</div>
+    <img class="logo" src="branding/CCIGA_App_Icon.png" alt="Logo CCIGA" />
     <h1>Pas de connexion Internet</h1>
     <p>CCIGA App a besoin d'une connexion Internet pour afficher le contenu. Vérifiez votre connexion Wi-Fi ou mobile, puis réessayez.</p>
     <button onclick="location.href='https://cciga-app.vercel.app'">Réessayer</button>

@@ -45,9 +45,8 @@ export default function AdminNav({
             {sector ? (
               <SectorLogo sector={sector} className="h-9 w-9 object-contain" />
             ) : (
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-bold text-primary-dark">
-                CG
-              </span>
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-8 w-8 rounded-md object-contain" />
             )}
             <span className="font-semibold">Administration CCIGA</span>
           </Link>

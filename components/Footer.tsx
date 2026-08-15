@@ -6,9 +6,8 @@ export default function Footer() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
         <div>
           <div className="mb-3 flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-bold text-primary-dark">
-              CG
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-8 w-8 rounded-md object-contain" />
             <span className="text-lg font-bold">CCIGA</span>
           </div>
           <p className="text-sm text-white/70">
