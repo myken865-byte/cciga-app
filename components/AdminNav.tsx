@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell, { type NotificationItem } from "@/components/NotificationBell";
+import SectorLogo from "@/components/SectorLogo";
+import type { Sector } from "@/lib/branding";
 
 const tabs = [
   { href: "/admin/dashboard", label: "Tableau de bord" },
@@ -19,6 +21,12 @@ const tabs = [
   { href: "/admin/messages", label: "Messages" },
 ];
 
+function sectorForAdminPathname(pathname: string): Sector | null {
+  if (pathname.startsWith("/admin/ecole-classique")) return "CLASSIQUE";
+  if (pathname.startsWith("/admin/universite")) return "UNIVERSITE";
+  return null;
+}
+
 export default function AdminNav({
   name,
   notifications,
@@ -27,15 +35,20 @@ export default function AdminNav({
   notifications: NotificationItem[];
 }) {
   const pathname = usePathname();
+  const sector = sectorForAdminPathname(pathname);
 
   return (
     <header className="border-b border-border bg-primary-dark text-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6">
         <div className="flex items-center gap-6">
           <Link href="/admin/dashboard" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-bold text-primary-dark">
-              CG
-            </span>
+            {sector ? (
+              <SectorLogo sector={sector} className="h-9 w-9 object-contain" />
+            ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-bold text-primary-dark">
+                CG
+              </span>
+            )}
             <span className="font-semibold">Administration CCIGA</span>
           </Link>
           <nav className="hidden gap-1 sm:flex">

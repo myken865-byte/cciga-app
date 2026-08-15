@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import CreateAcademicYearForm from "@/components/CreateAcademicYearForm";
 import CreateSemesterForm from "@/components/CreateSemesterForm";
+import SectorLogo from "@/components/SectorLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,10 @@ export default async function AdminEcoleClassiquePage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold text-foreground">Structure académique — École Classique</h1>
+      <div className="mb-2 flex items-center gap-3">
+        <SectorLogo sector="CLASSIQUE" className="h-10 w-10 object-contain" />
+        <h1 className="text-2xl font-bold text-foreground">Structure académique — École Classique</h1>
+      </div>
       <p className="mb-6 text-sm text-muted">
         Les années académiques et périodes sont partagées avec l&apos;Université — créez ici les périodes
         (trimestres/semestres) propres à l&apos;École Classique, avec le libellé de votre choix.

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import CreateFacultyForm from "@/components/CreateFacultyForm";
 import CreateAcademicYearForm from "@/components/CreateAcademicYearForm";
 import CreateSemesterForm from "@/components/CreateSemesterForm";
+import SectorLogo from "@/components/SectorLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,10 @@ export default async function AdminUniversitePage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Structure académique — Université</h1>
+      <div className="mb-6 flex items-center gap-3">
+        <SectorLogo sector="UNIVERSITE" className="h-10 w-10 object-contain" />
+        <h1 className="text-2xl font-bold text-foreground">Structure académique — Université</h1>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-3">

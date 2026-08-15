@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProgramsByNiveau, niveauLabels, niveauList, type Niveau } from "@/lib/content";
 import ProgramCard from "@/components/ProgramCard";
+import SectorLogo from "@/components/SectorLogo";
 
 function isNiveau(value: string): value is Niveau {
   return (niveauList as string[]).includes(value);
@@ -38,12 +39,17 @@ export default async function EcoleClassiqueNiveauPage({
       <Link href="/ecole-classique" className="mb-4 inline-block text-sm text-primary hover:underline">
         ← École Classique
       </Link>
-      <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
-        École Classique
-      </p>
-      <h1 className="mb-8 text-3xl font-bold text-foreground lg:text-4xl">
-        {niveauLabels[niveau]}
-      </h1>
+      <div className="mb-8 flex items-center gap-4">
+        <SectorLogo sector="CLASSIQUE" className="h-14 w-14 shrink-0 object-contain" />
+        <div>
+          <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-accent">
+            École Classique
+          </p>
+          <h1 className="text-3xl font-bold text-foreground lg:text-4xl">
+            {niveauLabels[niveau]}
+          </h1>
+        </div>
+      </div>
 
       {classes.length === 0 ? (
         <p className="text-muted">Aucune classe disponible pour ce niveau pour le moment.</p>

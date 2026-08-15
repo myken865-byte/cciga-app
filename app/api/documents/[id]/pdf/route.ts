@@ -1,5 +1,3 @@
-import { readFileSync } from "fs";
-import path from "path";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
@@ -8,18 +6,12 @@ import { formatCcigaId } from "@/lib/cciga-id";
 import { formatDocumentReference } from "@/lib/document-reference";
 import { generateVerificationQrDataUri } from "@/lib/qr";
 import { academicDecisionLabels } from "@/lib/universiteGrades";
+import { schoolToSector } from "@/lib/branding";
+import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
 import BulletinDocument from "@/lib/pdf/BulletinDocument";
 import ReleveDocument from "@/lib/pdf/ReleveDocument";
 
 export const runtime = "nodejs";
-
-let cachedLogo: string | null = null;
-function getLogoDataUri(): string {
-  if (cachedLogo) return cachedLogo;
-  const buffer = readFileSync(path.join(process.cwd(), "assets", "icon.png"));
-  cachedLogo = `data:image/png;base64,${buffer.toString("base64")}`;
-  return cachedLogo;
-}
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -57,7 +49,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     : "";
   const origin = new URL(request.url).origin;
   const qrDataUri = await generateVerificationQrDataUri(`${origin}/verify/${doc.id}`);
-  const logoBase64 = getLogoDataUri();
+  const logoBase64 = getDocumentLogoDataUri(schoolToSector(doc.program.school));
 
   let buffer: Buffer;
   if (doc.type === "releve_semestre") {

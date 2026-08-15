@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSchoolBySlug, niveauList, niveauLabels } from "@/lib/content";
+import SectorLogo from "@/components/SectorLogo";
 
 export const metadata: Metadata = {
   title: "École Classique",
@@ -21,12 +22,15 @@ export default function EcoleClassiquePage() {
   return (
     <div>
       <section className="bg-primary text-white">
-        <div className="mx-auto max-w-6xl px-4 py-16 lg:px-6">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent-light">
-            Nos écoles
-          </p>
-          <h1 className="mb-3 text-3xl font-bold lg:text-4xl">{school.name}</h1>
-          <p className="max-w-2xl text-white/85">{school.tagline}</p>
+        <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-16 lg:px-6">
+          <SectorLogo sector="CLASSIQUE" className="h-14 w-14 shrink-0 object-contain sm:h-24 sm:w-24" />
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent-light">
+              Nos écoles
+            </p>
+            <h1 className="mb-3 text-3xl font-bold lg:text-4xl">{school.name}</h1>
+            <p className="max-w-2xl text-white/85">{school.tagline}</p>
+          </div>
         </div>
       </section>
 

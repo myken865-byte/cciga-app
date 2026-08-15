@@ -1,5 +1,3 @@
-import { readFileSync } from "fs";
-import path from "path";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
@@ -8,6 +6,8 @@ import { formatCcigaId } from "@/lib/cciga-id";
 import { academicDecisionLabels } from "@/lib/universiteGrades";
 import { computeStudentPeriodResult } from "@/lib/periodResults";
 import { documentTypeForSchool } from "@/lib/documents";
+import { schoolToSector } from "@/lib/branding";
+import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
 import BulletinDocument from "@/lib/pdf/BulletinDocument";
 import ReleveDocument from "@/lib/pdf/ReleveDocument";
 
@@ -68,8 +68,7 @@ export async function POST(request: Request) {
     where: { studentId: student.id, courseId: { in: courses.map((c) => c.id) } },
   });
 
-  const logoBuffer = readFileSync(path.join(process.cwd(), "assets", "icon.png"));
-  const logoBase64 = `data:image/png;base64,${logoBuffer.toString("base64")}`;
+  const logoBase64 = getDocumentLogoDataUri(schoolToSector(program.school));
   const periodLabel = `${semester.academicYear.label} — ${semester.name}`;
 
   let buffer: Buffer;

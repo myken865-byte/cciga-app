@@ -14,6 +14,8 @@ import {
 } from "@/lib/universiteGrades";
 import { computeStudentPeriodResult } from "@/lib/periodResults";
 import PeriodResultCard from "@/components/PeriodResultCard";
+import SectorLogo from "@/components/SectorLogo";
+import { schoolToSector } from "@/lib/branding";
 
 export const metadata: Metadata = { title: "Bulletin" };
 
@@ -68,6 +70,7 @@ export default async function BulletinPage({
   const isUniversite = student.program?.school === "universite";
   const isEcoleProfessionnelle = student.program?.school === "ecole-professionnelle";
   const isEcoleClassique = student.program?.school === "ecole-classique";
+  const sector = student.program ? schoolToSector(student.program.school) : null;
 
   if (isEcoleProfessionnelle) {
     const courses = await prisma.course.findMany({
@@ -99,6 +102,7 @@ export default async function BulletinPage({
 
     return (
       <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
+        {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
         <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
           Bulletin de formation professionnelle
         </p>
@@ -244,6 +248,7 @@ export default async function BulletinPage({
 
     return (
       <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
+        {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
         <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
           {isUniversite ? "Relevé de notes universitaire" : "Bulletin scolaire"}
         </p>

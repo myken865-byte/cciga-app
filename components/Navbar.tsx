@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import SectorLogo from "@/components/SectorLogo";
+import type { Sector } from "@/lib/branding";
 
 const primaryLinks = [
   { href: "/", label: "Accueil" },
@@ -25,18 +28,31 @@ const portalLinks = [
   { href: "/portail/administration", label: "Portail Administration" },
 ];
 
+function sectorForPathname(pathname: string): Sector | null {
+  if (pathname.startsWith("/ecole-classique")) return "CLASSIQUE";
+  if (pathname.startsWith("/ecole-professionnelle")) return "PROFESSIONNELLE";
+  if (pathname.startsWith("/universite")) return "UNIVERSITE";
+  return null;
+}
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [schoolsOpen, setSchoolsOpen] = useState(false);
   const [portalsOpen, setPortalsOpen] = useState(false);
+  const pathname = usePathname();
+  const sector = sectorForPathname(pathname);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-white">
-            CG
-          </span>
+          {sector ? (
+            <SectorLogo sector={sector} className="h-10 w-10 object-contain" />
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-white">
+              CG
+            </span>
+          )}
           <span className="text-lg font-bold text-primary">CCIGA</span>
         </Link>
 

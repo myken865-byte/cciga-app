@@ -8,6 +8,8 @@ import {
   isPubliclyVisible,
   usesAuthorizationWorkflow,
 } from "@/lib/content";
+import SectorLogo from "@/components/SectorLogo";
+import { schoolToSector } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,7 @@ export default async function ProgramDetailPage({
   if (usesAuthorizationWorkflow(program.school) && !isPubliclyVisible(program)) notFound();
 
   const school = getSchoolBySlug(program.school);
+  const sector = schoolToSector(program.school);
   const related = (await getProgramsBySchool(program.school)).filter(
     (p) => p.slug !== program.slug && (!usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p)),
   );
@@ -53,6 +56,7 @@ export default async function ProgramDetailPage({
         <span>{program.name}</span>
       </div>
 
+      {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
       <span className="mb-3 inline-block rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold text-primary-dark">
         {program.level}
       </span>
