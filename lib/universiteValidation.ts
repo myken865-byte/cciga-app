@@ -3,6 +3,7 @@ import {
   isProgramType,
   isProgramStatus,
   usesAuthorizationWorkflow,
+  usesGradeWorkflow,
   type ProgramType,
   type ProgramStatus,
 } from "@/lib/universite";
@@ -15,6 +16,31 @@ export interface ResolvedUniversiteFields {
   authorizationDate: Date | null;
   authorizationDocumentRef: string | null;
   passingGrade: number | null;
+  rankingEnabled: boolean;
+}
+
+/**
+ * passingGrade/rankingEnabled are grading-decision settings, not
+ * authorization-status settings — they apply to every school using the grade
+ * workflow (including École Classique, which never uses the authorization
+ * workflow). Validated separately from the rest of this file's
+ * authorization-only fields.
+ */
+function resolveGradeDecisionFields(
+  school: string,
+  input: { passingGrade?: unknown; rankingEnabled?: unknown },
+): { ok: true; value: { passingGrade: number | null; rankingEnabled: boolean } } | { ok: false; error: string } {
+  if (!usesGradeWorkflow(school)) {
+    return { ok: true, value: { passingGrade: null, rankingEnabled: false } };
+  }
+  const passingGrade =
+    input.passingGrade !== undefined && input.passingGrade !== null && input.passingGrade !== ""
+      ? Number(input.passingGrade)
+      : null;
+  if (passingGrade !== null && (!Number.isFinite(passingGrade) || passingGrade < 0 || passingGrade > 100)) {
+    return { ok: false, error: "Le seuil de réussite doit être compris entre 0 et 100." };
+  }
+  return { ok: true, value: { passingGrade, rankingEnabled: Boolean(input.rankingEnabled) } };
 }
 
 /**
@@ -40,8 +66,12 @@ export async function resolveUniversiteFields(
     authorizationDate?: unknown;
     authorizationDocumentRef?: unknown;
     passingGrade?: unknown;
+    rankingEnabled?: unknown;
   },
 ): Promise<{ ok: true; value: ResolvedUniversiteFields } | { ok: false; error: string }> {
+  const gradeFields = resolveGradeDecisionFields(school, input);
+  if (!gradeFields.ok) return gradeFields;
+
   if (!usesAuthorizationWorkflow(school)) {
     return {
       ok: true,
@@ -52,7 +82,7 @@ export async function resolveUniversiteFields(
         authorizationRef: null,
         authorizationDate: null,
         authorizationDocumentRef: null,
-        passingGrade: null,
+        ...gradeFields.value,
       },
     };
   }
@@ -98,14 +128,6 @@ export async function resolveUniversiteFields(
     };
   }
 
-  const passingGrade =
-    input.passingGrade !== undefined && input.passingGrade !== null && input.passingGrade !== ""
-      ? Number(input.passingGrade)
-      : null;
-  if (passingGrade !== null && (!Number.isFinite(passingGrade) || passingGrade < 0 || passingGrade > 100)) {
-    return { ok: false, error: "Le seuil de réussite doit être compris entre 0 et 100." };
-  }
-
   return {
     ok: true,
     value: {
@@ -115,7 +137,7 @@ export async function resolveUniversiteFields(
       authorizationRef,
       authorizationDate,
       authorizationDocumentRef,
-      passingGrade,
+      ...gradeFields.value,
     },
   };
 }

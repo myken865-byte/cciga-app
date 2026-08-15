@@ -1,4 +1,4 @@
-export const roleList = ["ADMIN", "STUDENT", "PARENT", "TEACHER"] as const;
+export const roleList = ["ADMIN", "STUDENT", "PARENT", "TEACHER", "ACADEMIC_OFFICER"] as const;
 
 export type Role = (typeof roleList)[number];
 
@@ -7,6 +7,7 @@ export const roleLabels: Record<Role, string> = {
   STUDENT: "Étudiant",
   PARENT: "Parent",
   TEACHER: "Enseignant",
+  ACADEMIC_OFFICER: "Responsable académique",
 };
 
 export const rolePortalPath: Record<Role, string> = {
@@ -14,6 +15,7 @@ export const rolePortalPath: Record<Role, string> = {
   STUDENT: "/portail/etudiant",
   PARENT: "/portail/parent",
   TEACHER: "/portail/enseignant",
+  ACADEMIC_OFFICER: "/portail/responsable",
 };
 
 export function isRole(value: string): value is Role {

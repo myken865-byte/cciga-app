@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getPrograms } from "@/lib/content";
 import { parseRoles, hasRole } from "@/lib/roles";
-import { gradeStatusLabels, usesAuthorizationWorkflow, type GradeStatus } from "@/lib/universite";
+import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
@@ -12,6 +12,8 @@ import AttendanceForm from "@/components/AttendanceForm";
 import EditCourseForm from "@/components/EditCourseForm";
 import EvaluationCategoriesPanel from "@/components/EvaluationCategoriesPanel";
 import GradeWorkflowPanel from "@/components/GradeWorkflowPanel";
+import MissingGradesWarning from "@/components/MissingGradesWarning";
+import { computeMissingGrades } from "@/lib/gradeCompleteness";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +45,7 @@ export default async function AdminCourseDetailPage({
   if (!course) notFound();
 
   const isUniversite = course.program.school === "universite";
-  const usesWorkflow = usesAuthorizationWorkflow(course.program.school);
+  const usesWorkflow = usesGradeWorkflow(course.program.school);
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
   const assignmentOptions = course.assignments.map((a) => ({ id: a.id, title: a.title }));
   const categoryOptions = course.evaluationCategories.map((c) => ({
@@ -51,18 +53,22 @@ export default async function AdminCourseDetailPage({
     name: c.name,
     weightPercent: c.weightPercent,
   }));
+  const missingGrades = usesWorkflow
+    ? computeMissingGrades(categoryOptions, students, course.grades)
+    : [];
 
-  const [programs, allUsers, semesters] = await Promise.all([
+  const [programs, allUsers, semesters, allCoursesRaw] = await Promise.all([
     getPrograms(),
     prisma.user.findMany(),
     prisma.semester.findMany({ include: { academicYear: true }, orderBy: { order: "asc" } }),
+    prisma.course.findMany({ select: { id: true, name: true, programId: true } }),
   ]);
   const teachers = allUsers
     .filter((u) => hasRole(parseRoles(u.roles), "TEACHER"))
     .map((u) => ({ id: u.id, name: u.name }));
   const semesterOptions = semesters.map((s) => ({ id: s.id, label: `${s.academicYear.label} — ${s.name}` }));
 
-  const gradeCounts = { brouillon: 0, soumis: 0, valide: 0, publie: 0 };
+  const gradeCounts = { brouillon: 0, soumis: 0, en_verification: 0, valide: 0, publie: 0 };
   for (const g of course.grades) {
     if (g.status && g.status in gradeCounts) {
       gradeCounts[g.status as GradeStatus] += 1;
@@ -156,10 +162,12 @@ export default async function AdminCourseDetailPage({
               credits: course.credits,
               coefficient: course.coefficient,
               groupLabel: course.groupLabel,
+              retakeOfCourseId: course.retakeOfCourseId,
             }}
             programs={programs}
             teachers={teachers}
             semesters={semesterOptions}
+            allCourses={allCoursesRaw}
           />
           <AttendanceForm courseId={course.id} students={students} />
           <AddCourseMaterialForm courseId={course.id} />
@@ -171,8 +179,9 @@ export default async function AdminCourseDetailPage({
             assignments={assignmentOptions}
             categories={usesWorkflow ? categoryOptions : undefined}
           />
+          {usesWorkflow && <MissingGradesWarning missing={missingGrades} />}
           {usesWorkflow && (
-            <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} isAdmin />
+            <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} canReview canPublish />
           )}
         </div>
       </div>

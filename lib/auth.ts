@@ -65,4 +65,17 @@ export async function requireAdminSession(): Promise<SessionPayload | null> {
   return session;
 }
 
+/**
+ * For the grade review step (soumis→en_verification→validé): ADMIN or the
+ * dedicated ACADEMIC_OFFICER role. Publication stays ADMIN-only — see
+ * requireAdminSession above, used by the publish route.
+ */
+export async function requireReviewerSession(): Promise<SessionPayload | null> {
+  const session = await getSession();
+  if (!session || !(hasRole(session.roles, "ADMIN") || hasRole(session.roles, "ACADEMIC_OFFICER"))) {
+    return null;
+  }
+  return session;
+}
+
 export { SESSION_COOKIE };

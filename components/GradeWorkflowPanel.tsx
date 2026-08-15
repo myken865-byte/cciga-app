@@ -7,17 +7,19 @@ import { gradeStatusLabels } from "@/lib/universite";
 export default function GradeWorkflowPanel({
   courseId,
   counts,
-  isAdmin,
+  canReview,
+  canPublish,
 }: {
   courseId: string;
-  counts: { brouillon: number; soumis: number; valide: number; publie: number };
-  isAdmin: boolean;
+  counts: { brouillon: number; soumis: number; en_verification: number; valide: number; publie: number };
+  canReview: boolean;
+  canPublish: boolean;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function trigger(action: "submit" | "validate" | "publish") {
+  async function trigger(action: "submit" | "review" | "validate" | "publish") {
     setSubmitting(action);
     setError(null);
     try {
@@ -50,6 +52,10 @@ export default function GradeWorkflowPanel({
           {gradeStatusLabels.soumis} : <span className="font-semibold text-foreground">{counts.soumis}</span>
         </li>
         <li>
+          {gradeStatusLabels.en_verification} :{" "}
+          <span className="font-semibold text-foreground">{counts.en_verification}</span>
+        </li>
+        <li>
           {gradeStatusLabels.valide} : <span className="font-semibold text-foreground">{counts.valide}</span>
         </li>
         <li>
@@ -67,23 +73,32 @@ export default function GradeWorkflowPanel({
         >
           {submitting === "submit" ? "Envoi…" : `Soumettre les brouillons (${counts.brouillon})`}
         </button>
-        {isAdmin && (
+        {canReview && (
           <>
             <button
-              onClick={() => trigger("validate")}
+              onClick={() => trigger("review")}
               disabled={submitting !== null || counts.soumis === 0}
               className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-background disabled:opacity-50"
             >
-              {submitting === "validate" ? "Validation…" : `Valider les soumises (${counts.soumis})`}
+              {submitting === "review" ? "Envoi…" : `Mettre en vérification (${counts.soumis})`}
             </button>
             <button
-              onClick={() => trigger("publish")}
-              disabled={submitting !== null || counts.valide === 0}
-              className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-light disabled:opacity-50"
+              onClick={() => trigger("validate")}
+              disabled={submitting !== null || counts.en_verification === 0}
+              className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-background disabled:opacity-50"
             >
-              {submitting === "publish" ? "Publication…" : `Publier les validées (${counts.valide})`}
+              {submitting === "validate" ? "Validation…" : `Valider (${counts.en_verification})`}
             </button>
           </>
+        )}
+        {canPublish && (
+          <button
+            onClick={() => trigger("publish")}
+            disabled={submitting !== null || counts.valide === 0}
+            className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-light disabled:opacity-50"
+          >
+            {submitting === "publish" ? "Publication…" : `Publier les validées (${counts.valide})`}
+          </button>
         )}
       </div>
     </div>

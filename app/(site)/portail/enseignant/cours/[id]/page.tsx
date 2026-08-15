@@ -2,13 +2,15 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { gradeStatusLabels, usesAuthorizationWorkflow, type GradeStatus } from "@/lib/universite";
+import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
 import AttendanceForm from "@/components/AttendanceForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
 import GradeWorkflowPanel from "@/components/GradeWorkflowPanel";
+import MissingGradesWarning from "@/components/MissingGradesWarning";
+import { computeMissingGrades } from "@/lib/gradeCompleteness";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +43,7 @@ export default async function TeacherCoursePage({
     notFound();
   }
 
-  const usesWorkflow = usesAuthorizationWorkflow(course.program.school);
+  const usesWorkflow = usesGradeWorkflow(course.program.school);
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
   const assignmentOptions = course.assignments.map((a) => ({ id: a.id, title: a.title }));
   const categoryOptions = course.evaluationCategories.map((c) => ({
@@ -50,7 +52,9 @@ export default async function TeacherCoursePage({
     weightPercent: c.weightPercent,
   }));
 
-  const gradeCounts = { brouillon: 0, soumis: 0, valide: 0, publie: 0 };
+  const missingGrades = usesWorkflow ? computeMissingGrades(categoryOptions, students, course.grades) : [];
+
+  const gradeCounts = { brouillon: 0, soumis: 0, en_verification: 0, valide: 0, publie: 0 };
   for (const g of course.grades) {
     if (g.status && g.status in gradeCounts) {
       gradeCounts[g.status as GradeStatus] += 1;
@@ -100,7 +104,10 @@ export default async function TeacherCoursePage({
           assignments={assignmentOptions}
           categories={usesWorkflow ? categoryOptions : undefined}
         />
-        {usesWorkflow && <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} isAdmin={false} />}
+        {usesWorkflow && <MissingGradesWarning missing={missingGrades} />}
+        {usesWorkflow && (
+          <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} canReview={false} canPublish={false} />
+        )}
       </div>
 
       <div className="mt-8">

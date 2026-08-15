@@ -88,6 +88,7 @@ export async function POST(request: Request) {
       authorizationDate: universite.value.authorizationDate,
       authorizationDocumentRef: universite.value.authorizationDocumentRef,
       passingGrade: universite.value.passingGrade,
+      rankingEnabled: universite.value.rankingEnabled,
       skillsTargeted: skills.length > 0 ? JSON.stringify(skills) : null,
       practicalWork: typeof practicalWork === "string" && practicalWork.trim() ? practicalWork.trim() : null,
       internship: typeof internship === "string" && internship.trim() ? internship.trim() : null,

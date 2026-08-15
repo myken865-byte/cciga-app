@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import ObservationsPanel from "@/components/ObservationsPanel";
 import ParentMessageThread from "@/components/ParentMessageThread";
+import AppreciationForm from "@/components/AppreciationForm";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function TitulaireClassePage({
 
   const studentIds = program.students.map((s) => s.id);
 
-  const [observations, messages] = await Promise.all([
+  const [observations, messages, semesters, appreciations] = await Promise.all([
     prisma.observation.findMany({
       where: { studentId: { in: studentIds } },
       include: { author: true },
@@ -42,7 +43,16 @@ export default async function TitulaireClassePage({
       include: { sender: true },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.semester.findMany({ include: { academicYear: true }, orderBy: { order: "asc" } }),
+    prisma.studentAppreciation.findMany({ where: { studentId: { in: studentIds } } }),
   ]);
+  const semesterOptions = semesters.map((s) => ({ id: s.id, label: `${s.academicYear.label} — ${s.name}` }));
+  const appreciationsByStudent = new Map<number, typeof appreciations>();
+  for (const a of appreciations) {
+    const list = appreciationsByStudent.get(a.studentId) ?? [];
+    list.push(a);
+    appreciationsByStudent.set(a.studentId, list);
+  }
 
   const observationsByStudent = new Map<number, typeof observations>();
   for (const o of observations) {
@@ -108,6 +118,17 @@ export default async function TitulaireClassePage({
                     senderName: m.sender.name,
                     isSelf: m.senderId === session.userId,
                     createdAt: formatDate(m.createdAt),
+                  }))}
+                />
+              </div>
+              <div className="mt-4">
+                <AppreciationForm
+                  studentId={student.id}
+                  semesters={semesterOptions}
+                  existing={(appreciationsByStudent.get(student.id) ?? []).map((a) => ({
+                    semesterId: a.semesterId,
+                    appreciation: a.appreciation,
+                    conduct: a.conduct,
                   }))}
                 />
               </div>

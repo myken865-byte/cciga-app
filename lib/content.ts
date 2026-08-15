@@ -35,6 +35,7 @@ export {
   programStatusLabels,
   isPubliclyVisible,
   usesAuthorizationWorkflow,
+  usesGradeWorkflow,
 } from "@/lib/universite";
 
 export interface Program {
@@ -54,6 +55,7 @@ export interface Program {
   authorizationDate: string | null;
   authorizationDocumentRef: string | null;
   passingGrade: number | null;
+  rankingEnabled: boolean;
   skillsTargeted: string[];
   practicalWork: string | null;
   internship: string | null;
@@ -82,6 +84,7 @@ function mapProgram(row: PrismaProgram): Program {
     authorizationDate: row.authorizationDate ? row.authorizationDate.toISOString().slice(0, 10) : null,
     authorizationDocumentRef: row.authorizationDocumentRef ?? null,
     passingGrade: row.passingGrade ?? null,
+    rankingEnabled: row.rankingEnabled,
     skillsTargeted: JSON.parse(row.skillsTargeted || "[]"),
     practicalWork: row.practicalWork ?? null,
     internship: row.internship ?? null,

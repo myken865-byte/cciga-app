@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PortalStub from "@/components/PortalStub";
+import PortalHeader from "@/components/PortalHeader";
 import { getSession } from "@/lib/auth";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { formatHTG } from "@/lib/currency";
@@ -37,8 +37,20 @@ export default async function PortailEtudiantPage() {
 
   return (
     <div>
+      <PortalHeader
+        title="Portail Étudiant"
+        name={session?.name}
+        ccigaId={session ? formatCcigaId(session.userId) : undefined}
+      />
+      {user && !user.program && (
+        <div className="mx-auto max-w-2xl px-4 pb-14 lg:px-6">
+          <div className="rounded-lg border border-border bg-surface p-6 text-center text-sm text-muted">
+            Aucun programme ne vous est encore assigné. Contactez l&apos;administration du CCIGA.
+          </div>
+        </div>
+      )}
       {user?.program && (
-        <div className="mx-auto max-w-2xl px-4 pt-10 lg:px-6">
+        <div className="mx-auto max-w-2xl px-4 pb-14 lg:px-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-surface p-6">
               <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-accent">
@@ -110,12 +122,6 @@ export default async function PortailEtudiantPage() {
           </div>
         </div>
       )}
-      <PortalStub
-        title="Portail Étudiant"
-        description="Accédez à votre emploi du temps, vos notes, vos devoirs et vos documents."
-        name={session?.name}
-        ccigaId={session ? formatCcigaId(session.userId) : undefined}
-      />
     </div>
   );
 }

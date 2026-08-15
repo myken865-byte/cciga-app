@@ -31,6 +31,7 @@ export async function PATCH(
     credits,
     coefficient,
     groupLabel,
+    retakeOfCourseId,
   } = (await request.json()) ?? {};
 
   if (!programId || !name || !description) {
@@ -56,6 +57,15 @@ export async function PATCH(
     startTime: startTime || null,
     endTime: endTime || null,
   };
+
+  let resolvedRetakeOfCourseId: string | null = null;
+  if (retakeOfCourseId) {
+    const retakeOf = await prisma.course.findUnique({ where: { id: retakeOfCourseId } });
+    if (!retakeOf || retakeOf.programId !== programId || retakeOf.id === id) {
+      return NextResponse.json({ error: "Cours d'origine invalide pour la reprise." }, { status: 400 });
+    }
+    resolvedRetakeOfCourseId = retakeOf.id;
+  }
 
   let resolvedTeacherId: number | null = null;
 
@@ -103,6 +113,7 @@ export async function PATCH(
       credits: credits !== undefined && credits !== "" ? Number(credits) : null,
       coefficient: coefficient !== undefined && coefficient !== "" ? Number(coefficient) : null,
       groupLabel: groupLabel || null,
+      retakeOfCourseId: resolvedRetakeOfCourseId,
     },
   });
 

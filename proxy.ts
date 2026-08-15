@@ -7,6 +7,7 @@ const protectedPrefixes: { prefix: string; role: Role }[] = [
   { prefix: "/portail/etudiant", role: "STUDENT" },
   { prefix: "/portail/parent", role: "PARENT" },
   { prefix: "/portail/enseignant", role: "TEACHER" },
+  { prefix: "/portail/responsable", role: "ACADEMIC_OFFICER" },
 ];
 
 export async function proxy(request: NextRequest) {
@@ -28,5 +29,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/portail/etudiant/:path*", "/portail/parent/:path*", "/portail/enseignant/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/portail/etudiant/:path*",
+    "/portail/parent/:path*",
+    "/portail/enseignant/:path*",
+    "/portail/responsable/:path*",
+  ],
 };

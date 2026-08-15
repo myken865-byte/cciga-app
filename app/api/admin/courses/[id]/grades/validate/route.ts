@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireReviewerSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireReviewerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
@@ -18,13 +18,13 @@ export async function POST(
     return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
   }
 
-  const submitted = await prisma.grade.findMany({ where: { courseId: id, status: "soumis" } });
+  const submitted = await prisma.grade.findMany({ where: { courseId: id, status: "en_verification" } });
   if (submitted.length === 0) {
-    return NextResponse.json({ error: "Aucune note soumise à valider pour ce cours." }, { status: 400 });
+    return NextResponse.json({ error: "Aucune note en vérification à valider pour ce cours." }, { status: 400 });
   }
 
   await prisma.grade.updateMany({
-    where: { courseId: id, status: "soumis" },
+    where: { courseId: id, status: "en_verification" },
     data: { status: "valide", validatedById: session.userId },
   });
 

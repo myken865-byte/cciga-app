@@ -63,6 +63,11 @@ model User {
   gradesEntered        Grade[]         @relation("GradeEnteredBy")
   gradesValidated      Grade[]         @relation("GradeValidatedBy")
   auditLogs            AuditLog[]
+
+  academicDocuments       AcademicDocument[]     @relation("AcademicDocumentStudent")
+  documentsGenerated      AcademicDocument[]     @relation("DocumentGeneratedBy")
+  appreciationsAbout      StudentAppreciation[]  @relation("AppreciationStudent")
+  appreciationsEntered    StudentAppreciation[]  @relation("AppreciationEnteredBy")
 }
 
 model Faculty {
@@ -85,7 +90,8 @@ model AcademicYear {
   isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  semesters Semester[]
+  semesters         Semester[]
+  academicDocuments AcademicDocument[]
 }
 
 model Semester {
@@ -96,7 +102,9 @@ model Semester {
   order          Int          @default(1)
   createdAt      DateTime     @default(now())
 
-  courses Course[]
+  courses           Course[]
+  academicDocuments AcademicDocument[]
+  appreciations     StudentAppreciation[]
 }
 
 model Program {
@@ -118,6 +126,7 @@ model Program {
   authorizationDate        DateTime?
   authorizationDocumentRef String?
   passingGrade             Int?
+  rankingEnabled           Boolean   @default(false)
   skillsTargeted           String?
   practicalWork            String?
   internship               String?
@@ -129,9 +138,11 @@ model Program {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
-  students     User[]
-  courses      Course[]
-  observations Observation[]
+  students          User[]
+  courses           Course[]
+  observations      Observation[]
+  academicDocuments AcademicDocument[]
+  appreciations     StudentAppreciation[]
 }
 
 model Payment {
@@ -162,6 +173,10 @@ model Course {
   groupLabel  String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  retakeOfCourseId String?
+  retakeOf         Course?  @relation("CourseRetake", fields: [retakeOfCourseId], references: [id])
+  retakenBy        Course[] @relation("CourseRetake")
 
   materials            CourseMaterial[]
   assignments          Assignment[]
@@ -323,4 +338,52 @@ model AuditLog {
   after      String?
   reason     String?
   createdAt  DateTime @default(now())
+}
+
+model AcademicDocument {
+  id             String    @id @default(cuid())
+  type           String
+  studentId      Int
+  student        User      @relation("AcademicDocumentStudent", fields: [studentId], references: [id])
+  programId      String
+  program        Program   @relation(fields: [programId], references: [id])
+  semesterId     String?
+  semester       Semester? @relation(fields: [semesterId], references: [id])
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
+  status         String    @default("publie")
+  version        Int       @default(1)
+  documentGroupKey String
+
+  previousVersionId String?           @unique
+  previousVersion   AcademicDocument? @relation("DocumentVersionChain", fields: [previousVersionId], references: [id])
+  supersededBy      AcademicDocument? @relation("DocumentVersionChain")
+
+  snapshotData  String
+  generatedAt   DateTime  @default(now())
+  generatedById Int?
+  generatedBy   User?     @relation("DocumentGeneratedBy", fields: [generatedById], references: [id])
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([documentGroupKey])
+  @@index([studentId, programId])
+}
+
+model StudentAppreciation {
+  id           String   @id @default(cuid())
+  studentId    Int
+  student      User     @relation("AppreciationStudent", fields: [studentId], references: [id])
+  programId    String
+  program      Program  @relation(fields: [programId], references: [id])
+  semesterId   String
+  semester     Semester @relation(fields: [semesterId], references: [id])
+  appreciation String?
+  conduct      String?
+  enteredById  Int?
+  enteredBy    User?    @relation("AppreciationEnteredBy", fields: [enteredById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([studentId, semesterId])
 }

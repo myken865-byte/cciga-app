@@ -38,20 +38,30 @@ export function computeFinalCourseGrade(
   return Math.round(total * 100) / 100;
 }
 
+export interface WeightedResult {
+  finalGrade: number | null;
+  weight: number;
+}
+
+/** Weighted average across courses; courses without a computed final grade or with a zero/negative weight are excluded. */
+export function computeWeightedAverage(results: WeightedResult[]): number | null {
+  const graded = results.filter((r) => r.finalGrade !== null && r.weight > 0);
+  if (graded.length === 0) return null;
+  const totalWeight = graded.reduce((sum, r) => sum + r.weight, 0);
+  if (totalWeight === 0) return null;
+  const weightedSum = graded.reduce((sum, r) => sum + r.finalGrade! * r.weight, 0);
+  return Math.round((weightedSum / totalWeight) * 100) / 100;
+}
+
 export interface CourseResult {
   courseId: string;
   finalGrade: number | null;
   credits: number;
 }
 
-/** Credit-weighted semester average; courses without a computed final grade are excluded. */
+/** Credit-weighted semester average (Université) — thin wrapper over computeWeightedAverage. */
 export function computeSemesterAverage(results: CourseResult[]): number | null {
-  const graded = results.filter((r) => r.finalGrade !== null && r.credits > 0);
-  if (graded.length === 0) return null;
-  const totalCredits = graded.reduce((sum, r) => sum + r.credits, 0);
-  if (totalCredits === 0) return null;
-  const weightedSum = graded.reduce((sum, r) => sum + r.finalGrade! * r.credits, 0);
-  return Math.round((weightedSum / totalCredits) * 100) / 100;
+  return computeWeightedAverage(results.map((r) => ({ finalGrade: r.finalGrade, weight: r.credits })));
 }
 
 /** Simple (unweighted) average across a program's courses — used where no credit system applies (École Professionnelle). */

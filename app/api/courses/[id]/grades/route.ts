@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { hasRole } from "@/lib/roles";
 import { createNotification } from "@/lib/notifications";
-import { usesAuthorizationWorkflow } from "@/lib/universite";
+import { usesGradeWorkflow } from "@/lib/universite";
 
 export async function POST(
   request: Request,
@@ -38,7 +38,7 @@ export async function POST(
     return NextResponse.json({ error: "Étudiant invalide pour ce cours." }, { status: 400 });
   }
 
-  const usesWorkflow = usesAuthorizationWorkflow(course.program.school);
+  const usesWorkflow = usesGradeWorkflow(course.program.school);
 
   let resolvedCategoryId: string | undefined;
   if (usesWorkflow) {

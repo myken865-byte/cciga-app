@@ -30,6 +30,13 @@ interface CourseInitial {
   credits: number | null;
   coefficient: number | null;
   groupLabel: string | null;
+  retakeOfCourseId: string | null;
+}
+
+interface CourseOption {
+  id: string;
+  name: string;
+  programId: string;
 }
 
 export default function EditCourseForm({
@@ -37,11 +44,13 @@ export default function EditCourseForm({
   programs,
   teachers,
   semesters,
+  allCourses,
 }: {
   course: CourseInitial;
   programs: Program[];
   teachers: Teacher[];
   semesters?: SemesterOption[];
+  allCourses?: CourseOption[];
 }) {
   const router = useRouter();
   const [programId, setProgramId] = useState(course.programId);
@@ -55,6 +64,8 @@ export default function EditCourseForm({
   const selectedProgram = programs.find((p) => p.id === programId);
   const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
   const isUniversite = selectedProgram?.school === "universite";
+  const isEcoleClassique = selectedProgram?.school === "ecole-classique";
+  const showPeriodFields = isUniversite || isEcoleClassique;
   const titulaireName = isTitulaireModel
     ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
     : undefined;
@@ -64,6 +75,8 @@ export default function EditCourseForm({
   const [credits, setCredits] = useState(course.credits !== null ? String(course.credits) : "");
   const [coefficient, setCoefficient] = useState(course.coefficient !== null ? String(course.coefficient) : "");
   const [groupLabel, setGroupLabel] = useState(course.groupLabel ?? "");
+  const [retakeOfCourseId, setRetakeOfCourseId] = useState(course.retakeOfCourseId ?? "");
+  const retakeOptions = (allCourses ?? []).filter((c) => c.programId === programId && c.id !== course.id);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -86,10 +99,11 @@ export default function EditCourseForm({
           dayOfWeek: dayOfWeek === "" ? undefined : Number(dayOfWeek),
           startTime: startTime || undefined,
           endTime: endTime || undefined,
-          semesterId: isUniversite ? semesterId || undefined : undefined,
+          semesterId: showPeriodFields ? semesterId || undefined : undefined,
           credits: isUniversite ? credits || undefined : undefined,
-          coefficient: isUniversite ? coefficient || undefined : undefined,
-          groupLabel: isUniversite ? groupLabel || undefined : undefined,
+          coefficient: showPeriodFields ? coefficient || undefined : undefined,
+          groupLabel: showPeriodFields ? groupLabel || undefined : undefined,
+          retakeOfCourseId: isUniversite ? retakeOfCourseId || undefined : undefined,
         }),
       });
       const json = await res.json();
@@ -191,12 +205,14 @@ export default function EditCourseForm({
         </div>
       </div>
 
-      {isUniversite && (
+      {showPeriodFields && (
         <div className="space-y-3 rounded-md border border-border bg-background p-4">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-foreground">Semestre</span>
+            <span className="mb-1 block font-medium text-foreground">
+              {isUniversite ? "Semestre" : "Période"}
+            </span>
             <select className="input" value={semesterId} onChange={(e) => setSemesterId(e.target.value)}>
-              <option value="">Aucun</option>
+              <option value="">Aucune</option>
               {semesters?.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
@@ -204,11 +220,13 @@ export default function EditCourseForm({
               ))}
             </select>
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            <label className="block text-sm">
-              <span className="mb-1 block font-medium text-foreground">Crédits</span>
-              <input type="number" min="0" className="input" value={credits} onChange={(e) => setCredits(e.target.value)} />
-            </label>
+          <div className={`grid gap-2 ${isUniversite ? "grid-cols-3" : "grid-cols-2"}`}>
+            {isUniversite && (
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-foreground">Crédits</span>
+                <input type="number" min="0" className="input" value={credits} onChange={(e) => setCredits(e.target.value)} />
+              </label>
+            )}
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-foreground">Coefficient</span>
               <input type="number" min="0" step="0.1" className="input" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
@@ -218,6 +236,23 @@ export default function EditCourseForm({
               <input className="input" placeholder="Ex. Groupe A" value={groupLabel} onChange={(e) => setGroupLabel(e.target.value)} />
             </label>
           </div>
+          {isUniversite && (
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">Reprise du cours (optionnel)</span>
+              <select
+                className="input"
+                value={retakeOfCourseId}
+                onChange={(e) => setRetakeOfCourseId(e.target.value)}
+              >
+                <option value="">Ce n&apos;est pas une reprise</option>
+                {retakeOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
       )}
 

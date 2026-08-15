@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { hasRole } from "@/lib/roles";
 import { writeAuditLog } from "@/lib/auditLog";
+import { findDocumentsCoveringGrade, regenerateDocumentVersion } from "@/lib/documents";
 
 export async function PATCH(
   request: Request,
@@ -56,6 +57,11 @@ export async function PATCH(
     after: { score: updated.score },
     reason: reason.trim(),
   });
+
+  const covering = await findDocumentsCoveringGrade(id);
+  for (const doc of covering) {
+    await regenerateDocumentVersion(doc.id, session.userId, reason.trim());
+  }
 
   return NextResponse.json({ ok: true });
 }

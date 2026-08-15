@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PortalStub from "@/components/PortalStub";
+import PortalHeader from "@/components/PortalHeader";
 import { getSession } from "@/lib/auth";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { formatHTG } from "@/lib/currency";
@@ -54,8 +54,13 @@ export default async function PortailParentPage() {
 
   return (
     <div>
+      <PortalHeader
+        title="Portail Parent"
+        name={session?.name}
+        ccigaId={session ? formatCcigaId(session.userId) : undefined}
+      />
       {session && (
-        <div className="mx-auto max-w-2xl px-4 pt-10 lg:px-6">
+        <div className="mx-auto max-w-2xl px-4 pb-14 lg:px-6">
           {childSummaries.length === 0 ? (
             <div className="rounded-lg border border-border bg-surface p-6 text-center text-sm text-muted">
               Aucun enfant n&apos;est encore lié à votre compte. Contactez
@@ -165,12 +170,6 @@ export default async function PortailParentPage() {
           )}
         </div>
       )}
-      <PortalStub
-        title="Portail Parent"
-        description="Suivez la présence, les résultats et les finances de votre enfant."
-        name={session?.name}
-        ccigaId={session ? formatCcigaId(session.userId) : undefined}
-      />
     </div>
   );
 }

@@ -37,14 +37,26 @@ export const DEFAULT_PASSING_GRADE = 60;
 
 /**
  * Schools whose programmes carry the authorization workflow (programStatus,
- * authorizationRef/Date/DocumentRef) and the evaluation-category / grade
- * publication workflow (brouillon→soumis→validé→publié). École Classique is
- * deliberately excluded — its grading stays the original flat model.
+ * authorizationRef/Date/DocumentRef) — a MENFP/DESRS/INFP program-accreditation
+ * concern, unrelated to grading. École Classique is deliberately excluded here:
+ * it has no accreditation-status concept, its programmes are always public.
  */
 export const AUTHORIZATION_WORKFLOW_SCHOOLS = ["universite", "ecole-professionnelle"];
 
 export function usesAuthorizationWorkflow(school: string): boolean {
   return AUTHORIZATION_WORKFLOW_SCHOOLS.includes(school);
+}
+
+/**
+ * Schools whose courses use the evaluation-category / grade publication
+ * workflow (brouillon→soumis→en_verification→validé→publié) instead of the
+ * original flat, instant-notify grading. All three schools use it — this is a
+ * separate concern from AUTHORIZATION_WORKFLOW_SCHOOLS above.
+ */
+export const GRADE_WORKFLOW_SCHOOLS = ["universite", "ecole-professionnelle", "ecole-classique"];
+
+export function usesGradeWorkflow(school: string): boolean {
+  return GRADE_WORKFLOW_SCHOOLS.includes(school);
 }
 
 export interface AuthorizationFields {
@@ -67,13 +79,14 @@ export function isPubliclyVisible(program: AuthorizationFields): boolean {
   );
 }
 
-export type GradeStatus = "brouillon" | "soumis" | "valide" | "publie";
+export type GradeStatus = "brouillon" | "soumis" | "en_verification" | "valide" | "publie";
 
-export const gradeStatusList: GradeStatus[] = ["brouillon", "soumis", "valide", "publie"];
+export const gradeStatusList: GradeStatus[] = ["brouillon", "soumis", "en_verification", "valide", "publie"];
 
 export const gradeStatusLabels: Record<GradeStatus, string> = {
   brouillon: "Brouillon",
   soumis: "Soumis par l'enseignant",
+  en_verification: "En vérification",
   valide: "Validé par l'administration",
   publie: "Publié à l'étudiant",
 };

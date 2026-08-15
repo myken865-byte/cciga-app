@@ -52,6 +52,7 @@ export default function EditProgramForm({
     program.authorizationDocumentRef ?? "",
   );
   const [passingGrade, setPassingGrade] = useState(program.passingGrade ? String(program.passingGrade) : "");
+  const [rankingEnabled, setRankingEnabled] = useState(program.rankingEnabled);
   const [skillsText, setSkillsText] = useState(program.skillsTargeted.join("\n"));
   const [practicalWork, setPracticalWork] = useState(program.practicalWork ?? "");
   const [internship, setInternship] = useState(program.internship ?? "");
@@ -60,6 +61,7 @@ export default function EditProgramForm({
   const isUniversite = school === "universite";
   const isEcoleProfessionnelle = school === "ecole-professionnelle";
   const usesAuthorizationWorkflow = isUniversite || isEcoleProfessionnelle;
+  const usesGradeWorkflow = isUniversite || isEcoleProfessionnelle || isEcoleClassique;
   const [duration, setDuration] = useState(program.duration);
   const [description, setDescription] = useState(program.description);
   const [tuitionFee, setTuitionFee] = useState(String(program.tuitionFee));
@@ -102,7 +104,8 @@ export default function EditProgramForm({
           authorizationRef: usesAuthorizationWorkflow ? authorizationRef || undefined : undefined,
           authorizationDate: usesAuthorizationWorkflow ? authorizationDate || undefined : undefined,
           authorizationDocumentRef: usesAuthorizationWorkflow ? authorizationDocumentRef || undefined : undefined,
-          passingGrade: usesAuthorizationWorkflow && passingGrade ? passingGrade : undefined,
+          passingGrade: usesGradeWorkflow && passingGrade ? passingGrade : undefined,
+          rankingEnabled: usesGradeWorkflow ? rankingEnabled : undefined,
           skillsTargeted: isEcoleProfessionnelle ? skillsTargeted : undefined,
           practicalWork: isEcoleProfessionnelle ? practicalWork || undefined : undefined,
           internship: isEcoleProfessionnelle ? internship || undefined : undefined,
@@ -350,7 +353,11 @@ export default function EditProgramForm({
           <p className="text-xs text-muted">
             Un programme ne peut être marqué « Autorisé » sans référence ET document justificatif.
           </p>
+        </div>
+      )}
 
+      {usesGradeWorkflow && (
+        <div className="space-y-3 rounded-md border border-border bg-background p-4">
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-foreground">Seuil de réussite (sur 100, défaut 60)</span>
             <input
@@ -361,6 +368,15 @@ export default function EditProgramForm({
               value={passingGrade}
               onChange={(e) => setPassingGrade(e.target.value)}
             />
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={rankingEnabled}
+              onChange={(e) => setRankingEnabled(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <span className="font-medium text-foreground">Activer le classement (rang) des étudiants</span>
           </label>
         </div>
       )}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PortalStub from "@/components/PortalStub";
+import PortalHeader from "@/components/PortalHeader";
 import { getSession } from "@/lib/auth";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { prisma } from "@/lib/db";
@@ -33,8 +33,13 @@ export default async function PortailEnseignantPage() {
 
   return (
     <div>
+      <PortalHeader
+        title="Portail Enseignant"
+        name={session?.name}
+        ccigaId={session ? formatCcigaId(session.userId) : undefined}
+      />
       {session && (
-        <div className="mx-auto max-w-2xl px-4 pt-10 lg:px-6">
+        <div className="mx-auto max-w-2xl px-4 pb-14 lg:px-6">
           {titulaireOf.length > 0 && (
             <div className="mb-4 rounded-lg border border-border bg-surface p-6">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">
@@ -100,12 +105,6 @@ export default async function PortailEnseignantPage() {
           </div>
         </div>
       )}
-      <PortalStub
-        title="Portail Enseignant"
-        description="Gérez vos classes, vos évaluations et vos supports de cours."
-        name={session?.name}
-        ccigaId={session ? formatCcigaId(session.userId) : undefined}
-      />
     </div>
   );
 }

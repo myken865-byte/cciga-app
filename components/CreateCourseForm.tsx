@@ -35,6 +35,8 @@ export default function CreateCourseForm({
   const selectedProgram = programs.find((p) => p.id === programId);
   const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
   const isUniversite = selectedProgram?.school === "universite";
+  const isEcoleClassique = selectedProgram?.school === "ecole-classique";
+  const showPeriodFields = isUniversite || isEcoleClassique;
   const titulaireName = isTitulaireModel
     ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
     : undefined;
@@ -65,10 +67,10 @@ export default function CreateCourseForm({
           dayOfWeek: dayOfWeek === "" ? undefined : Number(dayOfWeek),
           startTime: startTime || undefined,
           endTime: endTime || undefined,
-          semesterId: isUniversite ? semesterId || undefined : undefined,
+          semesterId: showPeriodFields ? semesterId || undefined : undefined,
           credits: isUniversite ? credits || undefined : undefined,
-          coefficient: isUniversite ? coefficient || undefined : undefined,
-          groupLabel: isUniversite ? groupLabel || undefined : undefined,
+          coefficient: showPeriodFields ? coefficient || undefined : undefined,
+          groupLabel: showPeriodFields ? groupLabel || undefined : undefined,
         }),
       });
       const json = await res.json();
@@ -201,12 +203,14 @@ export default function CreateCourseForm({
         </div>
       </div>
 
-      {isUniversite && (
+      {showPeriodFields && (
         <div className="space-y-3 rounded-md border border-border bg-background p-4">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-foreground">Semestre</span>
+            <span className="mb-1 block font-medium text-foreground">
+              {isUniversite ? "Semestre" : "Période"}
+            </span>
             <select className="input" value={semesterId} onChange={(e) => setSemesterId(e.target.value)}>
-              <option value="">Aucun</option>
+              <option value="">Aucune</option>
               {semesters?.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
@@ -214,11 +218,13 @@ export default function CreateCourseForm({
               ))}
             </select>
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            <label className="block text-sm">
-              <span className="mb-1 block font-medium text-foreground">Crédits</span>
-              <input type="number" min="0" className="input" value={credits} onChange={(e) => setCredits(e.target.value)} />
-            </label>
+          <div className={`grid gap-2 ${isUniversite ? "grid-cols-3" : "grid-cols-2"}`}>
+            {isUniversite && (
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-foreground">Crédits</span>
+                <input type="number" min="0" className="input" value={credits} onChange={(e) => setCredits(e.target.value)} />
+              </label>
+            )}
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-foreground">Coefficient</span>
               <input type="number" min="0" step="0.1" className="input" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
