@@ -11,15 +11,15 @@ export type Sector = "CLASSIQUE" | "PROFESSIONNELLE" | "UNIVERSITE";
 export const sectorList: Sector[] = ["CLASSIQUE", "PROFESSIONNELLE", "UNIVERSITE"];
 
 const sectorLogoFile: Record<Sector, string> = {
-  CLASSIQUE: "Logo_CIGA_Ecole_Classique.png",
-  PROFESSIONNELLE: "Logo_CIGA_Ecole_Professionnelle.png",
-  UNIVERSITE: "Logo_CIGA_Universite.png",
+  CLASSIQUE: "Logo_CCIGA_Ecole_Classique.png",
+  PROFESSIONNELLE: "Logo_CCIGA_Ecole_Professionnelle.png",
+  UNIVERSITE: "Logo_CCIGA_Universite.png",
 };
 
 export const sectorLogoAlt: Record<Sector, string> = {
-  CLASSIQUE: "Logo CIGA École Classique",
-  PROFESSIONNELLE: "Logo CIGA École Professionnelle",
-  UNIVERSITE: "Logo CIGA Université",
+  CLASSIQUE: "Logo CCIGA École Classique",
+  PROFESSIONNELLE: "Logo CCIGA École Professionnelle",
+  UNIVERSITE: "Logo CCIGA Université",
 };
 
 export const sectorLabel: Record<Sector, string> = {
