@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getSchoolBySlug, getPublicUniversitePrograms, programTypeLabels, type Program } from "@/lib/content";
+import { getSchoolBySlug, getProgramsBySchool, isPubliclyVisible, programTypeLabels, type Program } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Université",
@@ -21,9 +21,11 @@ function groupByFaculty(programs: Program[]): Map<string, Program[]> {
 
 export default async function UniversitePage() {
   const school = getSchoolBySlug("universite")!;
-  const programs = await getPublicUniversitePrograms();
+  const allPrograms = await getProgramsBySchool("universite");
+  const programs = allPrograms.filter(isPubliclyVisible);
   const licences = groupByFaculty(programs.filter((p) => p.programType === "licence"));
   const diplomes = groupByFaculty(programs.filter((p) => p.programType === "diplome"));
+  const autres = groupByFaculty(programs.filter((p) => p.programType !== "licence" && p.programType !== "diplome"));
 
   return (
     <div>
@@ -62,10 +64,11 @@ export default async function UniversitePage() {
 
         <ProgramTypeSection title="Programmes de licence" groups={licences} />
         <ProgramTypeSection title="Programmes de diplôme" groups={diplomes} />
+        <ProgramTypeSection title="Autres programmes" groups={autres} />
 
         {programs.length === 0 && (
           <p className="mt-14 rounded-lg border border-border bg-surface p-8 text-center text-sm text-muted">
-            Aucun programme n&apos;est encore officiellement autorisé et publié pour l&apos;Université.
+            Aucun programme n&apos;est disponible pour le moment.
           </p>
         )}
       </section>
@@ -85,17 +88,34 @@ function ProgramTypeSection({ title, groups }: { title: string; groups: Map<stri
             <h3 className="mb-4 font-semibold text-foreground">{faculty}</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               {facultyPrograms.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/programmes/${p.slug}`}
-                  className="flex flex-col rounded-md border border-border bg-background p-4 transition hover:border-primary"
-                >
-                  <span className="mb-2 inline-block w-fit rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
-                    {p.programType ? programTypeLabels[p.programType] : p.level}
-                  </span>
-                  <span className="font-medium text-foreground">{p.name}</span>
-                  <span className="mt-1 text-xs text-muted">Durée : {p.duration}</span>
-                </Link>
+                <div key={p.id} className="flex flex-col rounded-md border border-border bg-background p-4">
+                  <Link href={`/programmes/${p.slug}`} className="group">
+                    <span className="mb-2 inline-block w-fit rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
+                      {p.programType ? programTypeLabels[p.programType] : p.level}
+                    </span>
+                    <span className="block font-medium text-foreground group-hover:text-primary">{p.name}</span>
+                  </Link>
+                  {p.description && <p className="mt-2 line-clamp-2 text-sm text-muted">{p.description}</p>}
+                  {p.admissionConditions.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-xs text-muted">
+                      {p.admissionConditions.slice(0, 2).map((c) => (
+                        <li key={c} className="flex gap-1.5">
+                          <span className="text-accent">✓</span>
+                          <span className="line-clamp-1">{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-primary">Durée : {p.duration}</span>
+                    <Link
+                      href="/admission/candidater"
+                      className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-primary-dark hover:bg-accent-light"
+                    >
+                      Candidater
+                    </Link>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

@@ -145,20 +145,6 @@ export async function getFaculties(school: SchoolSlug): Promise<FacultyItem[]> {
   return rows.map((f) => ({ id: f.id, name: f.name }));
 }
 
-/** Only programs that are Autorisé with both authorization and justificatif references — safe for public display. */
-export async function getPublicUniversitePrograms(): Promise<Program[]> {
-  const rows = await prisma.program.findMany({
-    where: {
-      school: "universite",
-      programStatus: "autorise",
-      authorizationRef: { not: null },
-      authorizationDocumentRef: { not: null },
-    },
-    orderBy: { name: "asc" },
-  });
-  return rows.map(mapProgram);
-}
-
 export interface NewsItem {
   id: string;
   slug: string;

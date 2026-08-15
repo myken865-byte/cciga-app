@@ -60,18 +60,33 @@ export function usesGradeWorkflow(school: string): boolean {
 }
 
 export interface AuthorizationFields {
+  school: string;
   programStatus: ProgramStatus | null;
   authorizationRef: string | null;
   authorizationDocumentRef: string | null;
 }
 
+/** Statuses that take a programme off the public Université catalogue — everything else shows. */
+const UNIVERSITE_HIDDEN_STATUSES: ProgramStatus[] = ["archive", "suspendu"];
+
 /**
- * A programme may only appear in public listings / admission pickers when it
- * is explicitly Autorisé AND carries both an authorization reference and a
- * justificatif reference. Presence of a title in the app is never itself proof
- * of authorization (see compliance note in the Université module spec).
+ * Whether a programme may appear in public listings / admission pickers.
+ *
+ * Université: every non-archived, non-suspended programme is public as soon
+ * as it exists — the accreditation status/references are internal
+ * administrative record-keeping only and never gate public visibility (see
+ * the "Correction de la visibilité publique des programmes" instruction).
+ *
+ * École Professionnelle (and any other authorization-workflow school): kept
+ * on the original strict rule — a programme only appears once explicitly
+ * Autorisé and carrying both an authorization reference and a justificatif
+ * reference. Presence of a title in the app is never itself proof of
+ * authorization.
  */
 export function isPubliclyVisible(program: AuthorizationFields): boolean {
+  if (program.school === "universite") {
+    return !program.programStatus || !UNIVERSITE_HIDDEN_STATUSES.includes(program.programStatus);
+  }
   return (
     program.programStatus === "autorise" &&
     !!program.authorizationRef?.trim() &&
