@@ -33,13 +33,14 @@ export default async function ProgramDetailPage({
   const program = await getProgramBySlug(slug);
   if (!program) notFound();
   // Université / École Professionnelle programmes are never publicly reachable
-  // until Autorisé with a justificatif on file.
-  if (usesAuthorizationWorkflow(program.school) && !isPubliclyVisible(program)) notFound();
+  // until Autorisé with a justificatif on file. An archived programme
+  // (active: false) is never publicly reachable regardless of school.
+  if (!program.active || (usesAuthorizationWorkflow(program.school) && !isPubliclyVisible(program))) notFound();
 
   const school = getSchoolBySlug(program.school);
   const sector = schoolToSector(program.school);
   const related = (await getProgramsBySchool(program.school)).filter(
-    (p) => p.slug !== program.slug && (!usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p)),
+    (p) => p.slug !== program.slug && p.active && (!usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p)),
   );
 
   return (

@@ -13,7 +13,8 @@ export default async function ProgrammesPage() {
   const schools = getSchools();
   const allPrograms = await getPrograms();
   // Université/École Professionnelle programs only appear here once officially Autorisé with a justificatif on file.
-  const programs = allPrograms.filter((p) => !usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p));
+  // Archived programs (active: false) never appear here, regardless of school.
+  const programs = allPrograms.filter((p) => p.active && (!usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p)));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 lg:px-6">

@@ -19,7 +19,7 @@ const calendar = [
 
 export default async function AdmissionPage() {
   const schools = getSchools();
-  const programs = await getPrograms();
+  const programs = (await getPrograms()).filter((p) => p.active);
 
   return (
     <div>
