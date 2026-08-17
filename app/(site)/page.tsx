@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const schools = getSchools();
-  const programs = (await getPrograms()).slice(0, 3);
+  const programs = (await getPrograms()).filter((p) => p.active).slice(0, 3);
   const news = (await getNews()).slice(0, 3);
 
   return (

@@ -44,6 +44,11 @@ export default async function AdminCoursesPage() {
                       {course.name}
                       {course.groupLabel && ` (${course.groupLabel})`}
                     </Link>
+                    {!course.active && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                        Archivé
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-muted">{course.code ?? "—"}</td>
                   <td className="px-4 py-3 text-muted">{course.teacher?.name ?? "Non assigné"}</td>
@@ -60,7 +65,11 @@ export default async function AdminCoursesPage() {
           </table>
         </div>
 
-        <CreateCourseForm programs={programs} teachers={teachers} semesters={semesterOptions} />
+        <CreateCourseForm
+          programs={programs.filter((p) => p.active)}
+          teachers={teachers}
+          semesters={semesterOptions}
+        />
       </div>
     </div>
   );

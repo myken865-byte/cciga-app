@@ -64,6 +64,7 @@ export interface Program {
   description: string;
   admissionConditions: string[];
   tuitionFee: number;
+  active: boolean;
 }
 
 function mapProgram(row: PrismaProgram): Program {
@@ -93,6 +94,7 @@ function mapProgram(row: PrismaProgram): Program {
     description: row.description,
     admissionConditions: JSON.parse(row.admissionConditions || "[]"),
     tuitionFee: row.tuitionFee,
+    active: row.active,
   };
 }
 

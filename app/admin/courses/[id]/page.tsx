@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getPrograms } from "@/lib/content";
+import { getSession } from "@/lib/auth";
 import { parseRoles, hasRole } from "@/lib/roles";
 import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
@@ -57,16 +58,18 @@ export default async function AdminCourseDetailPage({
     ? computeMissingGrades(categoryOptions, students, course.grades)
     : [];
 
-  const [programs, allUsers, semesters, allCoursesRaw] = await Promise.all([
+  const [programs, allUsers, semesters, allCoursesRaw, session] = await Promise.all([
     getPrograms(),
     prisma.user.findMany(),
     prisma.semester.findMany({ include: { academicYear: true }, orderBy: { order: "asc" } }),
     prisma.course.findMany({ select: { id: true, name: true, programId: true } }),
+    getSession(),
   ]);
   const teachers = allUsers
     .filter((u) => hasRole(parseRoles(u.roles), "TEACHER"))
     .map((u) => ({ id: u.id, name: u.name }));
   const semesterOptions = semesters.map((s) => ({ id: s.id, label: `${s.academicYear.label} — ${s.name}` }));
+  const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
 
   const gradeCounts = { brouillon: 0, soumis: 0, en_verification: 0, valide: 0, publie: 0 };
   for (const g of course.grades) {
@@ -163,11 +166,13 @@ export default async function AdminCourseDetailPage({
               coefficient: course.coefficient,
               groupLabel: course.groupLabel,
               retakeOfCourseId: course.retakeOfCourseId,
+              active: course.active,
             }}
             programs={programs}
             teachers={teachers}
             semesters={semesterOptions}
             allCourses={allCoursesRaw}
+            isSuperAdmin={isSuperAdmin}
           />
           <AttendanceForm courseId={course.id} students={students} />
           <AddCourseMaterialForm courseId={course.id} />

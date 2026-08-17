@@ -135,6 +135,7 @@ model Program {
   description              String
   admissionConditions      String
   tuitionFee               Int       @default(0)
+  active                   Boolean   @default(true)
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
@@ -171,6 +172,7 @@ model Course {
   credits     Int?
   coefficient Float?
   groupLabel  String?
+  active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

@@ -79,7 +79,7 @@ export default async function AdminUsersPage() {
           </table>
         </div>
 
-        <CreateUserForm students={students} programs={programs} isSuperAdmin={isSuperAdmin} />
+        <CreateUserForm students={students} programs={programs.filter((p) => p.active)} isSuperAdmin={isSuperAdmin} />
       </div>
     </div>
   );

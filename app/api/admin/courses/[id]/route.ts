@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireAdminSession, requireSuperAdminSession } from "@/lib/auth";
 import { slotsOverlap } from "@/lib/schedule";
+import { writeAuditLog } from "@/lib/auditLog";
 
 export async function PATCH(
   request: Request,
@@ -115,6 +116,57 @@ export async function PATCH(
       groupLabel: groupLabel || null,
       retakeOfCourseId: resolvedRetakeOfCourseId,
     },
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+/**
+ * Permanent deletion — reserved for Super Administrateur, and only when
+ * nothing depends on this course. Mirrors the same dependency-guard pattern
+ * as programme deletion and the existing evaluation-category deletion.
+ */
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireSuperAdminSession();
+  if (!session) {
+    return NextResponse.json(
+      { error: "Seul un Super Administrateur peut supprimer définitivement un cours." },
+      { status: 403 },
+    );
+  }
+
+  const { id } = await params;
+  const course = await prisma.course.findUnique({ where: { id } });
+  if (!course) {
+    return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
+  }
+
+  const [grades, attendances, materials, assignments, categories, retakenBy] = await Promise.all([
+    prisma.grade.count({ where: { courseId: id } }),
+    prisma.attendance.count({ where: { courseId: id } }),
+    prisma.courseMaterial.count({ where: { courseId: id } }),
+    prisma.assignment.count({ where: { courseId: id } }),
+    prisma.evaluationCategory.count({ where: { courseId: id } }),
+    prisma.course.count({ where: { retakeOfCourseId: id } }),
+  ]);
+  if (grades + attendances + materials + assignments + categories + retakenBy > 0) {
+    return NextResponse.json(
+      {
+        error:
+          "Impossible de supprimer : des données (notes, présences, matériel, devoirs, catégories d'évaluation ou reprises) dépendent de ce cours. Archivez-le à la place.",
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.course.delete({ where: { id } });
+
+  await writeAuditLog({
+    entityType: "Course",
+    entityId: id,
+    action: "delete",
+    actorId: session.userId,
+    before: course,
   });
 
   return NextResponse.json({ ok: true });

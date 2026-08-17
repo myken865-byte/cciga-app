@@ -29,11 +29,13 @@ export default function EditProgramForm({
   schools,
   teachers,
   faculties,
+  isSuperAdmin,
 }: {
   program: Program;
   schools: School[];
   teachers: Teacher[];
   faculties: Faculty[];
+  isSuperAdmin: boolean;
 }) {
   const router = useRouter();
   const [school, setSchool] = useState<string>(program.school);
@@ -69,6 +71,54 @@ export default function EditProgramForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [active, setActive] = useState(program.active);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function toggleArchive() {
+    const confirmMsg = active
+      ? "Archiver ce programme ? Il disparaîtra des listes publiques et des sélecteurs, mais tout l'historique (étudiants, notes, bulletins, paiements) reste intact et vous pourrez le réactiver à tout moment."
+      : "Réactiver ce programme ?";
+    if (!confirm(confirmMsg)) return;
+    setArchiving(true);
+    setArchiveError(null);
+    try {
+      const res = await fetch(`/api/admin/programs/${program.id}/archive`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) {
+        setArchiveError(json.error ?? "Une erreur est survenue.");
+        return;
+      }
+      setActive(json.active);
+      router.refresh();
+    } catch {
+      setArchiveError("Impossible de contacter le serveur.");
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  async function deleteProgram() {
+    if (!confirm("Supprimer définitivement ce programme ? Cette action est irréversible et n'est possible que si aucune donnée n'en dépend.")) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/admin/programs/${program.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok) {
+        setDeleteError(json.error ?? "Une erreur est survenue.");
+        return;
+      }
+      router.push("/admin/programs");
+      router.refresh();
+    } catch {
+      setDeleteError("Impossible de contacter le serveur.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -130,9 +180,16 @@ export default function EditProgramForm({
     }
   }
 
-  return (
+  const form = (
     <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
-      <h2 className="font-semibold text-foreground">Modifier le programme</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-foreground">Modifier le programme</h2>
+        {!active && (
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+            Archivé
+          </span>
+        )}
+      </div>
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">École</span>
@@ -430,5 +487,52 @@ export default function EditProgramForm({
         {submitting ? "Enregistrement…" : "Enregistrer"}
       </button>
     </form>
+  );
+
+  return (
+    <>
+      {form}
+      <div className="mt-6 rounded-lg border border-border bg-surface p-6">
+        <h2 className="mb-2 font-semibold text-foreground">Archivage</h2>
+        <p className="mb-4 text-sm text-muted">
+          {active
+            ? "Retire ce programme des listes publiques et des sélecteurs, sans supprimer aucune donnée. Réversible à tout moment."
+            : "Ce programme est archivé — il n'apparaît plus publiquement ni dans les sélecteurs de nouvelle inscription."}
+        </p>
+        {archiveError && (
+          <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{archiveError}</p>
+        )}
+        <button
+          type="button"
+          onClick={toggleArchive}
+          disabled={archiving}
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-background disabled:opacity-50"
+        >
+          {archiving ? "…" : active ? "Archiver ce programme" : "Réactiver ce programme"}
+        </button>
+      </div>
+
+      {isSuperAdmin && (
+        <div className="mt-6 rounded-lg border border-red-200 bg-surface p-6">
+          <h2 className="mb-2 font-semibold text-foreground">Suppression définitive</h2>
+          <p className="mb-4 text-sm text-muted">
+            Réservée au Super Administrateur, et uniquement possible si aucun étudiant, cours,
+            document ou observation n&apos;est lié à ce programme. Préférez l&apos;archivage dans
+            tous les autres cas.
+          </p>
+          {deleteError && (
+            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{deleteError}</p>
+          )}
+          <button
+            type="button"
+            onClick={deleteProgram}
+            disabled={deleting}
+            className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            {deleting ? "Suppression…" : "Supprimer définitivement"}
+          </button>
+        </div>
+      )}
+    </>
   );
 }
