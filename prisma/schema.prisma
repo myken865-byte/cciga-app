@@ -39,6 +39,9 @@ model User {
   roles        String
   createdAt    DateTime @default(now())
 
+  passwordResetTokenHash String?   @unique
+  passwordResetExpires   DateTime?
+
   admissionSubmissions AdmissionSubmission[]
 
   programId String?
