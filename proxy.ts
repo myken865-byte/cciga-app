@@ -10,11 +10,40 @@ const protectedPrefixes: { prefix: string; role: Role }[] = [
   { prefix: "/portail/responsable", role: "ACADEMIC_OFFICER" },
 ];
 
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * Origin-vs-Host check on state-changing requests — the standard, low-friction
+ * CSRF defense for a cookie+fetch architecture (no per-form token plumbing
+ * needed). A cross-site attacker page's request carries an Origin that won't
+ * match our Host and gets rejected; same-origin requests either omit Origin
+ * or match Host, and pass through unaffected.
+ */
+function hasValidOrigin(request: NextRequest): boolean {
+  if (!UNSAFE_METHODS.has(request.method)) return true;
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === request.headers.get("host");
+  } catch {
+    return false;
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/api/") && !hasValidOrigin(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)." }, { status: 403 });
+  }
+
   const match = protectedPrefixes.find((p) => pathname.startsWith(p.prefix));
   if (!match) {
     return NextResponse.next();
+  }
+
+  if (!hasValidOrigin(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)." }, { status: 403 });
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
@@ -35,5 +64,6 @@ export const config = {
     "/portail/parent/:path*",
     "/portail/enseignant/:path*",
     "/portail/responsable/:path*",
+    "/api/:path*",
   ],
 };

@@ -36,7 +36,8 @@ export default function CreateCourseForm({
   const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
   const isUniversite = selectedProgram?.school === "universite";
   const isEcoleClassique = selectedProgram?.school === "ecole-classique";
-  const showPeriodFields = isUniversite || isEcoleClassique;
+  const isEcoleProfessionnelle = selectedProgram?.school === "ecole-professionnelle";
+  const showPeriodFields = isUniversite || isEcoleClassique || isEcoleProfessionnelle;
   const titulaireName = isTitulaireModel
     ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
     : undefined;

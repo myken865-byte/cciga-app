@@ -3,6 +3,7 @@ import { styles, DocumentHeader, DraftWatermark, SignatureBlock, DocumentFooter 
 
 export interface BulletinDocumentProps {
   logoBase64: string;
+  docTitle: string;
   studentName: string;
   ccigaId: string;
   programName: string;
@@ -16,6 +17,7 @@ export interface BulletinDocumentProps {
   retards: number;
   appreciation: string | null;
   conduct: string | null;
+  certification: string | null;
   isDraft: boolean;
   reference: string;
   publishedLabel: string;
@@ -27,7 +29,7 @@ export default function BulletinDocument(props: BulletinDocumentProps) {
     <Document>
       <Page size="A4" style={styles.page}>
         <DraftWatermark isDraft={props.isDraft} />
-        <DocumentHeader logoBase64={props.logoBase64} orgTitle="CCIGA" docTitle="Bulletin scolaire — École Classique" />
+        <DocumentHeader logoBase64={props.logoBase64} orgTitle="CCIGA" docTitle={props.docTitle} />
 
         <View style={styles.identityBlock}>
           <View style={styles.identityRow}>
@@ -94,6 +96,12 @@ export default function BulletinDocument(props: BulletinDocumentProps) {
             <View style={styles.summaryRow}>
               <Text>Appréciation</Text>
               <Text style={styles.value}>{props.appreciation}</Text>
+            </View>
+          )}
+          {props.certification && (
+            <View style={styles.summaryRow}>
+              <Text>Certification délivrée</Text>
+              <Text style={styles.value}>{props.certification}</Text>
             </View>
           )}
         </View>

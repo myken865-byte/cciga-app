@@ -54,3 +54,5 @@ next-env.d.ts
 
 # downloaded build artifacts
 /apk-output
+
+.env*

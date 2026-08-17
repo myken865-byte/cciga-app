@@ -6,12 +6,7 @@ import { formatCcigaId } from "@/lib/cciga-id";
 import { getSchoolBySlug } from "@/lib/content";
 import { isGradeVisibleToStudent } from "@/lib/universite";
 import { resolveBulletinAccess } from "@/lib/bulletinAccess";
-import {
-  computeFinalCourseGrade,
-  computeSimpleAverage,
-  computeAcademicDecision,
-  academicDecisionLabels,
-} from "@/lib/universiteGrades";
+import { computeSimpleAverage, academicDecisionLabels } from "@/lib/universiteGrades";
 import { computeStudentPeriodResult } from "@/lib/periodResults";
 import PeriodResultCard from "@/components/PeriodResultCard";
 import SectorLogo from "@/components/SectorLogo";
@@ -72,107 +67,7 @@ export default async function BulletinPage({
   const isEcoleClassique = student.program?.school === "ecole-classique";
   const sector = student.program ? schoolToSector(student.program.school) : null;
 
-  if (isEcoleProfessionnelle) {
-    const courses = await prisma.course.findMany({
-      where: { programId: student.programId! },
-      include: { evaluationCategories: true },
-    });
-    const grades = await prisma.grade.findMany({
-      where: { courseId: { in: courses.map((c) => c.id) }, studentId: student.id },
-    });
-    const visibleGrades = viewerCanSeeAll ? grades : grades.filter((g) => isGradeVisibleToStudent(g.status));
-
-    const courseFinals = courses.map((course) => {
-      const categories = course.evaluationCategories.map((cat) => ({
-        id: cat.id,
-        weightPercent: cat.weightPercent,
-      }));
-      const courseGrades = visibleGrades
-        .filter((g) => g.courseId === course.id)
-        .map((g) => ({ evaluationCategoryId: g.evaluationCategoryId, score: g.score }));
-      return {
-        courseId: course.id,
-        courseName: course.name,
-        finalGrade: computeFinalCourseGrade(courseGrades, categories),
-      };
-    });
-
-    const overallAverage = computeSimpleAverage(courseFinals);
-    const decision = computeAcademicDecision(overallAverage, student.program!.passingGrade);
-
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
-        {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
-        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
-          Bulletin de formation professionnelle
-        </p>
-        <h1 className="mb-1 text-2xl font-bold text-foreground lg:text-3xl">{student.name}</h1>
-        <p className="mb-8 text-sm text-muted">
-          {formatCcigaId(student.id)} · {student.program!.name} — {school?.name ?? student.program!.school}
-        </p>
-
-        {courseFinals.length === 0 ? (
-          <p className="rounded-lg border border-border bg-surface p-6 text-center text-muted">
-            Aucun cours enregistré pour le moment.
-          </p>
-        ) : (
-          <>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-surface p-6">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-accent">Moyenne générale</p>
-                <p className="text-2xl font-bold text-primary">
-                  {overallAverage !== null ? overallAverage.toFixed(1) : "—"}/100
-                </p>
-              </div>
-              <span
-                className={`font-semibold ${
-                  decision === "reussi"
-                    ? "text-emerald-600"
-                    : decision === "echec"
-                      ? "text-red-600"
-                      : "text-muted"
-                }`}
-              >
-                {academicDecisionLabels[decision]}
-              </span>
-            </div>
-
-            <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-background text-muted">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Cours</th>
-                    <th className="px-4 py-3 font-semibold">Note finale</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courseFinals.map((c) => (
-                    <tr key={c.courseId} className="border-t border-border">
-                      <td className="px-4 py-3 font-medium text-foreground">{c.courseName}</td>
-                      <td className="px-4 py-3 font-semibold text-primary">
-                        {c.finalGrade !== null ? `${c.finalGrade.toFixed(1)}/100` : "En attente"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {decision === "reussi" && student.program!.certification && (
-              <div className="mt-6 rounded-lg border border-emerald-300 bg-emerald-50 p-6">
-                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
-                  Certification délivrée
-                </p>
-                <p className="mt-1 text-foreground">{student.program!.certification}</p>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    );
-  }
-
-  if (isUniversite || isEcoleClassique) {
+  if (isUniversite || isEcoleClassique || isEcoleProfessionnelle) {
     const cohort = await prisma.user.findMany({ where: { programId: student.programId! } });
     const cohortIds = cohort.map((u) => u.id);
 
@@ -250,7 +145,11 @@ export default async function BulletinPage({
       <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
         {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
         <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
-          {isUniversite ? "Relevé de notes universitaire" : "Bulletin scolaire"}
+          {isUniversite
+            ? "Relevé de notes universitaire"
+            : isEcoleProfessionnelle
+              ? "Bulletin de formation professionnelle"
+              : "Bulletin scolaire"}
         </p>
         <h1 className="mb-1 text-2xl font-bold text-foreground lg:text-3xl">{student.name}</h1>
         <p className="mb-8 text-sm text-muted">
@@ -289,6 +188,12 @@ export default async function BulletinPage({
                       </p>
                       {appreciationRow?.conduct && <p>Conduite : {appreciationRow.conduct}</p>}
                       {appreciationRow?.appreciation && <p>Appréciation : {appreciationRow.appreciation}</p>}
+                    </div>
+                  ) : isEcoleProfessionnelle &&
+                    sec.result.decision === "reussi" &&
+                    student.program!.certification ? (
+                    <div className="mt-3 rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">
+                      Certification délivrée : {student.program!.certification}
                     </div>
                   ) : undefined
                 }

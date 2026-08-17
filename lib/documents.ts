@@ -133,7 +133,7 @@ export async function generateDocumentsForPeriod(
       retards: attendances.filter((a) => a.status === "retard").length,
       appreciation: appreciation?.appreciation ?? null,
       conduct: appreciation?.conduct ?? null,
-      certification: null as string | null,
+      certification: result.decision === "reussi" ? program.certification : null,
       generatedAt: new Date().toISOString(),
     };
 

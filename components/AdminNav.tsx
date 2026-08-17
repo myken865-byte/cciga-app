@@ -13,6 +13,7 @@ const tabs = [
   { href: "/admin/programs", label: "Programmes" },
   { href: "/admin/courses", label: "Cours" },
   { href: "/admin/ecole-classique", label: "École Classique" },
+  { href: "/admin/ecole-professionnelle", label: "École Professionnelle" },
   { href: "/admin/universite", label: "Université" },
   { href: "/admin/documents", label: "Bulletins" },
   { href: "/admin/finance", label: "Finances" },
@@ -23,6 +24,7 @@ const tabs = [
 
 function sectorForAdminPathname(pathname: string): Sector | null {
   if (pathname.startsWith("/admin/ecole-classique")) return "CLASSIQUE";
+  if (pathname.startsWith("/admin/ecole-professionnelle")) return "PROFESSIONNELLE";
   if (pathname.startsWith("/admin/universite")) return "UNIVERSITE";
   return null;
 }
