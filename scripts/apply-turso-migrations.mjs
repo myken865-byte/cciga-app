@@ -28,6 +28,13 @@
 //     → applies every pending migration, in order, one transaction each.
 //     Stops immediately on the first failure so later migrations are never
 //     applied on top of a partially-applied one.
+//
+//   node --env-file=.env.production scripts/apply-turso-migrations.mjs --mark-applied <folder-name>
+//     → bookkeeping only, for the rare case where a specific migration's SQL
+//     was already run against production by some other means (e.g. an old
+//     one-off script from before this tool existed) and just needs to be
+//     recorded so --apply doesn't try to re-run it. Refuses if that specific
+//     migration is already tracked. Never touches the schema.
 
 import { createClient } from "@libsql/client";
 import { readFileSync, readdirSync } from "fs";
@@ -39,6 +46,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDir = path.join(__dirname, "..", "prisma", "migrations");
 const apply = process.argv.includes("--apply");
 const baseline = process.argv.includes("--baseline");
+const markAppliedIndex = process.argv.indexOf("--mark-applied");
+const markAppliedName = markAppliedIndex !== -1 ? process.argv[markAppliedIndex + 1] : null;
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -68,6 +77,34 @@ const migrationFolders = readdirSync(migrationsDir, { withFileTypes: true })
   .filter((d) => d.isDirectory())
   .map((d) => d.name)
   .sort();
+
+if (markAppliedIndex !== -1) {
+  if (!markAppliedName || markAppliedName.startsWith("--")) {
+    console.error("Usage : --mark-applied <nom-du-dossier-de-migration>");
+    client.close();
+    process.exit(1);
+  }
+  if (!migrationFolders.includes(markAppliedName)) {
+    console.error(`Migration introuvable sur disque : ${markAppliedName}`);
+    client.close();
+    process.exit(1);
+  }
+  if (appliedNames.has(markAppliedName)) {
+    console.error(`${markAppliedName} est déjà enregistrée comme appliquée. Rien à faire.`);
+    client.close();
+    process.exit(1);
+  }
+  const sql = readFileSync(path.join(migrationsDir, markAppliedName, "migration.sql"), "utf8");
+  const checksum = createHash("sha256").update(sql).digest("hex");
+  await client.execute({
+    sql: `INSERT INTO _prisma_migrations (id, checksum, finished_at, migration_name, started_at, applied_steps_count)
+          VALUES (?, ?, datetime('now'), ?, datetime('now'), 0)`,
+    args: [checksum, checksum, markAppliedName],
+  });
+  console.log(`${markAppliedName} — enregistrée comme déjà appliquée (aucun SQL exécuté).`);
+  client.close();
+  process.exit(0);
+}
 
 if (baseline) {
   if (appliedNames.size > 0) {
