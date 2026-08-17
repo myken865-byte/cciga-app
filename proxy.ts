@@ -1,13 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth";
-import { hasRole, type Role } from "@/lib/roles";
+import { hasAnyRole, type Role } from "@/lib/roles";
 
-const protectedPrefixes: { prefix: string; role: Role }[] = [
-  { prefix: "/admin", role: "ADMIN" },
-  { prefix: "/portail/etudiant", role: "STUDENT" },
-  { prefix: "/portail/parent", role: "PARENT" },
-  { prefix: "/portail/enseignant", role: "TEACHER" },
-  { prefix: "/portail/responsable", role: "ACADEMIC_OFFICER" },
+const ADMIN_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN"];
+const SECRETARIAT_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"];
+
+// Order matters: more specific prefixes must come before broader ones,
+// since the first match wins (e.g. "/admin/admissions" must be checked
+// before the general "/admin" catch-all, or it would never be reached).
+const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
+  { prefix: "/admin/admissions", roles: SECRETARIAT_LEVEL },
+  { prefix: "/admin/finance", roles: SECRETARIAT_LEVEL },
+  { prefix: "/admin", roles: ADMIN_LEVEL },
+  { prefix: "/portail/etudiant", roles: ["STUDENT"] },
+  { prefix: "/portail/parent", roles: ["PARENT"] },
+  { prefix: "/portail/enseignant", roles: ["TEACHER"] },
+  { prefix: "/portail/responsable", roles: ["ACADEMIC_OFFICER"] },
 ];
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -49,7 +57,7 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
 
-  if (!session || !hasRole(session.roles, match.role)) {
+  if (!session || !hasAnyRole(session.roles, match.roles)) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }

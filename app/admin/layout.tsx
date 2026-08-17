@@ -18,6 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {session && (
         <AdminNav
           name={session.name}
+          roles={session.roles}
           notifications={notifications.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() }))}
         />
       )}

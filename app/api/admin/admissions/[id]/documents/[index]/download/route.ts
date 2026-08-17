@@ -1,14 +1,14 @@
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import type { AdmissionDocumentEntry } from "@/lib/admission-documents";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string; index: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }

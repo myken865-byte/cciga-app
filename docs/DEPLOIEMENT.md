@@ -39,8 +39,30 @@ npx vercel logs https://cciga-app.vercel.app
 
 1. Modifier `prisma/schema.prisma`.
 2. Générer la migration en local : `npx prisma migrate dev --name <nom_descriptif>` (applique aussi à `dev.db` local).
-3. Appliquer la migration à Turso : la CLI Prisma standard (`prisma migrate deploy`) **ne fonctionne pas directement avec l'URL Turso** (`libsql://`) — c'est une limitation connue de Prisma avec les adaptateurs de pilote. Il faut appliquer le(s) nouveau(x) fichier(s) `migration.sql` manuellement via le client `@libsql/client`, en pointant vers `.env.production`. (Cette étape nécessite un script ponctuel — demander de l'aide si besoin le moment venu.)
+3. Appliquer la migration à Turso : la CLI Prisma standard (`prisma migrate deploy`) **ne fonctionne pas directement avec l'URL Turso** (`libsql://`) — c'est une limitation connue de Prisma avec les adaptateurs de pilote. Utiliser `scripts/apply-turso-migrations.mjs` (voir ci-dessous) plutôt qu'un script ponctuel écrit à la main.
 4. Redéployer sur Vercel (voir section précédente).
+
+### Outil `scripts/apply-turso-migrations.mjs`
+
+Remplace l'ancienne pratique d'écrire un script à usage unique à chaque changement de schéma. Il suit dans Turso, via une table `_prisma_migrations`, quelles migrations ont déjà été appliquées, et n'applique jamais deux fois la même. Toujours exécuté par l'utilisateur lui-même, jamais automatiquement.
+
+**Étape unique, à faire une seule fois** (les 15 migrations existantes ont déjà été appliquées à la main, sans suivi) :
+
+```bash
+node --env-file=.env.production scripts/apply-turso-migrations.mjs --baseline
+```
+
+Cela enregistre les migrations déjà présentes comme appliquées, sans exécuter aucun SQL. Refuse de s'exécuter si la table de suivi contient déjà des lignes (protection contre un double baseline accidentel).
+
+**Ensuite, à chaque nouvelle migration** :
+
+```bash
+# 1. Aperçu — n'écrit rien, liste seulement ce qui est en attente
+node --env-file=.env.production scripts/apply-turso-migrations.mjs
+
+# 2. Application réelle — une transaction par migration, arrêt immédiat en cas d'échec
+node --env-file=.env.production scripts/apply-turso-migrations.mjs --apply
+```
 
 ## Variables d'environnement Vercel (production)
 

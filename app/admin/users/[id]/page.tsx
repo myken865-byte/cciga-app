@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { parseRoles, hasRole } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { getPrograms } from "@/lib/content";
@@ -16,6 +17,9 @@ export default async function AdminUserDetailPage({
   const { id } = await params;
   const userId = Number(id);
   if (!Number.isInteger(userId)) notFound();
+
+  const session = await getSession();
+  const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
 
   const [user, programs] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
@@ -46,6 +50,8 @@ export default async function AdminUserDetailPage({
           initialRoles={parseRoles(user.roles)}
           initialProgramId={user.programId}
           programs={programs}
+          isSuperAdmin={isSuperAdmin}
+          isSelf={session?.userId === user.id}
         />
       </div>
     </div>

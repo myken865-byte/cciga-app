@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { parseRoles, roleLabels, hasRole } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { getPrograms } from "@/lib/content";
@@ -8,6 +9,9 @@ import CreateUserForm from "@/components/CreateUserForm";
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  const session = await getSession();
+  const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
+
   const [users, programs] = await Promise.all([
     prisma.user.findMany({ orderBy: { id: "asc" }, include: { program: true } }),
     getPrograms(),
@@ -75,7 +79,7 @@ export default async function AdminUsersPage() {
           </table>
         </div>
 
-        <CreateUserForm students={students} programs={programs} />
+        <CreateUserForm students={students} programs={programs} isSuperAdmin={isSuperAdmin} />
       </div>
     </div>
   );

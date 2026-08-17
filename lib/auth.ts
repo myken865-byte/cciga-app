@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { Role } from "@/lib/roles";
-import { isRole, hasRole } from "@/lib/roles";
+import { isRole, hasRole, hasAnyRole } from "@/lib/roles";
 
 const SESSION_COOKIE = "cciga_session";
 const SESSION_DURATION = "8h";
@@ -55,11 +55,37 @@ export async function getSession(): Promise<SessionPayload | null> {
 
 /**
  * For /api/admin/* route handlers: proxy.ts only gates page routes, not API
- * routes, so each admin API route must check this itself.
+ * routes, so each admin API route must check this itself. SUPER_ADMIN carries
+ * every ADMIN privilege, so it's accepted here too.
  */
 export async function requireAdminSession(): Promise<SessionPayload | null> {
   const session = await getSession();
-  if (!session || !hasRole(session.roles, "ADMIN")) {
+  if (!session || !hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"])) {
+    return null;
+  }
+  return session;
+}
+
+/**
+ * Full admin rights required, and nothing less: creating or editing an
+ * account that itself holds a privileged (staff) role. Kept separate from
+ * requireAdminSession so ADMIN/SECRETARIAT can't mint new staff accounts.
+ */
+export async function requireSuperAdminSession(): Promise<SessionPayload | null> {
+  const session = await getSession();
+  if (!session || !hasRole(session.roles, "SUPER_ADMIN")) {
+    return null;
+  }
+  return session;
+}
+
+/**
+ * Narrower staff scope for admissions/finance/document-generation routes —
+ * the day-to-day secretarial work — in addition to full admin rights.
+ */
+export async function requireSecretariatSession(): Promise<SessionPayload | null> {
+  const session = await getSession();
+  if (!session || !hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"])) {
     return null;
   }
   return session;
@@ -72,7 +98,7 @@ export async function requireAdminSession(): Promise<SessionPayload | null> {
  */
 export async function requireReviewerSession(): Promise<SessionPayload | null> {
   const session = await getSession();
-  if (!session || !(hasRole(session.roles, "ADMIN") || hasRole(session.roles, "ACADEMIC_OFFICER"))) {
+  if (!session || !hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN", "ACADEMIC_OFFICER"])) {
     return null;
   }
   return session;

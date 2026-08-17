@@ -30,7 +30,7 @@ async function seedAdmin() {
       email,
       passwordHash,
       name: "Administration CCIGA",
-      roles: JSON.stringify(["ADMIN"]),
+      roles: JSON.stringify(["SUPER_ADMIN"]),
     },
   });
 

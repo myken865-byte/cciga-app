@@ -71,7 +71,17 @@ export default async function StudentFinancePage({
                       <p className="font-medium text-foreground">{formatHTG(p.amount)}</p>
                       {p.note && <p className="text-muted">{p.note}</p>}
                     </div>
-                    <span className="text-muted">{formatDate(p.paidAt)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted">{formatDate(p.paidAt)}</span>
+                      <a
+                        href={`/api/admin/finance/${student.id}/payments/${p.id}/receipt`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Reçu PDF
+                      </a>
+                    </div>
                   </li>
                 ))}
               </ul>

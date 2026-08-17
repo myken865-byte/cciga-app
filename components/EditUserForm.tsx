@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { roleList, roleLabels, type Role } from "@/lib/roles";
+import { roleList, roleLabels, privilegedRoles, type Role } from "@/lib/roles";
 import type { Program } from "@/lib/content";
 import ProgramSelect from "@/components/ProgramSelect";
 
@@ -12,12 +12,16 @@ export default function EditUserForm({
   initialRoles,
   initialProgramId,
   programs,
+  isSuperAdmin,
+  isSelf,
 }: {
   userId: number;
   initialName: string;
   initialRoles: Role[];
   initialProgramId: string | null;
   programs: Program[];
+  isSuperAdmin: boolean;
+  isSelf: boolean;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -27,8 +31,23 @@ export default function EditUserForm({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  const targetIsPrivileged = initialRoles.some((r) => privilegedRoles.includes(r));
+  const locked = targetIsPrivileged && !isSuperAdmin && !isSelf;
+  const selectableRoles = isSuperAdmin ? roleList : roleList.filter((r) => !privilegedRoles.includes(r));
+
   function toggleRole(role: Role) {
     setRoles((r) => (r.includes(role) ? r.filter((x) => x !== role) : [...r, role]));
+  }
+
+  if (locked) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-6">
+        <h2 className="mb-2 font-semibold text-foreground">Modifier le compte</h2>
+        <p className="text-sm text-muted">
+          Seul un Super Administrateur peut modifier un compte Administration ou Secrétariat.
+        </p>
+      </div>
+    );
   }
 
   async function submit(e: React.FormEvent) {
@@ -70,7 +89,7 @@ export default function EditUserForm({
       <div>
         <span className="mb-2 block text-sm font-medium text-foreground">Rôles</span>
         <div className="flex flex-wrap gap-3">
-          {roleList.map((role) => (
+          {selectableRoles.map((role) => (
             <label key={role} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

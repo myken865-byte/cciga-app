@@ -6,20 +6,24 @@ import LogoutButton from "@/components/LogoutButton";
 import NotificationBell, { type NotificationItem } from "@/components/NotificationBell";
 import SectorLogo from "@/components/SectorLogo";
 import type { Sector } from "@/lib/branding";
+import { hasAnyRole, type Role } from "@/lib/roles";
+
+const ADMIN_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN"];
+const SECRETARIAT_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"];
 
 const tabs = [
-  { href: "/admin/dashboard", label: "Tableau de bord" },
-  { href: "/admin/admissions", label: "Candidatures" },
-  { href: "/admin/programs", label: "Programmes" },
-  { href: "/admin/courses", label: "Cours" },
-  { href: "/admin/ecole-classique", label: "École Classique" },
-  { href: "/admin/ecole-professionnelle", label: "École Professionnelle" },
-  { href: "/admin/universite", label: "Université" },
-  { href: "/admin/documents", label: "Bulletins" },
-  { href: "/admin/finance", label: "Finances" },
-  { href: "/admin/users", label: "Comptes" },
-  { href: "/admin/news", label: "Contenu" },
-  { href: "/admin/messages", label: "Messages" },
+  { href: "/admin/dashboard", label: "Tableau de bord", roles: ADMIN_LEVEL },
+  { href: "/admin/admissions", label: "Candidatures", roles: SECRETARIAT_LEVEL },
+  { href: "/admin/programs", label: "Programmes", roles: ADMIN_LEVEL },
+  { href: "/admin/courses", label: "Cours", roles: ADMIN_LEVEL },
+  { href: "/admin/ecole-classique", label: "École Classique", roles: ADMIN_LEVEL },
+  { href: "/admin/ecole-professionnelle", label: "École Professionnelle", roles: ADMIN_LEVEL },
+  { href: "/admin/universite", label: "Université", roles: ADMIN_LEVEL },
+  { href: "/admin/documents", label: "Bulletins", roles: ADMIN_LEVEL },
+  { href: "/admin/finance", label: "Finances", roles: SECRETARIAT_LEVEL },
+  { href: "/admin/users", label: "Comptes", roles: ADMIN_LEVEL },
+  { href: "/admin/news", label: "Contenu", roles: ADMIN_LEVEL },
+  { href: "/admin/messages", label: "Messages", roles: ADMIN_LEVEL },
 ];
 
 function sectorForAdminPathname(pathname: string): Sector | null {
@@ -31,19 +35,23 @@ function sectorForAdminPathname(pathname: string): Sector | null {
 
 export default function AdminNav({
   name,
+  roles,
   notifications,
 }: {
   name: string;
+  roles: Role[];
   notifications: NotificationItem[];
 }) {
   const pathname = usePathname();
   const sector = sectorForAdminPathname(pathname);
+  const visibleTabs = tabs.filter((tab) => hasAnyRole(roles, tab.roles));
+  const homeHref = hasAnyRole(roles, ADMIN_LEVEL) ? "/admin/dashboard" : "/admin/admissions";
 
   return (
     <header className="border-b border-border bg-primary-dark text-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6">
         <div className="flex items-center gap-6">
-          <Link href="/admin/dashboard" className="flex items-center gap-2">
+          <Link href={homeHref} className="flex items-center gap-2">
             {sector ? (
               <SectorLogo sector={sector} className="h-9 w-9 object-contain" />
             ) : (
@@ -53,7 +61,7 @@ export default function AdminNav({
             <span className="font-semibold">Administration CCIGA</span>
           </Link>
           <nav className="hidden gap-1 sm:flex">
-            {tabs.map((tab) => (
+            {visibleTabs.map((tab) => (
               <Link
                 key={tab.href}
                 href={tab.href}

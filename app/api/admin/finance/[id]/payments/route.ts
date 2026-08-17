@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { formatHTG } from "@/lib/currency";
 
@@ -8,7 +8,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getNews } from "@/lib/content";
 import ContentSubNav from "@/components/ContentSubNav";
 import CreateNewsForm from "@/components/CreateNewsForm";
@@ -34,7 +35,11 @@ export default async function AdminNewsPage() {
             <tbody>
               {news.map((item) => (
                 <tr key={item.id} className="border-t border-border">
-                  <td className="px-4 py-3 text-foreground">{item.title}</td>
+                  <td className="px-4 py-3 text-foreground">
+                    <Link href={`/admin/news/${item.id}`} className="text-primary hover:underline">
+                      {item.title}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-muted">{item.category}</td>
                   <td className="px-4 py-3 text-muted">{formatDate(item.date)}</td>
                 </tr>
