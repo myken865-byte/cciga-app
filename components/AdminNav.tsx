@@ -10,6 +10,7 @@ import { hasAnyRole, type Role } from "@/lib/roles";
 
 const ADMIN_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN"];
 const SECRETARIAT_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"];
+const SUPER_ADMIN_ONLY: Role[] = ["SUPER_ADMIN"];
 
 const tabs = [
   { href: "/admin/dashboard", label: "Tableau de bord", roles: ADMIN_LEVEL },
@@ -24,6 +25,7 @@ const tabs = [
   { href: "/admin/users", label: "Comptes", roles: ADMIN_LEVEL },
   { href: "/admin/news", label: "Contenu", roles: ADMIN_LEVEL },
   { href: "/admin/messages", label: "Messages", roles: ADMIN_LEVEL },
+  { href: "/admin/audit", label: "Journal d'audit", roles: SUPER_ADMIN_ONLY },
 ];
 
 function sectorForAdminPathname(pathname: string): Sector | null {

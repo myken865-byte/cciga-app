@@ -4,6 +4,7 @@ import { hasAnyRole, type Role } from "@/lib/roles";
 
 const ADMIN_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN"];
 const SECRETARIAT_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"];
+const SUPER_ADMIN_ONLY: Role[] = ["SUPER_ADMIN"];
 
 // Order matters: more specific prefixes must come before broader ones,
 // since the first match wins (e.g. "/admin/admissions" must be checked
@@ -11,6 +12,7 @@ const SECRETARIAT_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"];
 const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
   { prefix: "/admin/admissions", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/finance", roles: SECRETARIAT_LEVEL },
+  { prefix: "/admin/audit", roles: SUPER_ADMIN_ONLY },
   { prefix: "/admin", roles: ADMIN_LEVEL },
   { prefix: "/portail/etudiant", roles: ["STUDENT"] },
   { prefix: "/portail/parent", roles: ["PARENT"] },
