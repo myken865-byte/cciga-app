@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasRole } from "@/lib/roles";
+import { hasAnyRole } from "@/lib/roles";
 import { isAttendanceStatus, ATTENDANCE_ALERT_THRESHOLD } from "@/lib/attendance";
 import { notifyAdmins } from "@/lib/notifications";
 
@@ -20,13 +20,19 @@ export async function POST(
     return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
   }
 
-  const isAdmin = hasRole(session.roles, "ADMIN");
+  const isAdmin = hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
   const isCourseTeacher = course.teacherId === session.userId;
   if (!isAdmin && !isCourseTeacher) {
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
   }
 
-  const { date, records } = (await request.json()) ?? {};
+  let requestBody: Record<string, any>;
+  try {
+    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { date, records } = requestBody;
   if (!date || !Array.isArray(records) || records.length === 0) {
     return NextResponse.json({ error: "Date et présences requises." }, { status: 400 });
   }

@@ -17,7 +17,13 @@ export async function POST(
     return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
   }
 
-  const { name, weightPercent } = (await request.json()) ?? {};
+  let requestBody: Record<string, any>;
+  try {
+    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { name, weightPercent } = requestBody;
   const weight = Number(weightPercent);
   if (!name || !Number.isFinite(weight) || weight <= 0 || weight > 100) {
     return NextResponse.json(

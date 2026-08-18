@@ -99,3 +99,29 @@ npx vercel env ls production
 4. `npx vercel --prod` pour redéployer avec la nouvelle valeur.
 
 Pour un jeton Turso : le révoquer d'abord côté tableau de bord Turso (« Invalidate All Tokens » sur la page de la base) avant de le remplacer côté Vercel.
+
+## Plan de sauvegarde, migration et rollback — préproduction LMS (documentation, non exécuté)
+
+Préparé lors de l'Étape 9 du LMS, à titre de référence pour une future autorisation de mise en préproduction. Aucune commande de cette section n'a été exécutée ; rien ne connecte l'environnement local à Turso ou Vercel pour établir ce plan.
+
+### Sauvegarde avant toute migration
+
+1. Avant d'appliquer une nouvelle migration Prisma à Turso, exporter un instantané de la base de production : `turso db shell cciga-app .dump > backups/cciga-app-<date>.sql` (à exécuter par l'utilisateur, jamais automatiquement).
+2. Conserver également l'historique des déploiements Vercel (`npx vercel ls`) — chaque déploiement précédent reste disponible pour un rollback instantané via le tableau de bord Vercel (« Promote to Production » sur un déploiement antérieur), indépendamment de l'état de la base.
+3. Le fichier `.sql` exporté ne doit jamais être commité (contient des données réelles) — à stocker hors du dépôt Git, dans un emplacement choisi par l'utilisateur.
+
+### Migration (si une évolution de schéma devient nécessaire)
+
+Suivre la procédure déjà documentée plus haut (« Procédure de modification du schéma de base de données ») via `scripts/apply-turso-migrations.mjs`. Point important pour le LMS : aucune migration de schéma n'a été nécessaire aux Étapes 8 et 9 — les corrections sont restées au niveau du code applicatif (permissions, validation du corps de requête), sans toucher `prisma/schema.prisma`.
+
+### Rollback (en cas d'anomalie détectée après mise en préproduction/production)
+
+- **Rollback du code** : `npx vercel rollback` ou promotion d'un déploiement antérieur depuis le tableau de bord Vercel — ne nécessite aucune action sur la base de données tant qu'aucune migration de schéma n'a été appliquée entretemps.
+- **Rollback de la base** (uniquement si une migration de schéma a été appliquée et doit être annulée) : restaurer depuis l'export `.sql` le plus récent précédant la migration. Turso ne propose pas de « down migration » automatique côté Prisma avec l'adaptateur libSQL — la restauration manuelle depuis sauvegarde est la méthode de repli.
+- Dans tous les cas, vérifier `npx vercel logs` après un rollback pour confirmer l'absence de nouvelles erreurs.
+
+### Risques identifiés pour une future préproduction
+
+- Aucun test de charge n'a été effectué (nombre d'utilisateurs simultanés, volume de notes/documents générés en masse).
+- La sauvegarde Turso ci-dessus est manuelle ; aucune sauvegarde automatique planifiée n'est en place à ce jour.
+- `app/api/observations/route.ts` et `app/api/parent-messages/route.ts` utilisent encore `hasRole(session.roles, "ADMIN")` (vérification stricte) au lieu de `hasAnyRole(["ADMIN","SUPER_ADMIN"])` — un compte SUPER_ADMIN sans le rôle ADMIN explicite serait bloqué sur ces deux routes. Hors périmètre LMS strict (fonctionnalité titulaire/parent antérieure au LMS), documenté ici pour une correction future autorisée séparément.
