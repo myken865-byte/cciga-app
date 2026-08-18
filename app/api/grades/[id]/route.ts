@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasRole } from "@/lib/roles";
+import { hasAnyRole } from "@/lib/roles";
 import { writeAuditLog } from "@/lib/auditLog";
 import { findDocumentsCoveringGrade, regenerateDocumentVersion } from "@/lib/documents";
 
@@ -20,7 +20,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Note introuvable." }, { status: 404 });
   }
 
-  const isAdmin = hasRole(session.roles, "ADMIN");
+  const isAdmin = hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
   const isCourseTeacher = grade.course.teacherId === session.userId;
   if (!isAdmin && !isCourseTeacher) {
     return NextResponse.json({ error: "Non autorisé pour cette note." }, { status: 403 });

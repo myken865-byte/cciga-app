@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasRole } from "@/lib/roles";
+import { hasAnyRole } from "@/lib/roles";
 import { writeAuditLog } from "@/lib/auditLog";
 
 export async function POST(
@@ -19,7 +19,7 @@ export async function POST(
     return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
   }
 
-  const isAdmin = hasRole(session.roles, "ADMIN");
+  const isAdmin = hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
   const isCourseTeacher = course.teacherId === session.userId;
   if (!isAdmin && !isCourseTeacher) {
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
