@@ -162,6 +162,40 @@ export default function CourseContentView({
         {schedule && <p className="mt-1 text-sm text-muted">Horaire : {schedule}</p>}
       </div>
 
+      {totalEnrolled !== undefined && (
+        <div className="mb-6 rounded-lg border border-border bg-surface p-4">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Tableau de suivi LMS</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(() => {
+              const allLessons = lessonModules.flatMap((m) => m.lessons);
+              const lessonCompletions = allLessons.reduce((sum, l) => sum + (l.completedCount ?? 0), 0);
+              const lessonSlots = allLessons.length * totalEnrolled;
+              const submissionCount = assignments.reduce((sum, a) => sum + (a.submissions?.length ?? 0), 0);
+              const submissionSlots = assignments.length * totalEnrolled;
+              const attemptCount = quizzes.reduce((sum, q) => sum + (q.attempts?.length ?? 0), 0);
+              const stats = [
+                {
+                  label: "Leçons suivies",
+                  value: allLessons.length === 0 ? "—" : `${lessonCompletions}/${lessonSlots}`,
+                },
+                {
+                  label: "Devoirs remis",
+                  value: assignments.length === 0 ? "—" : `${submissionCount}/${submissionSlots}`,
+                },
+                { label: "Tentatives de quiz", value: quizzes.length === 0 ? "—" : String(attemptCount) },
+                { label: "Annonces publiées", value: String(announcements.length) },
+              ];
+              return stats.map((s) => (
+                <div key={s.label} className="rounded-md border border-border bg-background p-3">
+                  <p className="text-lg font-bold text-foreground">{s.value}</p>
+                  <p className="text-xs text-muted">{s.label}</p>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
+
       {announcements.length > 0 && (
         <div className="mb-6">
           <h2 className="mb-4 text-lg font-semibold text-foreground">Annonces</h2>

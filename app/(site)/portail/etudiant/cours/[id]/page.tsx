@@ -70,7 +70,14 @@ export default async function StudentCoursePage({
             fileUrl: submission.fileUrl,
             submittedAt: submission.submittedAt,
             late: submission.late,
-            grade: submission.grade ? { score: submission.grade.score } : null,
+            // Only surface the grade once it has cleared the same publication gate as
+            // "Mes notes" below (status null = classic non-workflow note, or "publie").
+            // A brouillon/soumis/en_verification grade must stay invisible to the
+            // student until an admin publishes it, exactly like every other grade.
+            grade:
+              submission.grade && (submission.grade.status === null || submission.grade.status === "publie")
+                ? { score: submission.grade.score }
+                : null,
           }
         : null,
     };
