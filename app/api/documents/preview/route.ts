@@ -1,7 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasRole } from "@/lib/roles";
+import { hasRole, hasAnyRole } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { academicDecisionLabels } from "@/lib/universiteGrades";
 import { computeStudentPeriodResult } from "@/lib/periodResults";
@@ -30,7 +30,10 @@ export async function POST(request: Request) {
     return new Response("Introuvable.", { status: 404 });
   }
 
-  const isAdmin = hasRole(session.roles, "ADMIN");
+  // hasRole is exact-membership, so it incorrectly rejected a SUPER_ADMIN-only
+  // account (no separate "ADMIN" role) — same bug class fixed earlier in
+  // api/appreciations/route.ts.
+  const isAdmin = hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
   const isOfficer = hasRole(session.roles, "ACADEMIC_OFFICER");
   const isTitulaire = program.titulaireId === session.userId;
   if (!isAdmin && !isOfficer && !isTitulaire) {
