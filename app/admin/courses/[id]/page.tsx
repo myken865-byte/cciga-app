@@ -10,6 +10,9 @@ import AddLessonModuleForm from "@/components/AddLessonModuleForm";
 import AddLessonForm from "@/components/AddLessonForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
+import AddQuizForm from "@/components/AddQuizForm";
+import AddQuizQuestionForm from "@/components/AddQuizQuestionForm";
+import AddAnnouncementForm from "@/components/AddAnnouncementForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
 import AttendanceForm from "@/components/AttendanceForm";
 import EditCourseForm from "@/components/EditCourseForm";
@@ -37,7 +40,10 @@ export default async function AdminCourseDetailPage({
       teacher: true,
       semester: { include: { academicYear: true } },
       materials: { orderBy: { createdAt: "desc" } },
-      assignments: { orderBy: { createdAt: "desc" } },
+      assignments: {
+        orderBy: { createdAt: "desc" },
+        include: { submissions: { include: { student: true, grade: true }, orderBy: { submittedAt: "desc" } } },
+      },
       evaluationCategories: { orderBy: { createdAt: "asc" } },
       grades: {
         include: { student: true, assignment: true, evaluationCategory: true },
@@ -45,13 +51,59 @@ export default async function AdminCourseDetailPage({
       },
       lessonModules: {
         orderBy: { order: "asc" },
-        include: { lessons: { orderBy: { order: "asc" } } },
+        include: {
+          lessons: { orderBy: { order: "asc" }, include: { _count: { select: { progress: true } } } },
+        },
+      },
+      quizzes: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          questions: { orderBy: { order: "asc" } },
+          attempts: { include: { student: true }, orderBy: { startedAt: "desc" } },
+        },
+      },
+      announcements: {
+        orderBy: { createdAt: "desc" },
+        include: { author: true },
       },
     },
   });
   if (!course) notFound();
 
   const moduleOptions = course.lessonModules.map((m) => ({ id: m.id, title: m.title }));
+  const quizOptions = course.quizzes.map((q) => ({ id: q.id, title: q.title }));
+  const assignmentsForView = course.assignments.map((a) => ({
+    ...a,
+    submissions: a.submissions.map((s) => ({
+      id: s.id,
+      studentName: s.student.name,
+      textContent: s.textContent,
+      fileUrl: s.fileUrl,
+      submittedAt: s.submittedAt,
+      late: s.late,
+      grade: s.grade ? { score: s.grade.score } : null,
+    })),
+  }));
+  const quizzesForView = course.quizzes.map((q) => ({
+    ...q,
+    attempts: q.attempts.map((att) => ({
+      id: att.id,
+      studentName: att.student.name,
+      score: att.score,
+      submittedAt: att.submittedAt,
+    })),
+  }));
+  const lessonModulesForView = course.lessonModules.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => ({ ...l, completedCount: l._count.progress })),
+  }));
+  const announcementsForView = course.announcements.map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    authorName: a.author.name,
+    createdAt: a.createdAt,
+  }));
 
   const isUniversite = course.program.school === "universite";
   const usesWorkflow = usesGradeWorkflow(course.program.school);
@@ -106,8 +158,13 @@ export default async function AdminCourseDetailPage({
               endTime: course.endTime,
             }}
             materials={course.materials}
-            assignments={course.assignments}
-            lessonModules={course.lessonModules}
+            assignments={assignmentsForView}
+            lessonModules={lessonModulesForView}
+            showSubmissions
+            quizzes={quizzesForView}
+            showQuizAttempts
+            announcements={announcementsForView}
+            totalEnrolled={students.length}
           />
 
           {isUniversite && (
@@ -188,6 +245,9 @@ export default async function AdminCourseDetailPage({
           <AddLessonForm modules={moduleOptions} />
           <AddCourseMaterialForm courseId={course.id} />
           {!usesWorkflow && <AddAssignmentForm courseId={course.id} />}
+          <AddQuizForm courseId={course.id} />
+          <AddQuizQuestionForm quizzes={quizOptions} />
+          <AddAnnouncementForm courseId={course.id} />
           {usesWorkflow && <EvaluationCategoriesPanel courseId={course.id} categories={categoryOptions} />}
           <RecordGradeForm
             courseId={course.id}

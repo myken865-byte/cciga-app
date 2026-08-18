@@ -9,6 +9,9 @@ import AddLessonModuleForm from "@/components/AddLessonModuleForm";
 import AddLessonForm from "@/components/AddLessonForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
+import AddQuizForm from "@/components/AddQuizForm";
+import AddQuizQuestionForm from "@/components/AddQuizQuestionForm";
+import AddAnnouncementForm from "@/components/AddAnnouncementForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
 import GradeWorkflowPanel from "@/components/GradeWorkflowPanel";
 import MissingGradesWarning from "@/components/MissingGradesWarning";
@@ -35,12 +38,28 @@ export default async function TeacherCoursePage({
       program: { include: { students: true } },
       teacher: true,
       materials: { orderBy: { createdAt: "desc" } },
-      assignments: { orderBy: { createdAt: "desc" } },
+      assignments: {
+        orderBy: { createdAt: "desc" },
+        include: { submissions: { include: { student: true, grade: true }, orderBy: { submittedAt: "desc" } } },
+      },
       evaluationCategories: { orderBy: { createdAt: "asc" } },
       grades: { include: { student: true, assignment: true, evaluationCategory: true }, orderBy: { recordedAt: "desc" } },
       lessonModules: {
         orderBy: { order: "asc" },
-        include: { lessons: { orderBy: { order: "asc" } } },
+        include: {
+          lessons: { orderBy: { order: "asc" }, include: { _count: { select: { progress: true } } } },
+        },
+      },
+      quizzes: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          questions: { orderBy: { order: "asc" } },
+          attempts: { include: { student: true }, orderBy: { startedAt: "desc" } },
+        },
+      },
+      announcements: {
+        orderBy: { createdAt: "desc" },
+        include: { author: true },
       },
     },
   });
@@ -50,6 +69,39 @@ export default async function TeacherCoursePage({
   }
 
   const moduleOptions = course.lessonModules.map((m) => ({ id: m.id, title: m.title }));
+  const quizOptions = course.quizzes.map((q) => ({ id: q.id, title: q.title }));
+  const assignmentsForView = course.assignments.map((a) => ({
+    ...a,
+    submissions: a.submissions.map((s) => ({
+      id: s.id,
+      studentName: s.student.name,
+      textContent: s.textContent,
+      fileUrl: s.fileUrl,
+      submittedAt: s.submittedAt,
+      late: s.late,
+      grade: s.grade ? { score: s.grade.score } : null,
+    })),
+  }));
+  const quizzesForView = course.quizzes.map((q) => ({
+    ...q,
+    attempts: q.attempts.map((att) => ({
+      id: att.id,
+      studentName: att.student.name,
+      score: att.score,
+      submittedAt: att.submittedAt,
+    })),
+  }));
+  const lessonModulesForView = course.lessonModules.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => ({ ...l, completedCount: l._count.progress })),
+  }));
+  const announcementsForView = course.announcements.map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    authorName: a.author.name,
+    createdAt: a.createdAt,
+  }));
 
   const usesWorkflow = usesGradeWorkflow(course.program.school);
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
@@ -86,8 +138,13 @@ export default async function TeacherCoursePage({
           endTime: course.endTime,
         }}
         materials={course.materials}
-        assignments={course.assignments}
-        lessonModules={course.lessonModules}
+        assignments={assignmentsForView}
+        lessonModules={lessonModulesForView}
+        showSubmissions
+        quizzes={quizzesForView}
+        showQuizAttempts
+        announcements={announcementsForView}
+        totalEnrolled={students.length}
       />
 
       {usesWorkflow && categoryOptions.length > 0 && (
@@ -109,6 +166,9 @@ export default async function TeacherCoursePage({
         <AddLessonForm modules={moduleOptions} />
         <AddCourseMaterialForm courseId={course.id} />
         {!usesWorkflow && <AddAssignmentForm courseId={course.id} />}
+        <AddQuizForm courseId={course.id} />
+        <AddQuizQuestionForm quizzes={quizOptions} />
+        <AddAnnouncementForm courseId={course.id} />
         <RecordGradeForm
           courseId={course.id}
           students={students}

@@ -37,12 +37,76 @@ export default async function StudentCoursePage({
         orderBy: { order: "asc" },
         include: { lessons: { orderBy: { order: "asc" } } },
       },
+      quizzes: {
+        orderBy: { createdAt: "asc" },
+        include: { questions: { orderBy: { order: "asc" } } },
+      },
+      announcements: {
+        orderBy: { createdAt: "desc" },
+        include: { author: true },
+      },
     },
   });
 
   if (!course || !user?.programId || course.programId !== user.programId) {
     notFound();
   }
+
+  const assignmentIds = course.assignments.map((a) => a.id);
+  const mySubmissions = assignmentIds.length
+    ? await prisma.submission.findMany({
+        where: { assignmentId: { in: assignmentIds }, studentId: user.id },
+        include: { grade: true },
+      })
+    : [];
+  const submissionByAssignment = new Map(mySubmissions.map((s) => [s.assignmentId, s]));
+  const assignmentsForView = course.assignments.map((a) => {
+    const submission = submissionByAssignment.get(a.id);
+    return {
+      ...a,
+      submission: submission
+        ? {
+            textContent: submission.textContent,
+            fileUrl: submission.fileUrl,
+            submittedAt: submission.submittedAt,
+            late: submission.late,
+            grade: submission.grade ? { score: submission.grade.score } : null,
+          }
+        : null,
+    };
+  });
+
+  const quizIds = course.quizzes.map((q) => q.id);
+  const myAttempts = quizIds.length
+    ? await prisma.quizAttempt.findMany({
+        where: { quizId: { in: quizIds }, studentId: user.id },
+        orderBy: { startedAt: "desc" },
+      })
+    : [];
+  const attemptsByQuiz = new Map<string, typeof myAttempts>();
+  for (const att of myAttempts) {
+    const list = attemptsByQuiz.get(att.quizId) ?? [];
+    list.push(att);
+    attemptsByQuiz.set(att.quizId, list);
+  }
+  const quizzesForView = course.quizzes.map((q) => ({
+    ...q,
+    // Never send correctAnswer to the student before they submit — CourseContentView
+    // passes this array as a prop into the client-side TakeQuizForm, and any field
+    // present here would be serialized into the page and visible in dev tools.
+    questions: q.questions.map((question) => ({
+      id: question.id,
+      type: question.type,
+      prompt: question.prompt,
+      options: question.options,
+      order: question.order,
+    })),
+    myAttempts: (attemptsByQuiz.get(q.id) ?? []).map((att) => ({
+      id: att.id,
+      score: att.score,
+      submittedAt: att.submittedAt,
+    })),
+  }));
 
   const lessonIds = course.lessonModules.flatMap((m) => m.lessons.map((l) => l.id));
   const progressRows = lessonIds.length
@@ -69,6 +133,14 @@ export default async function StudentCoursePage({
     orderBy: { date: "desc" },
   });
 
+  const announcementsForView = course.announcements.map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    authorName: a.author.name,
+    createdAt: a.createdAt,
+  }));
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
       <Link href="/portail/etudiant" className="mb-6 inline-block text-sm text-primary hover:underline">
@@ -86,9 +158,13 @@ export default async function StudentCoursePage({
           endTime: course.endTime,
         }}
         materials={course.materials}
-        assignments={course.assignments}
+        assignments={assignmentsForView}
         lessonModules={lessonModulesWithProgress}
         showLessonProgress
+        canSubmitAssignments
+        quizzes={quizzesForView}
+        canTakeQuizzes
+        announcements={announcementsForView}
       />
 
       <div className="mt-8">

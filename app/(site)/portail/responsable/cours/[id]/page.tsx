@@ -32,16 +32,65 @@ export default async function ResponsableCoursePage({
       program: { include: { students: true } },
       teacher: true,
       materials: { orderBy: { createdAt: "desc" } },
-      assignments: { orderBy: { createdAt: "desc" } },
+      assignments: {
+        orderBy: { createdAt: "desc" },
+        include: { submissions: { include: { student: true, grade: true }, orderBy: { submittedAt: "desc" } } },
+      },
       evaluationCategories: { orderBy: { createdAt: "asc" } },
       grades: { include: { student: true, assignment: true, evaluationCategory: true }, orderBy: { recordedAt: "desc" } },
       lessonModules: {
         orderBy: { order: "asc" },
-        include: { lessons: { orderBy: { order: "asc" } } },
+        include: {
+          lessons: { orderBy: { order: "asc" }, include: { _count: { select: { progress: true } } } },
+        },
+      },
+      quizzes: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          questions: { orderBy: { order: "asc" } },
+          attempts: { include: { student: true }, orderBy: { startedAt: "desc" } },
+        },
+      },
+      announcements: {
+        orderBy: { createdAt: "desc" },
+        include: { author: true },
       },
     },
   });
   if (!course || !usesGradeWorkflow(course.program.school)) notFound();
+
+  const assignmentsForView = course.assignments.map((a) => ({
+    ...a,
+    submissions: a.submissions.map((s) => ({
+      id: s.id,
+      studentName: s.student.name,
+      textContent: s.textContent,
+      fileUrl: s.fileUrl,
+      submittedAt: s.submittedAt,
+      late: s.late,
+      grade: s.grade ? { score: s.grade.score } : null,
+    })),
+  }));
+  const quizzesForView = course.quizzes.map((q) => ({
+    ...q,
+    attempts: q.attempts.map((att) => ({
+      id: att.id,
+      studentName: att.student.name,
+      score: att.score,
+      submittedAt: att.submittedAt,
+    })),
+  }));
+  const lessonModulesForView = course.lessonModules.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => ({ ...l, completedCount: l._count.progress })),
+  }));
+  const announcementsForView = course.announcements.map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    authorName: a.author.name,
+    createdAt: a.createdAt,
+  }));
 
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
   const categoryOptions = course.evaluationCategories.map((c) => ({ id: c.id, name: c.name }));
@@ -71,8 +120,13 @@ export default async function ResponsableCoursePage({
           endTime: course.endTime,
         }}
         materials={course.materials}
-        assignments={course.assignments}
-        lessonModules={course.lessonModules}
+        assignments={assignmentsForView}
+        lessonModules={lessonModulesForView}
+        showSubmissions
+        quizzes={quizzesForView}
+        showQuizAttempts
+        announcements={announcementsForView}
+        totalEnrolled={students.length}
       />
 
       <div className="mt-8 space-y-4">

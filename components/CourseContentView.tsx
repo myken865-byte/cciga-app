@@ -1,6 +1,16 @@
 import { formatSchedule, type ScheduleSlot } from "@/lib/schedule";
 import { lessonContentTypeLabels, type LessonContentType } from "@/lib/lms";
 import LessonProgressToggle from "@/components/LessonProgressToggle";
+import SubmitAssignmentForm from "@/components/SubmitAssignmentForm";
+import TakeQuizForm from "@/components/TakeQuizForm";
+
+interface AnnouncementItem {
+  id: string;
+  title: string;
+  body: string;
+  authorName: string;
+  createdAt: Date;
+}
 
 interface Material {
   id: string;
@@ -9,11 +19,67 @@ interface Material {
   createdAt: Date;
 }
 
+interface SubmissionGrade {
+  score: number;
+}
+
+interface OwnSubmission {
+  textContent: string | null;
+  fileUrl: string | null;
+  submittedAt: Date;
+  late: boolean;
+  grade?: SubmissionGrade | null;
+}
+
+interface StaffSubmission {
+  id: string;
+  studentName: string;
+  textContent: string | null;
+  fileUrl: string | null;
+  submittedAt: Date;
+  late: boolean;
+  grade?: SubmissionGrade | null;
+}
+
 interface AssignmentItem {
   id: string;
   title: string;
   description: string;
   dueDate: Date | null;
+  submission?: OwnSubmission | null;
+  submissions?: StaffSubmission[];
+}
+
+interface QuizQuestionForView {
+  id: string;
+  type: string;
+  prompt: string;
+  options: string | null;
+  order: number;
+}
+
+interface StaffQuizAttempt {
+  id: string;
+  studentName: string;
+  score: number | null;
+  submittedAt: Date | null;
+}
+
+interface OwnQuizAttempt {
+  id: string;
+  score: number | null;
+  submittedAt: Date | null;
+}
+
+interface QuizItem {
+  id: string;
+  title: string;
+  description: string | null;
+  isGraded: boolean;
+  maxAttempts: number;
+  questions?: QuizQuestionForView[];
+  attempts?: StaffQuizAttempt[];
+  myAttempts?: OwnQuizAttempt[];
 }
 
 interface LessonItem {
@@ -25,6 +91,7 @@ interface LessonItem {
   fileUrl: string | null;
   videoUrl: string | null;
   completed?: boolean;
+  completedCount?: number;
 }
 
 interface LessonModuleItem {
@@ -57,12 +124,26 @@ export default function CourseContentView({
   assignments = [],
   lessonModules = [],
   showLessonProgress = false,
+  canSubmitAssignments = false,
+  showSubmissions = false,
+  quizzes = [],
+  canTakeQuizzes = false,
+  showQuizAttempts = false,
+  announcements = [],
+  totalEnrolled,
 }: {
   course: CourseInfo;
   materials: Material[];
   assignments?: AssignmentItem[];
   lessonModules?: LessonModuleItem[];
   showLessonProgress?: boolean;
+  canSubmitAssignments?: boolean;
+  showSubmissions?: boolean;
+  quizzes?: QuizItem[];
+  canTakeQuizzes?: boolean;
+  showQuizAttempts?: boolean;
+  announcements?: AnnouncementItem[];
+  totalEnrolled?: number;
 }) {
   const schedule = formatSchedule(course);
 
@@ -80,6 +161,24 @@ export default function CourseContentView({
         )}
         {schedule && <p className="mt-1 text-sm text-muted">Horaire : {schedule}</p>}
       </div>
+
+      {announcements.length > 0 && (
+        <div className="mb-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Annonces</h2>
+          <div className="space-y-3">
+            {announcements.map((ann) => (
+              <div key={ann.id} className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <h3 className="font-medium text-foreground">{ann.title}</h3>
+                  <span className="text-xs text-muted">{formatDate(ann.createdAt)}</span>
+                </div>
+                <p className="whitespace-pre-wrap text-sm text-muted">{ann.body}</p>
+                <p className="mt-1 text-xs text-muted">Par {ann.authorName}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <h2 className="mb-4 text-lg font-semibold text-foreground">Modules du cours</h2>
       {lessonModules.length === 0 ? (
@@ -133,6 +232,11 @@ export default function CourseContentView({
                               <LessonProgressToggle lessonId={lesson.id} initialCompleted={lesson.completed ?? false} />
                             </div>
                           )}
+                          {!showLessonProgress && lesson.completedCount !== undefined && totalEnrolled !== undefined && (
+                            <p className="mt-2 text-xs text-muted">
+                              {lesson.completedCount}/{totalEnrolled} étudiant{totalEnrolled > 1 ? "s" : ""} ont terminé
+                            </p>
+                          )}
                         </li>
                       ))}
                   </ul>
@@ -156,8 +260,142 @@ export default function CourseContentView({
                 )}
               </div>
               <p className="text-sm text-muted">{a.description}</p>
+
+              {canSubmitAssignments && (
+                <>
+                  {a.submission && (
+                    <div className="mt-3 rounded-md border border-border bg-background p-3 text-sm">
+                      <p className="font-medium text-foreground">
+                        Ma remise ({formatDate(a.submission.submittedAt)}
+                        {a.submission.late ? " — en retard" : ""})
+                      </p>
+                      {a.submission.textContent && (
+                        <p className="mt-1 whitespace-pre-wrap text-muted">{a.submission.textContent}</p>
+                      )}
+                      {a.submission.fileUrl && (
+                        <a
+                          href={a.submission.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 block text-primary hover:underline"
+                        >
+                          Voir le fichier remis
+                        </a>
+                      )}
+                      {a.submission.grade && (
+                        <p className="mt-1 font-semibold text-primary">Note : {a.submission.grade.score}/100</p>
+                      )}
+                    </div>
+                  )}
+                  <SubmitAssignmentForm
+                    assignmentId={a.id}
+                    initialTextContent={a.submission?.textContent}
+                    initialFileUrl={a.submission?.fileUrl}
+                  />
+                </>
+              )}
+
+              {showSubmissions && (
+                <div className="mt-3">
+                  {totalEnrolled !== undefined && (
+                    <p className="mb-2 text-xs font-medium text-muted">
+                      Statut de remise : {a.submissions?.length ?? 0}/{totalEnrolled} étudiant
+                      {totalEnrolled > 1 ? "s" : ""} ont remis
+                    </p>
+                  )}
+                  {!a.submissions || a.submissions.length === 0 ? (
+                    <p className="text-sm text-muted">Aucune remise pour ce devoir pour le moment.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {a.submissions.map((s) => (
+                        <div key={s.id} className="rounded-md border border-border bg-background p-3 text-sm">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-foreground">{s.studentName}</p>
+                            <span className="text-xs text-muted">
+                              {formatDate(s.submittedAt)}
+                              {s.late ? " — en retard" : ""}
+                            </span>
+                          </div>
+                          {s.textContent && <p className="mt-1 whitespace-pre-wrap text-muted">{s.textContent}</p>}
+                          {s.fileUrl && (
+                            <a
+                              href={s.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 block text-primary hover:underline"
+                            >
+                              Voir le fichier remis
+                            </a>
+                          )}
+                          {s.grade && <p className="mt-1 font-semibold text-primary">Note : {s.grade.score}/100</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
+        </div>
+      )}
+
+      <h2 className="mb-4 text-lg font-semibold text-foreground">Quiz</h2>
+      {quizzes.length === 0 ? (
+        <p className="mb-6 text-sm text-muted">Aucun quiz pour ce cours pour le moment.</p>
+      ) : (
+        <div className="mb-6 space-y-3">
+          {quizzes.map((q) => {
+            const attemptsUsed = q.myAttempts?.length ?? 0;
+            const canAttemptMore = attemptsUsed < q.maxAttempts;
+            return (
+              <div key={q.id} className="rounded-lg border border-border bg-surface p-4">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <h3 className="font-medium text-foreground">{q.title}</h3>
+                  <span className="text-xs text-muted">
+                    {q.isGraded ? "Noté" : "Non noté"} · {q.maxAttempts} tentative{q.maxAttempts > 1 ? "s" : ""} max
+                  </span>
+                </div>
+                {q.description && <p className="text-sm text-muted">{q.description}</p>}
+
+                {canTakeQuizzes && (
+                  <>
+                    {q.myAttempts && q.myAttempts.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {q.myAttempts.map((att) => (
+                          <p key={att.id} className="text-sm text-muted">
+                            Tentative{att.submittedAt ? ` du ${formatDate(att.submittedAt)}` : ""} — score :{" "}
+                            {att.score ?? "—"}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {canAttemptMore ? (
+                      <TakeQuizForm quizId={q.id} questions={q.questions ?? []} />
+                    ) : (
+                      <p className="mt-3 text-sm text-muted">Nombre maximal de tentatives atteint.</p>
+                    )}
+                  </>
+                )}
+
+                {showQuizAttempts && (
+                  <div className="mt-3">
+                    {!q.attempts || q.attempts.length === 0 ? (
+                      <p className="text-sm text-muted">Aucune tentative pour ce quiz pour le moment.</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {q.attempts.map((att) => (
+                          <p key={att.id} className="text-sm text-muted">
+                            {att.studentName}
+                            {att.submittedAt ? ` — ${formatDate(att.submittedAt)}` : ""} — score : {att.score ?? "—"}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
