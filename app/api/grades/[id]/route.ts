@@ -26,7 +26,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Non autorisé pour cette note." }, { status: 403 });
   }
 
-  const { score, reason } = (await request.json()) ?? {};
+  let requestBody: Record<string, any>;
+  try {
+    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { score, reason } = requestBody;
   const parsedScore = Number(score);
   if (!Number.isFinite(parsedScore) || parsedScore < 0 || parsedScore > 100) {
     return NextResponse.json({ error: "Note invalide (entre 0 et 100)." }, { status: 400 });

@@ -33,7 +33,13 @@ export async function POST(
     return NextResponse.json({ error: "Nombre maximal de tentatives atteint." }, { status: 400 });
   }
 
-  const { answers } = (await request.json()) ?? {};
+  let requestBody: Record<string, any>;
+  try {
+    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { answers } = requestBody;
   if (!answers || typeof answers !== "object") {
     return NextResponse.json({ error: "Réponses requises." }, { status: 400 });
   }

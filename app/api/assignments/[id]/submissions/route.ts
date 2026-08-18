@@ -27,7 +27,13 @@ export async function POST(
     return NextResponse.json({ error: "Non autorisé pour ce devoir." }, { status: 403 });
   }
 
-  const { textContent, fileUrl } = (await request.json()) ?? {};
+  let requestBody: Record<string, any>;
+  try {
+    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { textContent, fileUrl } = requestBody;
   if (!textContent && !fileUrl) {
     return NextResponse.json(
       { error: "Un texte ou un lien de fichier est requis." },

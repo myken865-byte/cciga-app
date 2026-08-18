@@ -25,7 +25,13 @@ export async function POST(
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
   }
 
-  const { title, description, dueDate } = (await request.json()) ?? {};
+  let requestBody: Record<string, any>;
+  try {
+    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { title, description, dueDate } = requestBody;
   if (!title || !description) {
     return NextResponse.json({ error: "Titre et description requis." }, { status: 400 });
   }
