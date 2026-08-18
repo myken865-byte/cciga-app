@@ -33,12 +33,26 @@ export default async function StudentCoursePage({
       teacher: true,
       materials: { orderBy: { createdAt: "desc" } },
       assignments: { orderBy: { createdAt: "desc" } },
+      lessonModules: {
+        orderBy: { order: "asc" },
+        include: { lessons: { orderBy: { order: "asc" } } },
+      },
     },
   });
 
   if (!course || !user?.programId || course.programId !== user.programId) {
     notFound();
   }
+
+  const lessonIds = course.lessonModules.flatMap((m) => m.lessons.map((l) => l.id));
+  const progressRows = lessonIds.length
+    ? await prisma.lessonProgress.findMany({ where: { studentId: user.id, lessonId: { in: lessonIds } } })
+    : [];
+  const completedLessonIds = new Set(progressRows.map((p) => p.lessonId));
+  const lessonModulesWithProgress = course.lessonModules.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => ({ ...l, completed: completedLessonIds.has(l.id) })),
+  }));
 
   const grades = await prisma.grade.findMany({
     where: {
@@ -73,6 +87,8 @@ export default async function StudentCoursePage({
         }}
         materials={course.materials}
         assignments={course.assignments}
+        lessonModules={lessonModulesWithProgress}
+        showLessonProgress
       />
 
       <div className="mt-8">

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
 import AttendanceForm from "@/components/AttendanceForm";
+import AddLessonModuleForm from "@/components/AddLessonModuleForm";
+import AddLessonForm from "@/components/AddLessonForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
@@ -36,12 +38,18 @@ export default async function TeacherCoursePage({
       assignments: { orderBy: { createdAt: "desc" } },
       evaluationCategories: { orderBy: { createdAt: "asc" } },
       grades: { include: { student: true, assignment: true, evaluationCategory: true }, orderBy: { recordedAt: "desc" } },
+      lessonModules: {
+        orderBy: { order: "asc" },
+        include: { lessons: { orderBy: { order: "asc" } } },
+      },
     },
   });
 
   if (!course || course.teacherId !== session.userId) {
     notFound();
   }
+
+  const moduleOptions = course.lessonModules.map((m) => ({ id: m.id, title: m.title }));
 
   const usesWorkflow = usesGradeWorkflow(course.program.school);
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
@@ -79,6 +87,7 @@ export default async function TeacherCoursePage({
         }}
         materials={course.materials}
         assignments={course.assignments}
+        lessonModules={course.lessonModules}
       />
 
       {usesWorkflow && categoryOptions.length > 0 && (
@@ -96,6 +105,8 @@ export default async function TeacherCoursePage({
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <AttendanceForm courseId={course.id} students={students} />
+        <AddLessonModuleForm courseId={course.id} />
+        <AddLessonForm modules={moduleOptions} />
         <AddCourseMaterialForm courseId={course.id} />
         {!usesWorkflow && <AddAssignmentForm courseId={course.id} />}
         <RecordGradeForm

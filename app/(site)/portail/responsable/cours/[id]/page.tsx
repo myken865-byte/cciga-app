@@ -35,6 +35,10 @@ export default async function ResponsableCoursePage({
       assignments: { orderBy: { createdAt: "desc" } },
       evaluationCategories: { orderBy: { createdAt: "asc" } },
       grades: { include: { student: true, assignment: true, evaluationCategory: true }, orderBy: { recordedAt: "desc" } },
+      lessonModules: {
+        orderBy: { order: "asc" },
+        include: { lessons: { orderBy: { order: "asc" } } },
+      },
     },
   });
   if (!course || !usesGradeWorkflow(course.program.school)) notFound();
@@ -68,6 +72,7 @@ export default async function ResponsableCoursePage({
         }}
         materials={course.materials}
         assignments={course.assignments}
+        lessonModules={course.lessonModules}
       />
 
       <div className="mt-8 space-y-4">

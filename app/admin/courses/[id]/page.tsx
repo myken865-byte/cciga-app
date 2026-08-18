@@ -6,6 +6,8 @@ import { getSession } from "@/lib/auth";
 import { parseRoles, hasRole } from "@/lib/roles";
 import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
+import AddLessonModuleForm from "@/components/AddLessonModuleForm";
+import AddLessonForm from "@/components/AddLessonForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
@@ -41,9 +43,15 @@ export default async function AdminCourseDetailPage({
         include: { student: true, assignment: true, evaluationCategory: true },
         orderBy: { recordedAt: "desc" },
       },
+      lessonModules: {
+        orderBy: { order: "asc" },
+        include: { lessons: { orderBy: { order: "asc" } } },
+      },
     },
   });
   if (!course) notFound();
+
+  const moduleOptions = course.lessonModules.map((m) => ({ id: m.id, title: m.title }));
 
   const isUniversite = course.program.school === "universite";
   const usesWorkflow = usesGradeWorkflow(course.program.school);
@@ -99,6 +107,7 @@ export default async function AdminCourseDetailPage({
             }}
             materials={course.materials}
             assignments={course.assignments}
+            lessonModules={course.lessonModules}
           />
 
           {isUniversite && (
@@ -175,6 +184,8 @@ export default async function AdminCourseDetailPage({
             isSuperAdmin={isSuperAdmin}
           />
           <AttendanceForm courseId={course.id} students={students} />
+          <AddLessonModuleForm courseId={course.id} />
+          <AddLessonForm modules={moduleOptions} />
           <AddCourseMaterialForm courseId={course.id} />
           {!usesWorkflow && <AddAssignmentForm courseId={course.id} />}
           {usesWorkflow && <EvaluationCategoriesPanel courseId={course.id} categories={categoryOptions} />}
