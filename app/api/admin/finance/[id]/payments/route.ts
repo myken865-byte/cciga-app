@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireSecretariatSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { formatHTG } from "@/lib/currency";
+import { writeAuditLog } from "@/lib/auditLog";
 
 export async function POST(
   request: Request,
@@ -32,7 +33,16 @@ export async function POST(
       studentId,
       amount: Math.round(parsedAmount),
       note: note || undefined,
+      recordedById: session.userId,
     },
+  });
+
+  await writeAuditLog({
+    entityType: "Payment",
+    entityId: payment.id,
+    action: "create",
+    actorId: session.userId,
+    after: payment,
   });
 
   await createNotification(studentId, {
