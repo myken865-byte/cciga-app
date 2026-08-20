@@ -131,7 +131,7 @@ export default async function StudentCoursePage({
       studentId: user.id,
       OR: [{ status: null }, { status: "publie" }],
     },
-    include: { assignment: true },
+    include: { assignment: true, evaluationCategory: true },
     orderBy: { recordedAt: "desc" },
   });
 
@@ -212,7 +212,7 @@ export default async function StudentCoursePage({
               <div key={g.id} className="rounded-lg border border-border bg-surface p-4">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-foreground">
-                    {g.assignment?.title ?? "Note générale"}
+                    {g.assignment?.title ?? g.evaluationCategory?.name ?? "Note générale"}
                   </span>
                   <span className="font-semibold text-primary">{g.score}/100</span>
                 </div>
