@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/alt-text -- react-pdf's <Image> renders into a PDF, not the DOM; it has no `alt` prop. */
 import { StyleSheet, View, Text, Image } from "@react-pdf/renderer";
 
 export const styles = StyleSheet.create({

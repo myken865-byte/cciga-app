@@ -13,7 +13,6 @@ export default function ReceiptDocument({
   studentName,
   ccigaId,
   programName,
-  paymentId,
   amountLabel,
   paidAtLabel,
   note,
@@ -27,7 +26,6 @@ export default function ReceiptDocument({
   studentName: string;
   ccigaId: string;
   programName: string;
-  paymentId: string;
   amountLabel: string;
   paidAtLabel: string;
   note: string | null;

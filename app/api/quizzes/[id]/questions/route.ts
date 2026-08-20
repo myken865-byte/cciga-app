@@ -25,14 +25,14 @@ export async function POST(
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
   }
 
-  let requestBody: Record<string, any>;
+  let requestBody: Record<string, unknown>;
   try {
-    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
   const { type, prompt, options, correctAnswer, points, order } = requestBody;
-  if (!prompt || !isQuizQuestionType(type)) {
+  if (typeof prompt !== "string" || !prompt || !isQuizQuestionType(type)) {
     return NextResponse.json({ error: "Question et type valide requis." }, { status: 400 });
   }
   if (type === "qcm" && (!Array.isArray(options) || options.length < 2)) {

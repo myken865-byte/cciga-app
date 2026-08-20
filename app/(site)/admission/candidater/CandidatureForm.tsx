@@ -115,7 +115,7 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
 
     setUploadingLabel(label);
     try {
-      const blob = await upload(`admission-documents/${Date.now()}-${file.name}`, file, {
+      const blob = await upload(`admission-documents/${crypto.randomUUID()}-${file.name}`, file, {
         access: "private",
         handleUploadUrl: "/api/admission/upload",
       });

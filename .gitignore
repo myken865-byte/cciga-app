@@ -55,4 +55,12 @@ next-env.d.ts
 # downloaded build artifacts
 /apk-output
 
+# Android signing key material — never commit
+android/keystore.properties
+android/app/*.keystore
+android/app/*.jks
+*.keystore
+*.jks
+
 .env*
+.vercel

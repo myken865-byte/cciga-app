@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import CreateAcademicYearForm from "@/components/CreateAcademicYearForm";
 import CreateSemesterForm from "@/components/CreateSemesterForm";
@@ -33,13 +34,13 @@ export default async function AdminEcoleProfessionnellePage() {
         Les années académiques et périodes sont partagées avec les autres écoles — créez ici les périodes
         (trimestres/semestres) propres à l&apos;École Professionnelle. Les filières elles-mêmes (fiche
         compétences/stage/certification) se gèrent depuis{" "}
-        <a href="/admin/programs" className="text-primary hover:underline">
+        <Link href="/admin/programs" className="text-primary hover:underline">
           Programmes
-        </a>
+        </Link>
         , et l&apos;attribution des cours/coefficients/périodes depuis{" "}
-        <a href="/admin/courses" className="text-primary hover:underline">
+        <Link href="/admin/courses" className="text-primary hover:underline">
           Cours
-        </a>
+        </Link>
         .
       </p>
 

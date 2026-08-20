@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { hasRole } from "@/lib/roles";
+import { hasRole, hasAnyRole } from "@/lib/roles";
 import type { SessionPayload } from "@/lib/auth";
 
 /**
@@ -14,7 +14,9 @@ export async function resolveBulletinAccess(
 ): Promise<{ targetId: number | null; viewerCanSeeAll: boolean }> {
   if (!session) return { targetId: null, viewerCanSeeAll: false };
 
-  if (hasRole(session.roles, "ADMIN") || hasRole(session.roles, "ACADEMIC_OFFICER")) {
+  // hasRole is exact-membership, so checking "ADMIN" alone would incorrectly
+  // reject a SUPER_ADMIN-only account (the two are distinct role strings).
+  if (hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN", "ACADEMIC_OFFICER"])) {
     return { targetId: requestedId || null, viewerCanSeeAll: true };
   }
   if (requestedId === session.userId) {

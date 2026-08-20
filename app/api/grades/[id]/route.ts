@@ -26,9 +26,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Non autorisé pour cette note." }, { status: 403 });
   }
 
-  let requestBody: Record<string, any>;
+  let requestBody: Record<string, unknown>;
   try {
-    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }

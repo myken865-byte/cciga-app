@@ -59,7 +59,6 @@ export async function GET(
       studentName: student.name,
       ccigaId: formatCcigaId(student.id),
       programName: student.program?.name ?? "Aucun programme associé",
-      paymentId: payment.id,
       amountLabel: pdfSafeHTG(payment.amount),
       paidAtLabel,
       note: payment.note,

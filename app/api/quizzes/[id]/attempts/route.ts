@@ -33,9 +33,9 @@ export async function POST(
     return NextResponse.json({ error: "Nombre maximal de tentatives atteint." }, { status: 400 });
   }
 
-  let requestBody: Record<string, any>;
+  let requestBody: Record<string, unknown>;
   try {
-    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
@@ -43,12 +43,13 @@ export async function POST(
   if (!answers || typeof answers !== "object") {
     return NextResponse.json({ error: "Réponses requises." }, { status: 400 });
   }
+  const answersObj = answers as Record<string, unknown>;
 
   let score = 0;
   for (const question of quiz.questions) {
     const type = question.type as QuizQuestionType;
     if (!isAutoGradable(type)) continue;
-    const given = answers[question.id];
+    const given = answersObj[question.id];
     const correct = question.correctAnswer ? JSON.parse(question.correctAnswer) : null;
     if (given !== undefined && JSON.stringify(given) === JSON.stringify(correct)) {
       score += question.points;

@@ -26,13 +26,20 @@ export async function POST(
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
   }
 
-  let requestBody: Record<string, any>;
+  let requestBody: Record<string, unknown>;
   try {
-    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
   const { studentId, assignmentId, evaluationCategoryId, score, comment } = requestBody;
+  if (
+    (assignmentId !== undefined && typeof assignmentId !== "string") ||
+    (evaluationCategoryId !== undefined && typeof evaluationCategoryId !== "string") ||
+    (comment !== undefined && typeof comment !== "string")
+  ) {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
 
   const parsedScore = Number(score);
   if (!studentId || !Number.isFinite(parsedScore) || parsedScore < 0 || parsedScore > 100) {

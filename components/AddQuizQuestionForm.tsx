@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { quizQuestionTypes, quizQuestionTypeLabels, type QuizQuestionType } from "@/lib/lms";
 
@@ -12,11 +12,15 @@ export default function AddQuizQuestionForm({
   const router = useRouter();
   const [quizId, setQuizId] = useState(quizzes[0]?.id ?? "");
 
-  useEffect(() => {
+  // Adjusted during render (React's recommended pattern) instead of in an
+  // effect, to avoid an extra render pass — see AddLessonForm.tsx.
+  const [prevQuizzes, setPrevQuizzes] = useState(quizzes);
+  if (quizzes !== prevQuizzes) {
+    setPrevQuizzes(quizzes);
     if (!quizzes.some((q) => q.id === quizId)) {
       setQuizId(quizzes[0]?.id ?? "");
     }
-  }, [quizzes, quizId]);
+  }
 
   const [type, setType] = useState<QuizQuestionType>("qcm");
   const [prompt, setPrompt] = useState("");

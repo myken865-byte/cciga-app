@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { lessonContentTypes, lessonContentTypeLabels, type LessonContentType } from "@/lib/lms";
 
@@ -16,12 +16,15 @@ export default function AddLessonForm({
   // after creating the course's first module), but this component stays
   // mounted across that refresh, so its own state doesn't reinitialize.
   // Re-point the selection at a valid module whenever the current one no
-  // longer exists in the list.
-  useEffect(() => {
+  // longer exists in the list — adjusted during render (React's recommended
+  // pattern) instead of in an effect, to avoid an extra render pass.
+  const [prevModules, setPrevModules] = useState(modules);
+  if (modules !== prevModules) {
+    setPrevModules(modules);
     if (!modules.some((m) => m.id === moduleId)) {
       setModuleId(modules[0]?.id ?? "");
     }
-  }, [modules, moduleId]);
+  }
   const [title, setTitle] = useState("");
   const [order, setOrder] = useState("1");
   const [contentType, setContentType] = useState<LessonContentType>("texte");

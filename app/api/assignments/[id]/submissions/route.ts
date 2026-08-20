@@ -27,13 +27,22 @@ export async function POST(
     return NextResponse.json({ error: "Non autorisé pour ce devoir." }, { status: 403 });
   }
 
-  let requestBody: Record<string, any>;
+  let requestBody: Record<string, unknown>;
   try {
-    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
-  const { textContent, fileUrl } = requestBody;
+  const rawTextContent = requestBody.textContent;
+  const rawFileUrl = requestBody.fileUrl;
+  if (
+    (rawTextContent !== undefined && typeof rawTextContent !== "string") ||
+    (rawFileUrl !== undefined && typeof rawFileUrl !== "string")
+  ) {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const textContent: string | undefined = rawTextContent;
+  const fileUrl: string | undefined = rawFileUrl;
   if (!textContent && !fileUrl) {
     return NextResponse.json(
       { error: "Un texte ou un lien de fichier est requis." },

@@ -17,7 +17,11 @@ const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
   { prefix: "/portail/etudiant", roles: ["STUDENT"] },
   { prefix: "/portail/parent", roles: ["PARENT"] },
   { prefix: "/portail/enseignant", roles: ["TEACHER"] },
-  { prefix: "/portail/responsable", roles: ["ACADEMIC_OFFICER"] },
+  // ADMIN/SUPER_ADMIN included: requireReviewerSession (the API-side guard
+  // for the review action) and the course page's own check both already
+  // admit ADMIN alongside ACADEMIC_OFFICER — this must match, or ADMIN gets
+  // redirected to /login before ever reaching a page it's actually allowed to use.
+  { prefix: "/portail/responsable", roles: [...ADMIN_LEVEL, "ACADEMIC_OFFICER"] },
 ];
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);

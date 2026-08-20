@@ -26,24 +26,25 @@ export async function POST(
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
   }
 
-  let requestBody: Record<string, any>;
+  let requestBody: Record<string, unknown>;
   try {
-    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
   const { date, records } = requestBody;
-  if (!date || !Array.isArray(records) || records.length === 0) {
+  if (typeof date !== "string" || !date || !Array.isArray(records) || records.length === 0) {
     return NextResponse.json({ error: "Date et présences requises." }, { status: 400 });
   }
 
   const attendanceDate = new Date(date);
   const alertedStudents: { id: number; name: string }[] = [];
 
-  for (const record of records) {
-    const studentId = Number(record?.studentId);
-    const status = record?.status;
-    if (!Number.isInteger(studentId) || !isAttendanceStatus(status)) continue;
+  for (const record of records as unknown[]) {
+    const r = record as { studentId?: unknown; status?: unknown } | null | undefined;
+    const studentId = Number(r?.studentId);
+    const status = r?.status;
+    if (!Number.isInteger(studentId) || typeof status !== "string" || !isAttendanceStatus(status)) continue;
 
     await prisma.attendance.upsert({
       where: { courseId_studentId_date: { courseId: id, studentId, date: attendanceDate } },

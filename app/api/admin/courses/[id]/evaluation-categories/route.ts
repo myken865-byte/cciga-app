@@ -17,15 +17,15 @@ export async function POST(
     return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
   }
 
-  let requestBody: Record<string, any>;
+  let requestBody: Record<string, unknown>;
   try {
-    requestBody = ((await request.json()) as Record<string, any>) ?? {};
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
   const { name, weightPercent } = requestBody;
   const weight = Number(weightPercent);
-  if (!name || !Number.isFinite(weight) || weight <= 0 || weight > 100) {
+  if (typeof name !== "string" || !name || !Number.isFinite(weight) || weight <= 0 || weight > 100) {
     return NextResponse.json(
       { error: "Nom et pondération (entre 0 et 100) sont requis." },
       { status: 400 },
