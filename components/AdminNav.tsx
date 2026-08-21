@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell, { type NotificationItem } from "@/components/NotificationBell";
@@ -48,19 +49,20 @@ export default function AdminNav({
   const sector = sectorForAdminPathname(pathname);
   const visibleTabs = tabs.filter((tab) => hasAnyRole(roles, tab.roles));
   const homeHref = hasAnyRole(roles, ADMIN_LEVEL) ? "/admin/dashboard" : "/admin/admissions";
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <header className="border-b border-border bg-primary-dark text-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6">
-        <div className="flex items-center gap-6">
-          <Link href={homeHref} className="flex items-center gap-2">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 lg:px-6">
+        <div className="flex min-w-0 items-center gap-6">
+          <Link href={homeHref} className="flex min-w-0 items-center gap-2">
             {sector ? (
-              <SectorLogo sector={sector} className="h-9 w-9 object-contain" />
+              <SectorLogo sector={sector} className="h-9 w-9 shrink-0 object-contain" />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-8 w-8 rounded-md object-contain" />
+              <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-8 w-8 shrink-0 rounded-md object-contain" />
             )}
-            <span className="font-semibold">Administration CCIGA</span>
+            <span className="hidden truncate font-semibold sm:inline">Administration CCIGA</span>
           </Link>
           <nav className="hidden gap-1 sm:flex">
             {visibleTabs.map((tab) => (
@@ -78,14 +80,43 @@ export default function AdminNav({
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex shrink-0 items-center gap-2 text-sm sm:gap-4">
           <NotificationBell notifications={notifications} dark />
-          <Link href="/mon-espace" className="text-white/70 hover:text-white">
+          <Link href="/mon-espace" className="hidden text-white/70 hover:text-white sm:inline">
             {name}
           </Link>
           <LogoutButton className="rounded-md border border-white/30 px-3 py-1.5 hover:bg-white/10" />
+          <button
+            className="flex items-center rounded-md border border-white/30 p-2 sm:hidden"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Ouvrir le menu d'administration"
+          >
+            <span className="text-xl">☰</span>
+          </button>
         </div>
       </div>
+
+      {mobileOpen && (
+        <nav className="border-t border-white/10 bg-primary-dark px-4 py-3 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="px-3 py-1 text-xs uppercase tracking-wide text-white/60">{name}</span>
+            {visibleTabs.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                onClick={() => setMobileOpen(false)}
+                className={`rounded-md px-3 py-2 text-sm ${
+                  pathname.startsWith(tab.href)
+                    ? "bg-white/15 font-semibold"
+                    : "text-white/80 hover:bg-white/10"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
