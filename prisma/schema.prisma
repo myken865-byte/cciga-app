@@ -42,6 +42,11 @@ model User {
   passwordResetTokenHash String?   @unique
   passwordResetExpires   DateTime?
 
+  // Optionnelle — réutilisée par le gabarit de badge quand elle existe.
+  // Aucune photo réelle collectée par défaut ; upload via @vercel/blob (même
+  // mécanisme que les pièces jointes du guichet parent et de l'admission).
+  photoUrl String?
+
   admissionSubmissions AdmissionSubmission[]
 
   programId String?
@@ -78,6 +83,26 @@ model User {
   quizAttempts           QuizAttempt[]      @relation("QuizAttemptStudent")
   quizAttemptsGraded     QuizAttempt[]      @relation("QuizAttemptGradedBy")
   courseAnnouncements    CourseAnnouncement[]
+
+  parentRequestsSent    ParentRequest[]        @relation("ParentRequestParent")
+  parentRequestsAbout   ParentRequest[]        @relation("ParentRequestStudent")
+  parentRequestMessages ParentRequestMessage[]
+
+  employeeProfile         Employee?              @relation("EmployeeProfile")
+  leaveRequestsReviewed   EmployeeLeaveRequest[]  @relation("LeaveReviewedBy")
+  badge                   Badge?                 @relation("BadgeOwner")
+  badgesIssued            Badge[]                @relation("BadgeIssuedBy")
+  infirmaryVisitsAbout    InfirmaryVisit[]        @relation("InfirmaryVisitStudent")
+  infirmaryVisitsRecorded InfirmaryVisit[]        @relation("InfirmaryVisitRecordedBy")
+  psychosocialCasesAbout  PsychosocialCase[]      @relation("PsychosocialCaseStudent")
+  psychosocialCasesOpened PsychosocialCase[]      @relation("PsychosocialCaseOpenedBy")
+  psychosocialNotes       PsychosocialNote[]      @relation("PsychosocialNoteAuthor")
+  bookLoans               BookLoan[]              @relation("BookLoanBorrower")
+  bookLoansRecorded       BookLoan[]              @relation("BookLoanRecordedBy")
+  transportAssignments    TransportAssignment[]   @relation("TransportAssignmentStudent")
+  canteenReservations     CanteenReservation[]    @relation("CanteenReservationStudent")
+  inventoryItemsAssigned  InventoryItem[]         @relation("InventoryAssignedTo")
+  enrollmentSnapshotsCaptured EnrollmentSnapshot[] @relation("EnrollmentSnapshotCapturedBy")
 }
 
 model Faculty {
@@ -100,8 +125,30 @@ model AcademicYear {
   isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  semesters         Semester[]
-  academicDocuments AcademicDocument[]
+  semesters           Semester[]
+  academicDocuments   AcademicDocument[]
+  enrollmentSnapshots EnrollmentSnapshot[]
+}
+
+/**
+ * Historisation pluriannuelle des effectifs — capture manuelle et explicite
+ * (jamais rétroactive) du nombre réel d'élèves/étudiants par programme, liée
+ * à l'année académique active au moment de la capture. Une entrée par
+ * (année, programme) : une nouvelle capture pour la même année académique
+ * met à jour SA PROPRE ligne, elle n'écrase jamais celle d'une autre année.
+ */
+model EnrollmentSnapshot {
+  id             String       @id @default(cuid())
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  programId      String
+  program        Program      @relation(fields: [programId], references: [id])
+  studentCount   Int
+  capturedAt     DateTime     @default(now())
+  capturedById   Int?
+  capturedBy     User?        @relation("EnrollmentSnapshotCapturedBy", fields: [capturedById], references: [id])
+
+  @@unique([academicYearId, programId])
 }
 
 model Semester {
@@ -154,6 +201,7 @@ model Program {
   observations      Observation[]
   academicDocuments AcademicDocument[]
   appreciations     StudentAppreciation[]
+  enrollmentSnapshots EnrollmentSnapshot[]
 }
 
 model Payment {
@@ -165,6 +213,12 @@ model Payment {
   note         String?
   recordedById Int?
   recordedBy   User?    @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
+
+  // Abstraction fournisseur — préparée pour MonCash/NatCash sans identifiants réels.
+  // "manuel" (défaut) préserve le comportement existant à 100% pour toutes les lignes déjà en base.
+  provider          String  @default("manuel") // manuel | moncash | natcash
+  providerReference String? // référence de transaction retournée par le fournisseur (absent pour "manuel")
+  status            String  @default("confirme") // en_attente | confirme | echoue
 }
 
 model Course {
@@ -502,6 +556,46 @@ model AcademicDocument {
   @@index([studentId, programId])
 }
 
+/**
+ * Digital guichet: a parent-initiated request routed to a service
+ * (administration/secrétariat/comptabilité/direction pédagogique), tracked
+ * through a status workflow, with a threaded reply history.
+ */
+model ParentRequest {
+  id             String   @id @default(cuid())
+  studentId      Int
+  student        User     @relation("ParentRequestStudent", fields: [studentId], references: [id])
+  parentId       Int
+  parent         User     @relation("ParentRequestParent", fields: [parentId], references: [id])
+  category       String
+  service        String
+  subject        String
+  status         String   @default("envoyee")
+  attachmentUrl  String?
+  attachmentName String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  messages ParentRequestMessage[]
+
+  @@index([parentId])
+  @@index([studentId])
+  @@index([service])
+  @@index([status])
+}
+
+model ParentRequestMessage {
+  id        String        @id @default(cuid())
+  requestId String
+  request   ParentRequest @relation(fields: [requestId], references: [id])
+  authorId  Int
+  author    User          @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime      @default(now())
+
+  @@index([requestId])
+}
+
 model StudentAppreciation {
   id           String   @id @default(cuid())
   studentId    Int
@@ -518,4 +612,190 @@ model StudentAppreciation {
   updatedAt    DateTime @updatedAt
 
   @@unique([studentId, semesterId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Modules institutionnels complémentaires (DEV/TEST) — tous additifs.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Portail Personnel / RH — un profil employé par membre du personnel. */
+model Employee {
+  id           String   @id @default(cuid())
+  userId       Int      @unique
+  user         User     @relation("EmployeeProfile", fields: [userId], references: [id])
+  fonction     String
+  departement  String
+  typeContrat  String // cdi | cdd | vacataire | autre
+  dateEntree   DateTime
+  statut       String   @default("actif") // actif | conge | suspendu | termine
+  horaire      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  leaveRequests EmployeeLeaveRequest[]
+}
+
+model EmployeeLeaveRequest {
+  id           String    @id @default(cuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  type         String // conge | absence | retard
+  startDate    DateTime
+  endDate      DateTime?
+  reason       String?
+  status       String    @default("soumis") // soumis | approuve | rejete
+  reviewedById Int?
+  reviewedBy   User?     @relation("LeaveReviewedBy", fields: [reviewedById], references: [id])
+  createdAt    DateTime  @default(now())
+
+  @@index([employeeId])
+}
+
+/** Contrôle d'accès — un badge par identité (personnel ou apprenant), sans simulation de scan matériel. */
+model Badge {
+  id          String   @id @default(cuid())
+  userId      Int      @unique
+  user        User     @relation("BadgeOwner", fields: [userId], references: [id])
+  badgeNumber String   @unique
+  status      String   @default("actif") // actif | perdu | remplace | inactif
+  issuedAt    DateTime @default(now())
+  issuedById  Int?
+  issuedBy    User?    @relation("BadgeIssuedBy", fields: [issuedById], references: [id])
+}
+
+/** Infirmerie — registre des passages, accès limité au personnel autorisé. */
+model InfirmaryVisit {
+  id                String   @id @default(cuid())
+  studentId         Int
+  student           User     @relation("InfirmaryVisitStudent", fields: [studentId], references: [id])
+  visitDate         DateTime @default(now())
+  category          String
+  observations      String?
+  contactedGuardian Boolean  @default(false)
+  recordedById      Int
+  recordedBy        User     @relation("InfirmaryVisitRecordedBy", fields: [recordedById], references: [id])
+  createdAt         DateTime @default(now())
+
+  @@index([studentId])
+}
+
+/** Suivi psychosocial — dossier protégé, accès strictement restreint. */
+model PsychosocialCase {
+  id         String   @id @default(cuid())
+  studentId  Int
+  student    User     @relation("PsychosocialCaseStudent", fields: [studentId], references: [id])
+  status     String   @default("ouvert") // ouvert | suivi | cloture
+  openedById Int
+  openedBy   User     @relation("PsychosocialCaseOpenedBy", fields: [openedById], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  notes      PsychosocialNote[]
+
+  @@index([studentId])
+}
+
+model PsychosocialNote {
+  id       String           @id @default(cuid())
+  caseId   String
+  case     PsychosocialCase @relation(fields: [caseId], references: [id])
+  body     String
+  authorId Int
+  author   User             @relation("PsychosocialNoteAuthor", fields: [authorId], references: [id])
+  createdAt DateTime        @default(now())
+
+  @@index([caseId])
+}
+
+/** Bibliothèque — catalogue et emprunts. */
+model Book {
+  id          String   @id @default(cuid())
+  title       String
+  author      String
+  category    String
+  isbn        String?
+  totalCopies Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  loans       BookLoan[]
+}
+
+model BookLoan {
+  id           String    @id @default(cuid())
+  bookId       String
+  book         Book      @relation(fields: [bookId], references: [id])
+  borrowerId   Int
+  borrower     User      @relation("BookLoanBorrower", fields: [borrowerId], references: [id])
+  borrowedAt   DateTime  @default(now())
+  dueDate      DateTime
+  returnedAt   DateTime?
+  recordedById Int?
+  recordedBy   User?     @relation("BookLoanRecordedBy", fields: [recordedById], references: [id])
+
+  @@index([bookId])
+  @@index([borrowerId])
+}
+
+/** Transport — véhicules et affectations, sans données institutionnelles inventées. */
+model Vehicle {
+  id       String   @id @default(cuid())
+  label    String
+  plate    String?
+  capacity Int?
+  status   String   @default("actif")
+  driverName String?
+  schedule String?
+
+  assignments TransportAssignment[]
+}
+
+model TransportAssignment {
+  id        String   @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  studentId Int
+  student   User     @relation("TransportAssignmentStudent", fields: [studentId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([vehicleId])
+  @@index([studentId])
+}
+
+/** Cantine — menus et réservations. */
+model CanteenMenu {
+  id          String   @id @default(cuid())
+  date        DateTime
+  label       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  reservations CanteenReservation[]
+}
+
+model CanteenReservation {
+  id        String   @id @default(cuid())
+  menuId    String
+  menu      CanteenMenu @relation(fields: [menuId], references: [id])
+  studentId Int
+  student   User     @relation("CanteenReservationStudent", fields: [studentId], references: [id])
+  status    String   @default("reserve") // reserve | servi | annule
+  createdAt DateTime @default(now())
+
+  @@index([menuId])
+  @@index([studentId])
+}
+
+/** Inventaire / Patrimoine. */
+model InventoryItem {
+  id           String   @id @default(cuid())
+  name         String
+  category     String // equipement | mobilier | informatique | pedagogique | laboratoire
+  identifier   String?  @unique
+  location     String?
+  condition    String   @default("bon") // bon | moyen | mauvais | hors_service
+  quantity     Int      @default(1)
+  assignedToId Int?
+  assignedTo   User?    @relation("InventoryAssignedTo", fields: [assignedToId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
