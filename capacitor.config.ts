@@ -5,10 +5,10 @@ const config: CapacitorConfig = {
   appName: 'CCIGA App',
   webDir: 'public',
   server: {
-    // Real Production. DEV/TEST builds temporarily point this at
-    // https://cciga-app-devtest.vercel.app (isolated preview project) and
-    // must always be reverted here before any Release build.
-    url: 'https://cciga-app.vercel.app',
+    // TEMPORARY — private test APK build, DEV/TEST bypass preview only.
+    // Points at the isolated preprod preview alias, never the real Production URL.
+    // Not used for the signed Release AAB — that build uses Production.
+    url: 'https://cciga-app-devtest.vercel.app',
     androidScheme: 'https',
     errorPath: 'offline.html',
   },
