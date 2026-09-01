@@ -6,10 +6,10 @@ ensureDocumentFontRegistered();
 
 export const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: DOCUMENT_FONT_FAMILY, color: "#1a1a1a" },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 16, borderBottom: 2, borderBottomColor: "#0f2d52", paddingBottom: 10 },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 16, borderBottom: 2, borderBottomColor: "#00185a", paddingBottom: 10 },
   logo: { width: 40, height: 40, marginRight: 12 },
   headerTitleBlock: { flex: 1 },
-  orgName: { fontSize: 14, fontWeight: 700, color: "#0f2d52" },
+  orgName: { fontSize: 14, fontWeight: 700, color: "#00185a" },
   docTitle: { fontSize: 12, marginTop: 2, color: "#1a1a1a" },
   identityBlock: { marginBottom: 14 },
   identityBlockRow: { flexDirection: "row", justifyContent: "space-between" },

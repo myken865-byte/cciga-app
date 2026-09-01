@@ -176,7 +176,7 @@ export default function AdminNav({
                   aria-current={active ? "page" : undefined}
                   className={`group flex items-center gap-3 rounded-md border-l-2 px-2.5 py-2 text-sm transition-colors ${
                     active
-                      ? "border-accent bg-white/15 font-semibold text-white"
+                      ? "border-accent-vivid bg-white/15 font-semibold text-white"
                       : "border-transparent text-white/75 hover:border-white/30 hover:bg-white/10 hover:text-white"
                   } ${collapsed ? "justify-center" : ""}`}
                 >

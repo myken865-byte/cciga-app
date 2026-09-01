@@ -56,14 +56,14 @@ export default function NotificationBell({
       >
         🔔
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-primary-dark">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-vivid px-1 text-[10px] font-bold text-primary-dark">
             {unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-border bg-surface shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 card shadow-xl">
           <div className="flex items-center justify-between border-b border-border px-4 py-2">
             <span className="text-sm font-semibold text-foreground">Notifications</span>
             {unreadCount > 0 && (
@@ -86,7 +86,7 @@ export default function NotificationBell({
                 >
                   <div className="mb-0.5 flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-foreground">{n.title}</span>
-                    {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />}
+                    {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-accent-vivid" />}
                   </div>
                   <p className="text-xs text-muted">{n.body}</p>
                   <p className="mt-1 text-[11px] text-muted">{formatDate(n.createdAt)}</p>

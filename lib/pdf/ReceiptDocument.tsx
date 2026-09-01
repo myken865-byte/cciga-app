@@ -4,7 +4,7 @@ import { styles as shared, DocumentHeader, DocumentFooter } from "@/lib/pdf/shar
 const styles = StyleSheet.create({
   amountBlock: { marginTop: 18, marginBottom: 18, padding: 14, backgroundColor: "#f7f7f7", alignItems: "center" },
   amountLabel: { fontSize: 9, color: "#555555", marginBottom: 4 },
-  amountValue: { fontSize: 22, fontWeight: 700, color: "#0f2d52" },
+  amountValue: { fontSize: 22, fontWeight: 700, color: "#00185a" },
   row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
 });
 
