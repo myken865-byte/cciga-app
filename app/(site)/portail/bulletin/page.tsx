@@ -28,26 +28,26 @@ export default async function BulletinPage({
 
   if (!session) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-14 text-center lg:px-6">
-        <h1 className="mb-2 text-2xl font-bold text-foreground">Bulletin</h1>
-        <p className="text-muted">
-          Connectez-vous à votre compte CCIGA ID pour consulter un bulletin.
-        </p>
-        <Link href="/login" className="mt-4 inline-block text-primary hover:underline">
-          Se connecter →
-        </Link>
+      <div className="mx-auto max-w-2xl lg:max-w-4xl xl:max-w-5xl px-4 py-14 lg:px-6">
+        <h1 className="mb-4 text-2xl font-bold text-foreground">Bulletin</h1>
+        <div className="empty-state">
+          <p>Connectez-vous à votre compte CCIGA ID pour consulter un bulletin.</p>
+          <Link href="/login" className="btn-primary mt-3">
+            Se connecter
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (targetId === null) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-14 text-center lg:px-6">
-        <h1 className="mb-2 text-2xl font-bold text-foreground">Bulletin</h1>
-        <p className="text-muted">
+      <div className="mx-auto max-w-2xl lg:max-w-4xl xl:max-w-5xl px-4 py-14 lg:px-6">
+        <h1 className="mb-4 text-2xl font-bold text-foreground">Bulletin</h1>
+        <div className="empty-state">
           Vous n&apos;avez pas accès à ce bulletin. Seul l&apos;élève concerné, ses parents liés,
           son titulaire de classe, un responsable académique ou l&apos;administration peuvent le consulter.
-        </p>
+        </div>
       </div>
     );
   }
@@ -55,8 +55,8 @@ export default async function BulletinPage({
   const student = await prisma.user.findUnique({ where: { id: targetId }, include: { program: true } });
   if (!student) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-14 text-center lg:px-6">
-        <p className="text-muted">Élève introuvable.</p>
+      <div className="mx-auto max-w-2xl lg:max-w-4xl xl:max-w-5xl px-4 py-14 lg:px-6">
+        <div className="empty-state">Élève introuvable.</div>
       </div>
     );
   }
@@ -144,7 +144,7 @@ export default async function BulletinPage({
     return (
       <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
         {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
-        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
+        <p className="section-label mb-2">
           {isUniversite
             ? "Relevé de notes universitaire"
             : isEcoleProfessionnelle
@@ -157,9 +157,7 @@ export default async function BulletinPage({
         </p>
 
         {periodSections.length === 0 ? (
-          <p className="rounded-lg border border-border bg-surface p-6 text-center text-muted">
-            Aucun cours rattaché à une période pour le moment.
-          </p>
+          <div className="empty-state">Aucun cours rattaché à une période pour le moment.</div>
         ) : (
           <div className="space-y-8">
             {periodSections.map((sec) => (
@@ -192,7 +190,7 @@ export default async function BulletinPage({
                   ) : isEcoleProfessionnelle &&
                     sec.result.decision === "reussi" &&
                     student.program!.certification ? (
-                    <div className="mt-3 rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">
+                    <div className="mt-3 rounded-md bg-success-bg p-3 text-sm text-success">
                       Certification délivrée : {student.program!.certification}
                     </div>
                   ) : undefined
@@ -203,36 +201,38 @@ export default async function BulletinPage({
         )}
 
         {periodSections.length > 0 && (
-          <div className="mt-8 rounded-lg border border-border bg-surface p-6">
-            <h2 className="mb-3 font-semibold text-foreground">
-              {isUniversite ? "Relevé complet — moyenne cumulative" : "Récapitulatif annuel"}
-            </h2>
-            <table className="w-full text-left text-sm">
-              <thead className="bg-background text-muted">
-                <tr>
-                  <th className="px-3 py-2 font-semibold">Période</th>
-                  <th className="px-3 py-2 font-semibold">Moyenne</th>
-                  <th className="px-3 py-2 font-semibold">Décision</th>
-                </tr>
-              </thead>
-              <tbody>
-                {periodSections.map((sec) => (
-                  <tr key={sec.semesterId} className="border-t border-border">
-                    <td className="px-3 py-2 text-foreground">{sec.periodLabel}</td>
-                    <td className="px-3 py-2 text-muted">
-                      {sec.result.average !== null ? `${sec.result.average.toFixed(1)}/100` : "—"}
-                    </td>
-                    <td className="px-3 py-2 text-muted">{academicDecisionLabels[sec.result.decision]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-3 text-sm text-muted">
-              Moyenne {isUniversite ? "cumulative" : "annuelle"} :{" "}
-              <span className="font-semibold text-primary">
+          <div className="mt-8 card p-5 sm:p-6">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-bold text-foreground">
+                {isUniversite ? "Relevé complet — moyenne cumulative" : "Récapitulatif annuel"}
+              </h2>
+              <span className="badge badge-info text-sm">
+                Moyenne {isUniversite ? "cumulative" : "annuelle"} :{" "}
                 {annualAverage !== null ? annualAverage.toFixed(1) : "—"}/100
               </span>
-            </p>
+            </div>
+            <div className="overflow-x-auto card">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-surface-alt text-muted">
+                  <tr>
+                    <th className="px-3 py-2.5 font-semibold">Période</th>
+                    <th className="px-3 py-2.5 font-semibold">Moyenne</th>
+                    <th className="px-3 py-2.5 font-semibold">Décision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {periodSections.map((sec) => (
+                    <tr key={sec.semesterId} className="border-t border-border">
+                      <td className="px-3 py-2.5 text-foreground">{sec.periodLabel}</td>
+                      <td className="px-3 py-2.5 text-muted">
+                        {sec.result.average !== null ? `${sec.result.average.toFixed(1)}/100` : "—"}
+                      </td>
+                      <td className="px-3 py-2.5 text-muted">{academicDecisionLabels[sec.result.decision]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -240,8 +240,8 @@ export default async function BulletinPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-14 text-center lg:px-6">
-      <p className="text-muted">Aucun programme rattaché à ce compte.</p>
+    <div className="mx-auto max-w-2xl lg:max-w-4xl xl:max-w-5xl px-4 py-14 lg:px-6">
+      <div className="empty-state">Aucun programme rattaché à ce compte.</div>
     </div>
   );
 }

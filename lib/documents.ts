@@ -68,17 +68,19 @@ export async function computePeriodReadiness(programId: string, semesterId: stri
 }
 
 /**
- * Bulk-generates (and publishes) documents for every ready student in a
- * period who doesn't already have one — the only way an AcademicDocument row
- * is ever created. Skips students who already have a current document in
- * this group (a grade correction after publication goes through
- * regenerateDocumentVersion instead, never through this bulk action).
+ * Génère (et publie) le document d'UN SEUL élève pour une période — brique
+ * réutilisée à la fois par la génération par classe (generateDocumentsForPeriod)
+ * et par l'action individuelle depuis le dossier élève, pour ne jamais
+ * dupliquer cette logique (une note saisie une fois n'est jamais ressaisie).
+ * Ne fait rien si l'élève n'est pas prêt (notes manquantes/non publiées) ou
+ * possède déjà un document courant pour ce groupe.
  */
-export async function generateDocumentsForPeriod(
+export async function generateDocumentForStudent(
+  studentId: number,
   programId: string,
   semesterId: string,
   actorId: number,
-): Promise<number> {
+): Promise<{ created: boolean; documentId?: string; reason?: string }> {
   const [program, semester, courses] = await Promise.all([
     prisma.program.findUnique({ where: { id: programId } }),
     prisma.semester.findUnique({ where: { id: semesterId }, include: { academicYear: true } }),
@@ -87,12 +89,22 @@ export async function generateDocumentsForPeriod(
       include: { evaluationCategories: true },
     }),
   ]);
-  if (!program || !semester) return 0;
+  if (!program || !semester) return { created: false, reason: "Programme ou période introuvable." };
 
   const type = documentTypeForSchool(program.school);
   const readiness = await computePeriodReadiness(programId, semesterId);
-  const readyStudents = readiness.filter((r) => r.ready && !r.hasDocument);
-  if (readyStudents.length === 0) return 0;
+  const studentReadiness = readiness.find((r) => r.studentId === studentId);
+  if (!studentReadiness) return { created: false, reason: "Élève non inscrit à ce programme." };
+  if (studentReadiness.hasDocument) return { created: false, reason: "Un bulletin existe déjà pour cette période." };
+  if (!studentReadiness.ready) {
+    return {
+      created: false,
+      reason:
+        studentReadiness.missing.length > 0
+          ? `Notes manquantes : ${studentReadiness.missing.map((m) => m.categoryName).join(", ")}`
+          : "Notes non publiées.",
+    };
+  }
 
   const cohortIds = readiness.map((r) => r.studentId);
   const allGrades = await prisma.grade.findMany({
@@ -100,75 +112,92 @@ export async function generateDocumentsForPeriod(
   });
   const weightField = type === "releve_semestre" ? "credits" : "coefficient";
 
+  const result = computeStudentPeriodResult({
+    studentId,
+    courses,
+    grades: allGrades,
+    weightField,
+    passingGrade: program.passingGrade,
+    rankingEnabled: program.rankingEnabled,
+    cohortIds,
+  });
+
+  const appreciation = await prisma.studentAppreciation.findUnique({
+    where: { studentId_semesterId: { studentId, semesterId } },
+  });
+  const attendances = await prisma.attendance.findMany({
+    where: { studentId, courseId: { in: courses.map((c) => c.id) } },
+  });
+
+  const snapshotData = {
+    studentName: studentReadiness.studentName,
+    programName: program.name,
+    periodLabel: `${semester.academicYear.label} — ${semester.name}`,
+    courseFinals: result.courseFinals,
+    average: result.average,
+    decision: result.decision,
+    rank: result.rank,
+    rankingEnabled: program.rankingEnabled,
+    absences: attendances.filter((a) => a.status === "absent").length,
+    retards: attendances.filter((a) => a.status === "retard").length,
+    appreciation: appreciation?.appreciation ?? null,
+    conduct: appreciation?.conduct ?? null,
+    certification: result.decision === "reussi" ? program.certification : null,
+    generatedAt: new Date().toISOString(),
+  };
+
+  const documentGroupKey = `${type}:${studentId}:${programId}:${semesterId}`;
+  const doc = await prisma.academicDocument.create({
+    data: {
+      type,
+      studentId,
+      programId,
+      semesterId,
+      academicYearId: semester.academicYearId,
+      status: "publie",
+      version: 1,
+      documentGroupKey,
+      snapshotData: JSON.stringify(snapshotData),
+      generatedById: actorId,
+      publishedAt: new Date(),
+    },
+  });
+
+  await writeAuditLog({
+    entityType: "AcademicDocument",
+    entityId: doc.id,
+    action: "generate_publish",
+    actorId,
+    after: { studentId, type, average: result.average, decision: result.decision },
+  });
+
+  await createNotification(studentId, {
+    type: "document",
+    title: "Bulletin/relevé disponible",
+    body: `Votre document pour ${snapshotData.periodLabel} est maintenant disponible.`,
+  });
+
+  return { created: true, documentId: doc.id };
+}
+
+/**
+ * Génère en masse — appelle generateDocumentForStudent pour chaque élève prêt
+ * n'ayant pas encore de document. Les élèves aux notes incomplètes sont
+ * simplement ignorés ici (déjà signalés séparément par computePeriodReadiness),
+ * sans jamais bloquer la génération des bulletins complets des autres élèves.
+ */
+export async function generateDocumentsForPeriod(
+  programId: string,
+  semesterId: string,
+  actorId: number,
+): Promise<number> {
+  const readiness = await computePeriodReadiness(programId, semesterId);
+  const readyStudents = readiness.filter((r) => r.ready && !r.hasDocument);
+
   let created = 0;
   for (const student of readyStudents) {
-    const result = computeStudentPeriodResult({
-      studentId: student.studentId,
-      courses,
-      grades: allGrades,
-      weightField,
-      passingGrade: program.passingGrade,
-      rankingEnabled: program.rankingEnabled,
-      cohortIds,
-    });
-
-    const appreciation = await prisma.studentAppreciation.findUnique({
-      where: { studentId_semesterId: { studentId: student.studentId, semesterId } },
-    });
-
-    const attendances = await prisma.attendance.findMany({
-      where: { studentId: student.studentId, courseId: { in: courses.map((c) => c.id) } },
-    });
-
-    const snapshotData = {
-      studentName: student.studentName,
-      programName: program.name,
-      periodLabel: `${semester.academicYear.label} — ${semester.name}`,
-      courseFinals: result.courseFinals,
-      average: result.average,
-      decision: result.decision,
-      rank: result.rank,
-      rankingEnabled: program.rankingEnabled,
-      absences: attendances.filter((a) => a.status === "absent").length,
-      retards: attendances.filter((a) => a.status === "retard").length,
-      appreciation: appreciation?.appreciation ?? null,
-      conduct: appreciation?.conduct ?? null,
-      certification: result.decision === "reussi" ? program.certification : null,
-      generatedAt: new Date().toISOString(),
-    };
-
-    const documentGroupKey = `${type}:${student.studentId}:${programId}:${semesterId}`;
-    const doc = await prisma.academicDocument.create({
-      data: {
-        type,
-        studentId: student.studentId,
-        programId,
-        semesterId,
-        academicYearId: semester.academicYearId,
-        status: "publie",
-        version: 1,
-        documentGroupKey,
-        snapshotData: JSON.stringify(snapshotData),
-        generatedById: actorId,
-        publishedAt: new Date(),
-      },
-    });
-
-    await writeAuditLog({
-      entityType: "AcademicDocument",
-      entityId: doc.id,
-      action: "generate_publish",
-      actorId,
-      after: { studentId: student.studentId, type, average: result.average, decision: result.decision },
-    });
-
-    await createNotification(student.studentId, {
-      type: "document",
-      title: "Bulletin/relevé disponible",
-      body: `Votre document pour ${snapshotData.periodLabel} est maintenant disponible.`,
-    });
-
-    created += 1;
+    const result = await generateDocumentForStudent(student.studentId, programId, semesterId, actorId);
+    if (result.created) created += 1;
   }
 
   return created;

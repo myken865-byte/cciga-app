@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { isRole, hasRole, hasAnyRole, parseRoles, privilegedRoles, type Role } from "@/lib/roles";
+import { ensureBadgeForUser } from "@/lib/badgeAuto";
 
 export async function PATCH(
   request: Request,
@@ -19,7 +20,8 @@ export async function PATCH(
     return NextResponse.json({ error: "Compte introuvable." }, { status: 404 });
   }
 
-  const { name, roles, programId } = (await request.json()) ?? {};
+  const { name, roles, programId, photoUrl, dob, phone, address, active, parentId } =
+    (await request.json()) ?? {};
 
   if (!name) {
     return NextResponse.json({ error: "Nom requis." }, { status: 400 });
@@ -62,10 +64,44 @@ export async function PATCH(
     newProgramId = program.id;
   }
 
+  let newParentId: number | null | undefined = undefined;
+  if (roles.includes("STUDENT") && parentId !== undefined) {
+    if (parentId === null) {
+      newParentId = null;
+    } else {
+      const parent = await prisma.user.findUnique({ where: { id: Number(parentId) } });
+      if (!parent || !hasRole(parseRoles(parent.roles), "PARENT")) {
+        return NextResponse.json({ error: "Parent invalide." }, { status: 400 });
+      }
+      newParentId = parent.id;
+    }
+  }
+
+  // Un compte ne se réactive/archive que par cette action explicite — jamais
+  // en effet de bord d'une simple modification de nom ou de rôle.
+  const newActive = typeof active === "boolean" ? active : undefined;
+
   await prisma.user.update({
     where: { id: userId },
-    data: { name, roles: JSON.stringify(roles), programId: newProgramId },
+    data: {
+      name,
+      roles: JSON.stringify(roles),
+      programId: newProgramId,
+      parentId: newParentId,
+      photoUrl: photoUrl !== undefined ? photoUrl || null : undefined,
+      dob: dob !== undefined ? (dob ? new Date(dob) : null) : undefined,
+      phone: phone !== undefined ? phone || null : undefined,
+      address: address !== undefined ? address || null : undefined,
+      active: newActive,
+    },
   });
+
+  // Régénération automatique contrôlée : une classe/programme désormais
+  // assigné (ou retiré) fait automatiquement basculer le statut du badge
+  // existant entre "actif" et "à finaliser" — jamais son ID ni son numéro.
+  if (roles.includes("STUDENT")) {
+    await ensureBadgeForUser(userId, session.userId);
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -53,7 +53,7 @@ export default function EcoleClassiquePage() {
               ))}
             </ul>
             <Link
-              href="/admission/candidater"
+              href={`/admission/candidater?school=${school.slug}`}
               className="mt-5 block rounded-md bg-accent px-4 py-2 text-center text-sm font-semibold text-primary-dark hover:bg-accent-light"
             >
               Candidater à {school.name}
