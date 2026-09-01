@@ -25,7 +25,15 @@ export default async function MonEspacePage() {
           <h1 className="mb-1 text-3xl font-bold text-foreground">Bonjour {session.name}</h1>
           <p className="font-mono text-sm text-muted">{formatCcigaId(session.userId)}</p>
         </div>
-        <LogoutButton className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface" />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/mon-espace/mot-de-passe"
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface"
+          >
+            Changer mon mot de passe
+          </Link>
+          <LogoutButton className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface" />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

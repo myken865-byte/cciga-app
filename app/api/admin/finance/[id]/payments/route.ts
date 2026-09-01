@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { formatHTG } from "@/lib/currency";
+import { writeAuditLog } from "@/lib/auditLog";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
@@ -32,7 +33,16 @@ export async function POST(
       studentId,
       amount: Math.round(parsedAmount),
       note: note || undefined,
+      recordedById: session.userId,
     },
+  });
+
+  await writeAuditLog({
+    entityType: "Payment",
+    entityId: payment.id,
+    action: "create",
+    actorId: session.userId,
+    after: payment,
   });
 
   await createNotification(studentId, {

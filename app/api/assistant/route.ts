@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildSystemPrompt } from "@/lib/ai/systemPrompt";
+import { getClientKey, isRateLimited } from "@/lib/ai/rateLimit";
 
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_HISTORY = 20;
@@ -18,9 +19,27 @@ export async function POST(request: Request) {
     );
   }
 
-  const { messages } = (await request.json()) ?? {};
+  if (isRateLimited(getClientKey(request))) {
+    return NextResponse.json(
+      { error: "rate_limited", message: "Trop de messages envoyés. Merci de patienter une minute avant de réessayer." },
+      { status: 429 },
+    );
+  }
+
+  let messages: unknown;
+  try {
+    ({ messages } = (await request.json()) ?? {});
+  } catch {
+    return NextResponse.json(
+      { error: "invalid_body", message: "Requête invalide." },
+      { status: 400 },
+    );
+  }
   if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json({ error: "Message requis." }, { status: 400 });
+    return NextResponse.json(
+      { error: "empty_message", message: "Veuillez saisir un message." },
+      { status: 400 },
+    );
   }
 
   const history: ChatMessage[] = messages
@@ -35,7 +54,10 @@ export async function POST(request: Request) {
     .slice(-MAX_HISTORY);
 
   if (history.length === 0) {
-    return NextResponse.json({ error: "Message invalide." }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid_message", message: "Message trop long ou invalide (limite : 1000 caractères)." },
+      { status: 400 },
+    );
   }
 
   const system = await buildSystemPrompt();

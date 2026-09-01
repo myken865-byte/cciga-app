@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasRole } from "@/lib/roles";
+import { hasAnyRole } from "@/lib/roles";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Élève introuvable." }, { status: 400 });
   }
 
-  const isAdmin = hasRole(session.roles, "ADMIN");
+  const isAdmin = hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
   const isTitulaire = student.program?.titulaireId === session.userId;
   const isParent = student.parentId === session.userId;
   if (!isAdmin && !isTitulaire && !isParent) {

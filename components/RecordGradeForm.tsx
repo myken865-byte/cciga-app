@@ -50,7 +50,7 @@ export default function RecordGradeForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: Number(studentId),
-          assignmentId: isUniversite ? undefined : assignmentId || undefined,
+          assignmentId: assignmentId || undefined,
           evaluationCategoryId: isUniversite ? evaluationCategoryId : undefined,
           score: Number(score),
           comment,
@@ -63,6 +63,7 @@ export default function RecordGradeForm({
       }
       setScore("");
       setComment("");
+      setAssignmentId("");
       router.refresh();
     } catch {
       setError("Impossible de contacter le serveur.");
@@ -108,7 +109,7 @@ export default function RecordGradeForm({
         </select>
       </label>
 
-      {isUniversite ? (
+      {isUniversite && (
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-foreground">Catégorie d&apos;évaluation</span>
           <select
@@ -124,19 +125,26 @@ export default function RecordGradeForm({
             ))}
           </select>
         </label>
-      ) : (
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-foreground">Devoir (optionnel)</span>
-          <select className="input" value={assignmentId} onChange={(e) => setAssignmentId(e.target.value)}>
-            <option value="">Note générale du cours</option>
-            {assignments.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.title}
-              </option>
-            ))}
-          </select>
-        </label>
       )}
+
+      <label className="block text-sm">
+        <span className="mb-1 block font-medium text-foreground">
+          Devoir {isUniversite ? "lié (optionnel)" : "(optionnel)"}
+        </span>
+        <select className="input" value={assignmentId} onChange={(e) => setAssignmentId(e.target.value)}>
+          <option value="">{isUniversite ? "Aucun" : "Note générale du cours"}</option>
+          {assignments.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.title}
+            </option>
+          ))}
+        </select>
+        {isUniversite && (
+          <span className="mt-1 block text-xs text-muted">
+            Si un devoir est sélectionné, cette note sera liée à la remise de l&apos;étudiant pour ce devoir.
+          </span>
+        )}
+      </label>
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Note (sur 100)</span>

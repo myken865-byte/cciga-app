@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { roleList, roleLabels, type Role } from "@/lib/roles";
+import { roleList, roleLabels, privilegedRoles, type Role } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
 import type { Program } from "@/lib/content";
 import ProgramSelect from "@/components/ProgramSelect";
@@ -15,11 +15,14 @@ interface StudentOption {
 export default function CreateUserForm({
   students,
   programs,
+  isSuperAdmin,
 }: {
   students: StudentOption[];
   programs: Program[];
+  isSuperAdmin: boolean;
 }) {
   const router = useRouter();
+  const selectableRoles = isSuperAdmin ? roleList : roleList.filter((r) => !privilegedRoles.includes(r));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
@@ -110,7 +113,7 @@ export default function CreateUserForm({
       <div>
         <span className="mb-2 block text-sm font-medium text-foreground">Rôles</span>
         <div className="flex flex-wrap gap-3">
-          {roleList.map((role) => (
+          {selectableRoles.map((role) => (
             <label key={role} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

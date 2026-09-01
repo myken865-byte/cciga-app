@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { parseRoles, hasRole } from "@/lib/roles";
+import { parseRoles, hasAnyRole } from "@/lib/roles";
 
 interface NotificationInput {
   type: string;
@@ -21,7 +21,9 @@ export async function notifyProgramStudents(programId: string, data: Notificatio
 
 export async function notifyAdmins(data: NotificationInput) {
   const users = await prisma.user.findMany({ select: { id: true, roles: true } });
-  const admins = users.filter((u) => hasRole(parseRoles(u.roles), "ADMIN"));
+  // hasAnyRole (not hasRole): "ADMIN" and "SUPER_ADMIN" are distinct role
+  // strings, so a SUPER_ADMIN-only account must still be matched here.
+  const admins = users.filter((u) => hasAnyRole(parseRoles(u.roles), ["ADMIN", "SUPER_ADMIN"]));
   if (admins.length === 0) return;
   await prisma.notification.createMany({
     data: admins.map((a) => ({ userId: a.id, ...data })),

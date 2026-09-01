@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasRole } from "@/lib/roles";
+import { hasAnyRole } from "@/lib/roles";
 import { writeAuditLog } from "@/lib/auditLog";
 import { findDocumentsCoveringGrade, regenerateDocumentVersion } from "@/lib/documents";
 
@@ -20,13 +20,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Note introuvable." }, { status: 404 });
   }
 
-  const isAdmin = hasRole(session.roles, "ADMIN");
+  const isAdmin = hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
   const isCourseTeacher = grade.course.teacherId === session.userId;
   if (!isAdmin && !isCourseTeacher) {
     return NextResponse.json({ error: "Non autorisé pour cette note." }, { status: 403 });
   }
 
-  const { score, reason } = (await request.json()) ?? {};
+  let requestBody: Record<string, unknown>;
+  try {
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { score, reason } = requestBody;
   const parsedScore = Number(score);
   if (!Number.isFinite(parsedScore) || parsedScore < 0 || parsedScore > 100) {
     return NextResponse.json({ error: "Note invalide (entre 0 et 100)." }, { status: 400 });

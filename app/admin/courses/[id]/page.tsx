@@ -2,11 +2,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getPrograms } from "@/lib/content";
+import { getSession } from "@/lib/auth";
 import { parseRoles, hasRole } from "@/lib/roles";
 import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
 import CourseContentView from "@/components/CourseContentView";
+import AddLessonModuleForm from "@/components/AddLessonModuleForm";
+import AddLessonForm from "@/components/AddLessonForm";
 import AddCourseMaterialForm from "@/components/AddCourseMaterialForm";
 import AddAssignmentForm from "@/components/AddAssignmentForm";
+import AddQuizForm from "@/components/AddQuizForm";
+import AddQuizQuestionForm from "@/components/AddQuizQuestionForm";
+import AddAnnouncementForm from "@/components/AddAnnouncementForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
 import AttendanceForm from "@/components/AttendanceForm";
 import EditCourseForm from "@/components/EditCourseForm";
@@ -34,15 +40,70 @@ export default async function AdminCourseDetailPage({
       teacher: true,
       semester: { include: { academicYear: true } },
       materials: { orderBy: { createdAt: "desc" } },
-      assignments: { orderBy: { createdAt: "desc" } },
+      assignments: {
+        orderBy: { createdAt: "desc" },
+        include: { submissions: { include: { student: true, grade: true }, orderBy: { submittedAt: "desc" } } },
+      },
       evaluationCategories: { orderBy: { createdAt: "asc" } },
       grades: {
         include: { student: true, assignment: true, evaluationCategory: true },
         orderBy: { recordedAt: "desc" },
       },
+      lessonModules: {
+        orderBy: { order: "asc" },
+        include: {
+          lessons: { orderBy: { order: "asc" }, include: { _count: { select: { progress: true } } } },
+        },
+      },
+      quizzes: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          questions: { orderBy: { order: "asc" } },
+          attempts: { include: { student: true }, orderBy: { startedAt: "desc" } },
+        },
+      },
+      announcements: {
+        orderBy: { createdAt: "desc" },
+        include: { author: true },
+      },
     },
   });
   if (!course) notFound();
+
+  const moduleOptions = course.lessonModules.map((m) => ({ id: m.id, title: m.title }));
+  const quizOptions = course.quizzes.map((q) => ({ id: q.id, title: q.title }));
+  const assignmentsForView = course.assignments.map((a) => ({
+    ...a,
+    submissions: a.submissions.map((s) => ({
+      id: s.id,
+      studentName: s.student.name,
+      textContent: s.textContent,
+      fileUrl: s.fileUrl,
+      submittedAt: s.submittedAt,
+      late: s.late,
+      grade: s.grade ? { score: s.grade.score } : null,
+    })),
+  }));
+  const quizzesForView = course.quizzes.map((q) => ({
+    ...q,
+    attempts: q.attempts.map((att) => ({
+      id: att.id,
+      studentName: att.student.name,
+      score: att.score,
+      submittedAt: att.submittedAt,
+    })),
+  }));
+  const lessonModulesForView = course.lessonModules.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => ({ ...l, completedCount: l._count.progress })),
+  }));
+  const announcementsForView = course.announcements.map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    authorName: a.author.name,
+    createdAt: a.createdAt,
+  }));
 
   const isUniversite = course.program.school === "universite";
   const usesWorkflow = usesGradeWorkflow(course.program.school);
@@ -57,16 +118,18 @@ export default async function AdminCourseDetailPage({
     ? computeMissingGrades(categoryOptions, students, course.grades)
     : [];
 
-  const [programs, allUsers, semesters, allCoursesRaw] = await Promise.all([
+  const [programs, allUsers, semesters, allCoursesRaw, session] = await Promise.all([
     getPrograms(),
     prisma.user.findMany(),
     prisma.semester.findMany({ include: { academicYear: true }, orderBy: { order: "asc" } }),
     prisma.course.findMany({ select: { id: true, name: true, programId: true } }),
+    getSession(),
   ]);
   const teachers = allUsers
     .filter((u) => hasRole(parseRoles(u.roles), "TEACHER"))
     .map((u) => ({ id: u.id, name: u.name }));
   const semesterOptions = semesters.map((s) => ({ id: s.id, label: `${s.academicYear.label} — ${s.name}` }));
+  const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
 
   const gradeCounts = { brouillon: 0, soumis: 0, en_verification: 0, valide: 0, publie: 0 };
   for (const g of course.grades) {
@@ -95,7 +158,13 @@ export default async function AdminCourseDetailPage({
               endTime: course.endTime,
             }}
             materials={course.materials}
-            assignments={course.assignments}
+            assignments={assignmentsForView}
+            lessonModules={lessonModulesForView}
+            showSubmissions
+            quizzes={quizzesForView}
+            showQuizAttempts
+            announcements={announcementsForView}
+            totalEnrolled={students.length}
           />
 
           {isUniversite && (
@@ -163,15 +232,22 @@ export default async function AdminCourseDetailPage({
               coefficient: course.coefficient,
               groupLabel: course.groupLabel,
               retakeOfCourseId: course.retakeOfCourseId,
+              active: course.active,
             }}
             programs={programs}
             teachers={teachers}
             semesters={semesterOptions}
             allCourses={allCoursesRaw}
+            isSuperAdmin={isSuperAdmin}
           />
           <AttendanceForm courseId={course.id} students={students} />
+          <AddLessonModuleForm courseId={course.id} />
+          <AddLessonForm modules={moduleOptions} />
           <AddCourseMaterialForm courseId={course.id} />
           {!usesWorkflow && <AddAssignmentForm courseId={course.id} />}
+          <AddQuizForm courseId={course.id} />
+          <AddQuizQuestionForm quizzes={quizOptions} />
+          <AddAnnouncementForm courseId={course.id} />
           {usesWorkflow && <EvaluationCategoriesPanel courseId={course.id} categories={categoryOptions} />}
           <RecordGradeForm
             courseId={course.id}

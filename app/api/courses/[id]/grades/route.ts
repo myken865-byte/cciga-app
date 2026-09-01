@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasRole } from "@/lib/roles";
+import { hasAnyRole } from "@/lib/roles";
 import { createNotification } from "@/lib/notifications";
 import { usesGradeWorkflow } from "@/lib/universite";
 
@@ -20,13 +20,26 @@ export async function POST(
     return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
   }
 
-  const isAdmin = hasRole(session.roles, "ADMIN");
+  const isAdmin = hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
   const isCourseTeacher = course.teacherId === session.userId;
   if (!isAdmin && !isCourseTeacher) {
     return NextResponse.json({ error: "Non autorisé pour ce cours." }, { status: 403 });
   }
 
-  const { studentId, assignmentId, evaluationCategoryId, score, comment } = (await request.json()) ?? {};
+  let requestBody: Record<string, unknown>;
+  try {
+    requestBody = ((await request.json()) as Record<string, unknown>) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
+  const { studentId, assignmentId, evaluationCategoryId, score, comment } = requestBody;
+  if (
+    (assignmentId !== undefined && typeof assignmentId !== "string") ||
+    (evaluationCategoryId !== undefined && typeof evaluationCategoryId !== "string") ||
+    (comment !== undefined && typeof comment !== "string")
+  ) {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
 
   const parsedScore = Number(score);
   if (!studentId || !Number.isFinite(parsedScore) || parsedScore < 0 || parsedScore > 100) {
@@ -36,6 +49,18 @@ export async function POST(
   const student = await prisma.user.findUnique({ where: { id: Number(studentId) } });
   if (!student || student.programId !== course.programId) {
     return NextResponse.json({ error: "Étudiant invalide pour ce cours." }, { status: 400 });
+  }
+
+  // A grade may optionally reference the LMS Assignment it grades (whether the
+  // course uses simple per-assignment notes or the evaluation-category workflow),
+  // so the student's Submission for that assignment can be linked to this Grade below.
+  let resolvedAssignmentId: string | undefined;
+  if (assignmentId) {
+    const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId } });
+    if (!assignment || assignment.courseId !== id) {
+      return NextResponse.json({ error: "Devoir invalide pour ce cours." }, { status: 400 });
+    }
+    resolvedAssignmentId = assignment.id;
   }
 
   const usesWorkflow = usesGradeWorkflow(course.program.school);
@@ -69,7 +94,7 @@ export async function POST(
     data: {
       studentId: student.id,
       courseId: id,
-      assignmentId: usesWorkflow ? undefined : assignmentId || undefined,
+      assignmentId: resolvedAssignmentId,
       evaluationCategoryId: resolvedCategoryId,
       score: parsedScore,
       comment: comment || undefined,
@@ -77,6 +102,15 @@ export async function POST(
       enteredById: session.userId,
     },
   });
+
+  if (resolvedAssignmentId) {
+    const submission = await prisma.submission.findUnique({
+      where: { assignmentId_studentId: { assignmentId: resolvedAssignmentId, studentId: student.id } },
+    });
+    if (submission && !submission.gradeId) {
+      await prisma.submission.update({ where: { id: submission.id }, data: { gradeId: grade.id } });
+    }
+  }
 
   if (!usesWorkflow) {
     await createNotification(student.id, {

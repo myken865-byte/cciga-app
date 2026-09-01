@@ -33,6 +33,18 @@ export default async function StudentCoursePage({
       teacher: true,
       materials: { orderBy: { createdAt: "desc" } },
       assignments: { orderBy: { createdAt: "desc" } },
+      lessonModules: {
+        orderBy: { order: "asc" },
+        include: { lessons: { orderBy: { order: "asc" } } },
+      },
+      quizzes: {
+        orderBy: { createdAt: "asc" },
+        include: { questions: { orderBy: { order: "asc" } } },
+      },
+      announcements: {
+        orderBy: { createdAt: "desc" },
+        include: { author: true },
+      },
     },
   });
 
@@ -40,13 +52,86 @@ export default async function StudentCoursePage({
     notFound();
   }
 
+  const assignmentIds = course.assignments.map((a) => a.id);
+  const mySubmissions = assignmentIds.length
+    ? await prisma.submission.findMany({
+        where: { assignmentId: { in: assignmentIds }, studentId: user.id },
+        include: { grade: true },
+      })
+    : [];
+  const submissionByAssignment = new Map(mySubmissions.map((s) => [s.assignmentId, s]));
+  const assignmentsForView = course.assignments.map((a) => {
+    const submission = submissionByAssignment.get(a.id);
+    return {
+      ...a,
+      submission: submission
+        ? {
+            textContent: submission.textContent,
+            fileUrl: submission.fileUrl,
+            submittedAt: submission.submittedAt,
+            late: submission.late,
+            // Only surface the grade once it has cleared the same publication gate as
+            // "Mes notes" below (status null = classic non-workflow note, or "publie").
+            // A brouillon/soumis/en_verification grade must stay invisible to the
+            // student until an admin publishes it, exactly like every other grade.
+            grade:
+              submission.grade && (submission.grade.status === null || submission.grade.status === "publie")
+                ? { score: submission.grade.score }
+                : null,
+          }
+        : null,
+    };
+  });
+
+  const quizIds = course.quizzes.map((q) => q.id);
+  const myAttempts = quizIds.length
+    ? await prisma.quizAttempt.findMany({
+        where: { quizId: { in: quizIds }, studentId: user.id },
+        orderBy: { startedAt: "desc" },
+      })
+    : [];
+  const attemptsByQuiz = new Map<string, typeof myAttempts>();
+  for (const att of myAttempts) {
+    const list = attemptsByQuiz.get(att.quizId) ?? [];
+    list.push(att);
+    attemptsByQuiz.set(att.quizId, list);
+  }
+  const quizzesForView = course.quizzes.map((q) => ({
+    ...q,
+    // Never send correctAnswer to the student before they submit — CourseContentView
+    // passes this array as a prop into the client-side TakeQuizForm, and any field
+    // present here would be serialized into the page and visible in dev tools.
+    questions: q.questions.map((question) => ({
+      id: question.id,
+      type: question.type,
+      prompt: question.prompt,
+      options: question.options,
+      order: question.order,
+    })),
+    myAttempts: (attemptsByQuiz.get(q.id) ?? []).map((att) => ({
+      id: att.id,
+      score: att.score,
+      submittedAt: att.submittedAt,
+    })),
+  }));
+
+  const lessonIds = course.lessonModules.flatMap((m) => m.lessons.map((l) => l.id));
+  const progressRows = lessonIds.length
+    ? await prisma.lessonProgress.findMany({ where: { studentId: user.id, lessonId: { in: lessonIds } } })
+    : [];
+  const completedLessonIds = new Set(progressRows.map((p) => p.lessonId));
+  const lessonModulesWithProgress = course.lessonModules.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => ({ ...l, completed: completedLessonIds.has(l.id) })),
+  }));
+
   const grades = await prisma.grade.findMany({
     where: {
       courseId: id,
       studentId: user.id,
       OR: [{ status: null }, { status: "publie" }],
     },
-    include: { assignment: true },
+    include: { assignment: true, evaluationCategory: true },
     orderBy: { recordedAt: "desc" },
   });
 
@@ -54,6 +139,14 @@ export default async function StudentCoursePage({
     where: { courseId: id, studentId: user.id },
     orderBy: { date: "desc" },
   });
+
+  const announcementsForView = course.announcements.map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    authorName: a.author.name,
+    createdAt: a.createdAt,
+  }));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
@@ -72,7 +165,13 @@ export default async function StudentCoursePage({
           endTime: course.endTime,
         }}
         materials={course.materials}
-        assignments={course.assignments}
+        assignments={assignmentsForView}
+        lessonModules={lessonModulesWithProgress}
+        showLessonProgress
+        canSubmitAssignments
+        quizzes={quizzesForView}
+        canTakeQuizzes
+        announcements={announcementsForView}
       />
 
       <div className="mt-8">
@@ -113,7 +212,7 @@ export default async function StudentCoursePage({
               <div key={g.id} className="rounded-lg border border-border bg-surface p-4">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-foreground">
-                    {g.assignment?.title ?? "Note générale"}
+                    {g.assignment?.title ?? g.evaluationCategory?.name ?? "Note générale"}
                   </span>
                   <span className="font-semibold text-primary">{g.score}/100</span>
                 </div>

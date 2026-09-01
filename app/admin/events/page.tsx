@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getEvents } from "@/lib/content";
 import ContentSubNav from "@/components/ContentSubNav";
 import CreateEventForm from "@/components/CreateEventForm";
@@ -34,7 +35,11 @@ export default async function AdminEventsPage() {
             <tbody>
               {events.map((event) => (
                 <tr key={event.id} className="border-t border-border">
-                  <td className="px-4 py-3 text-foreground">{event.title}</td>
+                  <td className="px-4 py-3 text-foreground">
+                    <Link href={`/admin/events/${event.id}`} className="text-primary hover:underline">
+                      {event.title}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-muted">{event.location}</td>
                   <td className="px-4 py-3 text-muted">{formatDate(event.date)}</td>
                 </tr>

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated/native build output and background-agent worktrees — not source.
+    "android/**",
+    ".claude/worktrees/**",
   ]),
 ]);
 

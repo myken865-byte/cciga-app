@@ -23,7 +23,9 @@ export default async function AdminDocumentsPage({
       take: 20,
     }),
   ]);
-  const programs = allPrograms.filter((p) => p.school === "universite" || p.school === "ecole-classique");
+  const programs = allPrograms.filter(
+    (p) => p.school === "universite" || p.school === "ecole-classique" || p.school === "ecole-professionnelle",
+  );
 
   const selectedProgramId = programId && semesterId ? programId : null;
   const selectedSemesterId = programId && semesterId ? semesterId : null;

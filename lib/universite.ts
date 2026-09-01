@@ -64,6 +64,7 @@ export interface AuthorizationFields {
   programStatus: ProgramStatus | null;
   authorizationRef: string | null;
   authorizationDocumentRef: string | null;
+  active: boolean;
 }
 
 /** Statuses that take a programme off the public Université catalogue — everything else shows. */
@@ -82,8 +83,13 @@ const UNIVERSITE_HIDDEN_STATUSES: ProgramStatus[] = ["archive", "suspendu"];
  * Autorisé and carrying both an authorization reference and a justificatif
  * reference. Presence of a title in the app is never itself proof of
  * authorization.
+ *
+ * A programme with `active: false` (archived by an admin — see the
+ * "Archiver au lieu de supprimer" policy) never shows publicly, regardless
+ * of school or programStatus.
  */
 export function isPubliclyVisible(program: AuthorizationFields): boolean {
+  if (!program.active) return false;
   if (program.school === "universite") {
     return !program.programStatus || !UNIVERSITE_HIDDEN_STATUSES.includes(program.programStatus);
   }

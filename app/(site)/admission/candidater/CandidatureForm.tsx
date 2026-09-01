@@ -2,10 +2,20 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import { schools } from "@/data/schools";
 import type { Program } from "@/lib/content";
 import { niveauList, niveauLabels, type Niveau } from "@/lib/niveaux";
 import { requiredAdmissionDocuments as requiredDocuments } from "@/lib/admission-documents";
+
+const MAX_FILE_SIZE = 8 * 1024 * 1024;
+const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+
+interface DocumentEntry {
+  label: string;
+  fileUrl: string | null;
+  fileName: string | null;
+}
 
 type FormData = {
   school: string;
@@ -18,7 +28,7 @@ type FormData = {
   email: string;
   phone: string;
   address: string;
-  documents: string[];
+  documents: DocumentEntry[];
 };
 
 const initialData: FormData = {
@@ -32,7 +42,7 @@ const initialData: FormData = {
   email: "",
   phone: "",
   address: "",
-  documents: [],
+  documents: requiredDocuments.map((label) => ({ label, fileUrl: null, fileName: null })),
 };
 
 const baseSteps = [
@@ -49,6 +59,8 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
+  const [uploadingLabel, setUploadingLabel] = useState<string | null>(null);
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
   const isEcoleClassique = data.school === "ecole-classique";
   const steps = isEcoleClassique
@@ -88,12 +100,42 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  function toggleDocument(doc: string) {
+  async function handleFileSelect(label: string, file: File | undefined) {
+    if (!file) return;
+    setUploadErrors((e) => ({ ...e, [label]: "" }));
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setUploadErrors((e) => ({ ...e, [label]: "Format non accepté (PDF, JPG ou PNG uniquement)." }));
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadErrors((e) => ({ ...e, [label]: "Fichier trop volumineux (8 Mo maximum)." }));
+      return;
+    }
+
+    setUploadingLabel(label);
+    try {
+      const blob = await upload(`admission-documents/${crypto.randomUUID()}-${file.name}`, file, {
+        access: "private",
+        handleUploadUrl: "/api/admission/upload",
+      });
+      setData((d) => ({
+        ...d,
+        documents: d.documents.map((doc) =>
+          doc.label === label ? { ...doc, fileUrl: blob.url, fileName: file.name } : doc,
+        ),
+      }));
+    } catch {
+      setUploadErrors((e) => ({ ...e, [label]: "Échec du téléversement. Veuillez réessayer." }));
+    } finally {
+      setUploadingLabel(null);
+    }
+  }
+
+  function removeDocument(label: string) {
     setData((d) => ({
       ...d,
-      documents: d.documents.includes(doc)
-        ? d.documents.filter((x) => x !== doc)
-        : [...d.documents, doc],
+      documents: d.documents.map((doc) => (doc.label === label ? { ...doc, fileUrl: null, fileName: null } : doc)),
     }));
   }
 
@@ -311,25 +353,44 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
           <div>
             <h2 className="mb-2 text-lg font-semibold text-foreground">Documents requis</h2>
             <p className="mb-4 text-sm text-muted">
-              Cochez les documents que vous êtes en mesure de fournir. Le
-              téléversement en ligne sera disponible avec le déploiement de la
-              plateforme CCIGA ; en attendant, préparez ces documents pour les
-              transmettre à l&apos;administration.
+              Téléversez chaque document ci-dessous (PDF, JPG ou PNG, 8 Mo maximum). Vos fichiers sont
+              envoyés directement et de façon sécurisée vers notre espace de stockage privé — seule
+              l&apos;administration du CCIGA peut y accéder.
             </p>
-            <div className="space-y-2">
-              {requiredDocuments.map((doc) => (
-                <label
-                  key={doc}
-                  className="flex items-center gap-3 rounded-md border border-border p-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={data.documents.includes(doc)}
-                    onChange={() => toggleDocument(doc)}
-                    className="h-4 w-4"
-                  />
-                  {doc}
-                </label>
+            <div className="space-y-3">
+              {data.documents.map((doc) => (
+                <div key={doc.label} className="rounded-md border border-border p-3 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-medium text-foreground">{doc.label}</span>
+                    {doc.fileUrl ? (
+                      <span className="flex items-center gap-2 text-emerald-600">
+                        ✓ {doc.fileName}
+                        <button
+                          type="button"
+                          onClick={() => removeDocument(doc.label)}
+                          className="text-xs text-muted underline hover:text-foreground"
+                        >
+                          Retirer
+                        </button>
+                      </span>
+                    ) : uploadingLabel === doc.label ? (
+                      <span className="text-muted">Envoi en cours…</span>
+                    ) : (
+                      <label className="cursor-pointer rounded-md border border-border px-3 py-1.5 text-xs font-medium text-primary hover:border-primary">
+                        Choisir un fichier
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="hidden"
+                          onChange={(e) => handleFileSelect(doc.label, e.target.files?.[0])}
+                        />
+                      </label>
+                    )}
+                  </div>
+                  {uploadErrors[doc.label] && (
+                    <p className="mt-1 text-xs text-red-600">{uploadErrors[doc.label]}</p>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -351,8 +412,15 @@ export default function CandidatureForm({ programs }: { programs: Program[] }) {
               <Summary label="Email" value={data.email} />
               <Summary label="Téléphone" value={data.phone} />
               <Summary
-                label="Documents cochés"
-                value={data.documents.length > 0 ? data.documents.join(", ") : "Aucun"}
+                label="Documents fournis"
+                value={
+                  data.documents.some((d) => d.fileUrl)
+                    ? data.documents
+                        .filter((d) => d.fileUrl)
+                        .map((d) => d.label)
+                        .join(", ")
+                    : "Aucun"
+                }
               />
             </dl>
             {error && (

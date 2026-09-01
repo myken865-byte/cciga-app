@@ -32,7 +32,7 @@ export default async function EcoleClassiqueNiveauPage({
   const { niveau } = await params;
   if (!isNiveau(niveau)) notFound();
 
-  const classes = await getProgramsByNiveau(niveau);
+  const classes = (await getProgramsByNiveau(niveau)).filter((p) => p.active);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 lg:px-6">

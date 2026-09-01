@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireAdminSession, requireSuperAdminSession } from "@/lib/auth";
 import { getSchools } from "@/lib/content";
 import { resolveTeacherModel, cascadeTitulaireToCourses } from "@/lib/titulaire";
 import { resolveUniversiteFields } from "@/lib/universiteValidation";
@@ -119,6 +119,58 @@ export async function PATCH(
       after: updated,
     });
   }
+
+  return NextResponse.json({ ok: true });
+}
+
+/**
+ * Permanent deletion — reserved for Super Administrateur, and only when
+ * nothing depends on this programme. A real programme with any history
+ * (students, courses, documents, observations, appreciations) is never
+ * hard-deletable; use the archive toggle instead. This mirrors the existing
+ * dependency guard on evaluation-category deletion.
+ */
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireSuperAdminSession();
+  if (!session) {
+    return NextResponse.json(
+      { error: "Seul un Super Administrateur peut supprimer définitivement un programme." },
+      { status: 403 },
+    );
+  }
+
+  const { id } = await params;
+  const program = await prisma.program.findUnique({ where: { id } });
+  if (!program) {
+    return NextResponse.json({ error: "Programme introuvable." }, { status: 404 });
+  }
+
+  const [students, courses, observations, documents, appreciations] = await Promise.all([
+    prisma.user.count({ where: { programId: id } }),
+    prisma.course.count({ where: { programId: id } }),
+    prisma.observation.count({ where: { programId: id } }),
+    prisma.academicDocument.count({ where: { programId: id } }),
+    prisma.studentAppreciation.count({ where: { programId: id } }),
+  ]);
+  if (students + courses + observations + documents + appreciations > 0) {
+    return NextResponse.json(
+      {
+        error:
+          "Impossible de supprimer : des données (étudiants, cours, documents, observations ou appréciations) dépendent de ce programme. Archivez-le à la place.",
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.program.delete({ where: { id } });
+
+  await writeAuditLog({
+    entityType: "Program",
+    entityId: id,
+    action: "delete",
+    actorId: session.userId,
+    before: program,
+  });
 
   return NextResponse.json({ ok: true });
 }

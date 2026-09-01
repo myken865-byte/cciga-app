@@ -40,6 +40,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     retards: number;
     appreciation: string | null;
     conduct: string | null;
+    certification: string | null;
     periodLabel: string;
   };
 
@@ -83,10 +84,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }),
     );
   } else {
+    const docTitle =
+      doc.program.school === "ecole-professionnelle"
+        ? "Bulletin de formation professionnelle — École Professionnelle"
+        : "Bulletin scolaire — École Classique";
     buffer = await renderToBuffer(
       BulletinDocument({
         logoBase64,
+        docTitle,
         studentName: doc.student.name,
+        studentPhotoUrl: doc.program.school === "ecole-classique" ? doc.student.photoUrl : null,
+        showTotal: doc.program.school === "ecole-classique",
         ccigaId: formatCcigaId(doc.student.id),
         programName: doc.program.name,
         periodLabel: snapshot.periodLabel,
@@ -103,6 +111,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         retards: snapshot.retards,
         appreciation: snapshot.appreciation,
         conduct: snapshot.conduct,
+        certification: snapshot.certification,
         isDraft: false,
         reference,
         publishedLabel,

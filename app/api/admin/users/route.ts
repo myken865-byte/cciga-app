@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
-import { isRole, hasRole, parseRoles } from "@/lib/roles";
+import { isRole, hasRole, parseRoles, privilegedRoles } from "@/lib/roles";
 import { createNotification } from "@/lib/notifications";
 import { formatCcigaId } from "@/lib/cciga-id";
 
@@ -20,6 +20,13 @@ export async function POST(request: Request) {
   }
   if (!Array.isArray(roles) || roles.length === 0 || !roles.every(isRole)) {
     return NextResponse.json({ error: "Au moins un rôle valide est requis." }, { status: 400 });
+  }
+  const requestsPrivilegedRole = roles.some((r: string) => (privilegedRoles as string[]).includes(r));
+  if (requestsPrivilegedRole && !hasRole(session.roles, "SUPER_ADMIN")) {
+    return NextResponse.json(
+      { error: "Seul un Super Administrateur peut créer un compte Administration/Secrétariat." },
+      { status: 403 },
+    );
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });

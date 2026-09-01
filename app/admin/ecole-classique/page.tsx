@@ -1,7 +1,8 @@
-import { prisma } from "@/lib/db";
 import CreateAcademicYearForm from "@/components/CreateAcademicYearForm";
 import CreateSemesterForm from "@/components/CreateSemesterForm";
 import SectorLogo from "@/components/SectorLogo";
+import { getSchoolScopedAuditLogs } from "@/lib/schoolAuditLog";
+import { getSchoolScopedAcademicYears } from "@/lib/schoolAcademicYears";
 
 export const dynamic = "force-dynamic";
 
@@ -11,16 +12,8 @@ function formatDateTime(iso: Date) {
 
 export default async function AdminEcoleClassiquePage() {
   const [academicYears, auditLogs] = await Promise.all([
-    prisma.academicYear.findMany({
-      orderBy: { startDate: "desc" },
-      include: { semesters: { orderBy: { order: "asc" } } },
-    }),
-    prisma.auditLog.findMany({
-      where: { entityType: { in: ["Program", "Grade", "AcademicDocument"] } },
-      include: { actor: true },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    }),
+    getSchoolScopedAcademicYears("ecole-classique"),
+    getSchoolScopedAuditLogs("ecole-classique"),
   ]);
 
   return (
@@ -42,7 +35,7 @@ export default async function AdminEcoleClassiquePage() {
           ) : (
             <div className="space-y-2">
               {academicYears.map((y) => (
-                <div key={y.id} className="rounded-lg border border-border bg-surface p-3 text-sm">
+                <div key={y.id} className="card p-3 text-sm">
                   <p className="font-medium text-foreground">
                     {y.label} {y.isActive && <span className="text-xs text-emerald-600">(active)</span>}
                   </p>
@@ -62,7 +55,7 @@ export default async function AdminEcoleClassiquePage() {
 
         <div className="space-y-3">
           <h2 className="font-semibold text-foreground">Journal d&apos;audit (50 dernières entrées)</h2>
-          <div className="max-h-[600px] overflow-y-auto rounded-lg border border-border bg-surface">
+          <div className="max-h-[600px] overflow-y-auto card">
             <table className="w-full text-left text-xs">
               <thead className="bg-background text-muted">
                 <tr>

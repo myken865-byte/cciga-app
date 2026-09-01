@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSchoolBySlug, getProgramBySlug } from "@/lib/content";
 import { admissionStatusLabels, admissionStatusStyles, isAdmissionStatus } from "@/lib/admission-status";
 import { formatCcigaId } from "@/lib/cciga-id";
+import type { AdmissionDocumentEntry } from "@/lib/admission-documents";
 import StatusUpdateForm from "./StatusUpdateForm";
 import CreateStudentAccountButton from "./CreateStudentAccountButton";
 
@@ -30,7 +31,7 @@ export default async function AdmissionDetailPage({
 
   const school = getSchoolBySlug(submission.school);
   const program = await getProgramBySlug(submission.programSlug);
-  const documents: string[] = JSON.parse(submission.documents || "[]");
+  const documents: AdmissionDocumentEntry[] = JSON.parse(submission.documents || "[]");
   const statusKey = isAdmissionStatus(submission.status) ? submission.status : "nouveau";
 
   return (
@@ -70,13 +71,22 @@ export default async function AdmissionDetailPage({
           <div className="rounded-lg border border-border bg-surface p-6">
             <h2 className="mb-4 font-semibold text-foreground">Documents fournis</h2>
             {documents.length === 0 ? (
-              <p className="text-sm text-muted">Aucun document coché par le candidat.</p>
+              <p className="text-sm text-muted">Aucun document requis pour ce type de candidature.</p>
             ) : (
-              <ul className="space-y-2 text-sm text-muted">
-                {documents.map((doc) => (
-                  <li key={doc} className="flex gap-2">
-                    <span className="text-accent">✓</span>
-                    {doc}
+              <ul className="space-y-2 text-sm">
+                {documents.map((doc, i) => (
+                  <li key={doc.label} className="flex items-center justify-between gap-2">
+                    <span className={doc.fileUrl ? "text-foreground" : "text-muted"}>
+                      {doc.fileUrl ? "✓" : "✗"} {doc.label}
+                    </span>
+                    {doc.fileUrl && (
+                      <a
+                        href={`/api/admin/admissions/${submission.id}/documents/${i}/download`}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Télécharger →
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

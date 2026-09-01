@@ -39,12 +39,16 @@ model User {
   roles        String
   createdAt    DateTime @default(now())
 
+  passwordResetTokenHash String?   @unique
+  passwordResetExpires   DateTime?
+
   admissionSubmissions AdmissionSubmission[]
 
   programId String?
   program   Program? @relation(fields: [programId], references: [id])
 
-  payments Payment[]
+  payments         Payment[] @relation("PaymentStudent")
+  paymentsRecorded Payment[] @relation("PaymentRecordedBy")
 
   coursesTaught Course[]
   grades        Grade[]
@@ -68,6 +72,12 @@ model User {
   documentsGenerated      AcademicDocument[]     @relation("DocumentGeneratedBy")
   appreciationsAbout      StudentAppreciation[]  @relation("AppreciationStudent")
   appreciationsEntered    StudentAppreciation[]  @relation("AppreciationEnteredBy")
+
+  lessonProgress         LessonProgress[]
+  submissions            Submission[]
+  quizAttempts           QuizAttempt[]      @relation("QuizAttemptStudent")
+  quizAttemptsGraded     QuizAttempt[]      @relation("QuizAttemptGradedBy")
+  courseAnnouncements    CourseAnnouncement[]
 }
 
 model Faculty {
@@ -135,6 +145,7 @@ model Program {
   description              String
   admissionConditions      String
   tuitionFee               Int       @default(0)
+  active                   Boolean   @default(true)
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
@@ -146,12 +157,14 @@ model Program {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  studentId Int
-  student   User     @relation(fields: [studentId], references: [id])
-  amount    Int
-  paidAt    DateTime @default(now())
-  note      String?
+  id           String   @id @default(cuid())
+  studentId    Int
+  student      User     @relation("PaymentStudent", fields: [studentId], references: [id])
+  amount       Int
+  paidAt       DateTime @default(now())
+  note         String?
+  recordedById Int?
+  recordedBy   User?    @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
 }
 
 model Course {
@@ -171,6 +184,7 @@ model Course {
   credits     Int?
   coefficient Float?
   groupLabel  String?
+  active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -183,6 +197,10 @@ model Course {
   grades               Grade[]
   attendances          Attendance[]
   evaluationCategories EvaluationCategory[]
+
+  lessonModules LessonModule[]
+  quizzes       Quiz[]
+  announcements CourseAnnouncement[]
 }
 
 model EvaluationCategory {
@@ -214,7 +232,8 @@ model Assignment {
   dueDate     DateTime?
   createdAt   DateTime  @default(now())
 
-  grades Grade[]
+  grades      Grade[]
+  submissions Submission[]
 }
 
 model Grade {
@@ -236,6 +255,119 @@ model Grade {
   validatedBy          User?               @relation("GradeValidatedBy", fields: [validatedById], references: [id])
   publishedAt          DateTime?
   recordedAt           DateTime            @default(now())
+
+  submission Submission?
+}
+
+// --- LMS (pilier 3) — Étape 1 : modèles de données uniquement, non branchés ---
+// Tout est additif : aucun modèle existant n'est modifié, aucune donnée existante
+// n'est touchée. Course/Assignment/Grade/User/AuditLog sont réutilisés tels quels.
+
+model LessonModule {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  title     String
+  order     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  lessons Lesson[]
+}
+
+model Lesson {
+  id          String       @id @default(cuid())
+  moduleId    String
+  module      LessonModule @relation(fields: [moduleId], references: [id])
+  title       String
+  order       Int          @default(1)
+  contentType String // "texte" | "fichier" | "video"
+  body        String?
+  fileUrl     String?
+  videoUrl    String?
+  createdAt   DateTime     @default(now())
+
+  progress LessonProgress[]
+  quizzes  Quiz[]
+}
+
+model LessonProgress {
+  id          String   @id @default(cuid())
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id])
+  studentId   Int
+  student     User     @relation(fields: [studentId], references: [id])
+  completedAt DateTime @default(now())
+
+  @@unique([lessonId, studentId])
+}
+
+model Submission {
+  id           String     @id @default(cuid())
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  studentId    Int
+  student      User       @relation(fields: [studentId], references: [id])
+  submittedAt  DateTime   @default(now())
+  textContent  String?
+  fileUrl      String?
+  late         Boolean    @default(false)
+  gradeId      String?    @unique
+  grade        Grade?     @relation(fields: [gradeId], references: [id])
+
+  @@unique([assignmentId, studentId])
+}
+
+model Quiz {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  lessonId    String?
+  lesson      Lesson?  @relation(fields: [lessonId], references: [id])
+  title       String
+  description String?
+  isGraded    Boolean  @default(false)
+  maxAttempts Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+}
+
+model QuizQuestion {
+  id            String @id @default(cuid())
+  quizId        String
+  quiz          Quiz   @relation(fields: [quizId], references: [id])
+  type          String // "qcm" | "vrai_faux" | "reponse_courte"
+  prompt        String
+  options       String? // JSON — tableau de choix pour "qcm"
+  correctAnswer String? // JSON — null pour "reponse_courte" (correction manuelle)
+  points        Int    @default(1)
+  order         Int    @default(1)
+}
+
+model QuizAttempt {
+  id          String    @id @default(cuid())
+  quizId      String
+  quiz        Quiz      @relation(fields: [quizId], references: [id])
+  studentId   Int
+  student     User      @relation("QuizAttemptStudent", fields: [studentId], references: [id])
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+  score       Float?
+  answers     String? // JSON — { questionId: reponse }
+  gradedById  Int?
+  gradedBy    User?     @relation("QuizAttemptGradedBy", fields: [gradedById], references: [id])
+}
+
+model CourseAnnouncement {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  title     String
+  body      String
+  createdAt DateTime @default(now())
 }
 
 model Notification {

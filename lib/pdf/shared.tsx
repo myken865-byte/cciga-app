@@ -1,13 +1,20 @@
+/* eslint-disable jsx-a11y/alt-text -- react-pdf's <Image> renders into a PDF, not the DOM; it has no `alt` prop. */
 import { StyleSheet, View, Text, Image } from "@react-pdf/renderer";
+import { DOCUMENT_FONT_FAMILY, ensureDocumentFontRegistered } from "@/lib/pdf/fonts";
+
+ensureDocumentFontRegistered();
 
 export const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 16, borderBottom: 2, borderBottomColor: "#0f2d52", paddingBottom: 10 },
+  page: { padding: 32, fontSize: 10, fontFamily: DOCUMENT_FONT_FAMILY, color: "#1a1a1a" },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 16, borderBottom: 2, borderBottomColor: "#00185a", paddingBottom: 10 },
   logo: { width: 40, height: 40, marginRight: 12 },
   headerTitleBlock: { flex: 1 },
-  orgName: { fontSize: 14, fontWeight: 700, color: "#0f2d52" },
+  orgName: { fontSize: 14, fontWeight: 700, color: "#00185a" },
   docTitle: { fontSize: 12, marginTop: 2, color: "#1a1a1a" },
   identityBlock: { marginBottom: 14 },
+  identityBlockRow: { flexDirection: "row", justifyContent: "space-between" },
+  identityFields: { flex: 1 },
+  identityPhoto: { width: 70, height: 90, marginLeft: 16, objectFit: "cover", border: 1, borderColor: "#dddddd" },
   identityRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 3 },
   label: { color: "#555555" },
   value: { fontWeight: 700 },

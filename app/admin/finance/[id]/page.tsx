@@ -29,6 +29,7 @@ export default async function StudentFinancePage({
   const payments = await prisma.payment.findMany({
     where: { studentId },
     orderBy: { paidAt: "desc" },
+    include: { recordedBy: true },
   });
 
   const paid = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -70,8 +71,21 @@ export default async function StudentFinancePage({
                     <div>
                       <p className="font-medium text-foreground">{formatHTG(p.amount)}</p>
                       {p.note && <p className="text-muted">{p.note}</p>}
+                      <p className="text-xs text-muted">
+                        Enregistré par {p.recordedBy?.name ?? "—"}
+                      </p>
                     </div>
-                    <span className="text-muted">{formatDate(p.paidAt)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted">{formatDate(p.paidAt)}</span>
+                      <a
+                        href={`/api/admin/finance/${student.id}/payments/${p.id}/receipt`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Reçu PDF
+                      </a>
+                    </div>
                   </li>
                 ))}
               </ul>
