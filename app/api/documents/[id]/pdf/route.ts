@@ -93,6 +93,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         logoBase64,
         docTitle,
         studentName: doc.student.name,
+        studentPhotoUrl: doc.program.school === "ecole-classique" ? doc.student.photoUrl : null,
+        showTotal: doc.program.school === "ecole-classique",
         ccigaId: formatCcigaId(doc.student.id),
         programName: doc.program.name,
         periodLabel: snapshot.periodLabel,
