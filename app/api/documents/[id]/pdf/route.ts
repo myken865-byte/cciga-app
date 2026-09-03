@@ -86,6 +86,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     buffer = await renderToBuffer(
       BulletinDocument({
         logoBase64,
+        docTitle: doc.type === "bulletin_annuel" ? "Bulletin annuel" : "Bulletin périodique",
         studentName: doc.student.name,
         ccigaId: formatCcigaId(doc.student.id),
         programName: doc.program.name,
@@ -103,6 +104,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         retards: snapshot.retards,
         appreciation: snapshot.appreciation,
         conduct: snapshot.conduct,
+        certification: null,
         isDraft: false,
         reference,
         publishedLabel,

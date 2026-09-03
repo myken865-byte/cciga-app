@@ -5,6 +5,7 @@ import { getSchools } from "@/lib/content";
 import { resolveTeacherModel, cascadeTitulaireToCourses } from "@/lib/titulaire";
 import { resolveUniversiteFields } from "@/lib/universiteValidation";
 import { writeAuditLog } from "@/lib/auditLog";
+import { resolveActorId } from "@/lib/devBypass";
 
 export async function PATCH(
   request: Request,
@@ -30,6 +31,7 @@ export async function PATCH(
     niveau,
     teacherModel,
     titulaireId,
+    coordinatorId,
     duration,
     description,
     tuitionFee,
@@ -78,6 +80,10 @@ export async function PATCH(
       niveau: school === "ecole-classique" && validNiveaux.includes(niveau) ? niveau : null,
       teacherModel: resolved.value.teacherModel,
       titulaireId: resolved.value.titulaireId,
+      coordinatorId:
+        school === "universite" && coordinatorId && Number.isInteger(Number(coordinatorId))
+          ? Number(coordinatorId)
+          : null,
       programType: universite.value.programType,
       programStatus: universite.value.programStatus,
       authorizationRef: universite.value.authorizationRef,
@@ -105,7 +111,7 @@ export async function PATCH(
       entityType: "Program",
       entityId: id,
       action: "status_change",
-      actorId: session.userId,
+      actorId: resolveActorId(session.userId),
       before: { programStatus: program.programStatus },
       after: { programStatus: updated.programStatus },
     });
@@ -114,7 +120,7 @@ export async function PATCH(
       entityType: "Program",
       entityId: id,
       action: "update",
-      actorId: session.userId,
+      actorId: resolveActorId(session.userId),
       before: program,
       after: updated,
     });

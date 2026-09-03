@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import BackToPortalsButton from "@/components/BackToPortalsButton";
 import { getSchoolBySlug, getPrograms } from "@/lib/content";
 import {
   admissionStatuses,
@@ -39,6 +40,7 @@ export default async function AdmissionsListPage({
 
   return (
     <div>
+      <BackToPortalsButton className="mb-4" />
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Candidatures</h1>

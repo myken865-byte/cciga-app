@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated/native build output and background-agent worktrees — not source.
+    "android/**",
+    ".claude/worktrees/**",
+    // Separate Electron sub-project (own package.json, CommonJS main process) —
+    // not part of the Next.js app, not linted by its rules.
+    "desktop/**",
   ]),
 ]);
 

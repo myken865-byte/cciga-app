@@ -5,7 +5,7 @@ export default function ProgramCard({ program }: { program: Program }) {
   return (
     <Link
       href={`/programmes/${program.slug}`}
-      className="flex flex-col rounded-lg border border-border bg-surface p-5 transition hover:border-primary hover:shadow-md"
+      className="flex flex-col card p-5 transition hover:border-primary hover:shadow-md"
     >
       <span className="mb-2 inline-block w-fit rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
         {program.level}

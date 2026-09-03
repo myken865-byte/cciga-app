@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { getPrograms } from "@/lib/content";
 import { parseRoles, hasRole } from "@/lib/roles";
 import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
@@ -57,12 +58,14 @@ export default async function AdminCourseDetailPage({
     ? computeMissingGrades(categoryOptions, students, course.grades)
     : [];
 
-  const [programs, allUsers, semesters, allCoursesRaw] = await Promise.all([
+  const [programs, allUsers, semesters, allCoursesRaw, session] = await Promise.all([
     getPrograms(),
     prisma.user.findMany(),
     prisma.semester.findMany({ include: { academicYear: true }, orderBy: { order: "asc" } }),
     prisma.course.findMany({ select: { id: true, name: true, programId: true } }),
+    getSession(),
   ]);
+  const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
   const teachers = allUsers
     .filter((u) => hasRole(parseRoles(u.roles), "TEACHER"))
     .map((u) => ({ id: u.id, name: u.name }));
@@ -77,9 +80,7 @@ export default async function AdminCourseDetailPage({
 
   return (
     <div>
-      <Link href="/admin/courses" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Tous les cours
-      </Link>
+      <BackButton fallbackHref="/admin/courses" label="Tous les cours" />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
@@ -163,11 +164,13 @@ export default async function AdminCourseDetailPage({
               coefficient: course.coefficient,
               groupLabel: course.groupLabel,
               retakeOfCourseId: course.retakeOfCourseId,
+              active: course.active,
             }}
             programs={programs}
             teachers={teachers}
             semesters={semesterOptions}
             allCourses={allCoursesRaw}
+            isSuperAdmin={isSuperAdmin}
           />
           <AttendanceForm courseId={course.id} students={students} />
           <AddCourseMaterialForm courseId={course.id} />

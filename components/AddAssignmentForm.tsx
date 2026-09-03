@@ -38,7 +38,7 @@ export default function AddAssignmentForm({ courseId }: { courseId: string }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
+    <form onSubmit={submit} className="space-y-4 card p-6">
       <h2 className="font-semibold text-foreground">Ajouter un devoir</h2>
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Titre</span>

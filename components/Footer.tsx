@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SocialLinksSection from "@/components/SocialLinksSection";
 
 export default function Footer() {
   return (
@@ -53,6 +54,8 @@ export default function Footer() {
           </ul>
         </div>
       </div>
+
+      <SocialLinksSection />
 
       <div className="flex flex-col items-center gap-2 border-t border-white/10 px-4 py-4 text-center text-xs text-white/60 sm:flex-row sm:justify-between">
         <span>© {new Date().getFullYear()} CCIGA — Centre Interdisciplinaire des Génies Agrégées. Tous droits réservés.</span>

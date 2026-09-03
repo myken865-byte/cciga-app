@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>CCIGA App</title>
+<style>
+  :root {
+    --background: #f5f6f9;
+    --foreground: #12213b;
+    --primary: #0f2d52;
+    --primary-dark: #0a1f3a;
+    --primary-light: #1e4a82;
+    --accent: #c99a2e;
+    --accent-light: #e4c268;
+    --accent-dark: #a97f1f;
+    --surface: #ffffff;
+    --cream: #fdf6e6;
+    --cream-hover: #fbefd4;
+    --border: #e2e5ea;
+    --muted: #5b6478;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .hero {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 55%, var(--primary-light) 100%);
+    color: #fff;
+    padding: 32px 48px 26px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    position: relative;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 50%, var(--accent) 100%);
+  }
+  .hero img { height: 56px; width: 56px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+  .hero h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: .2px; }
+  .hero p { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,.8); }
+  main { padding: 32px 48px 90px; max-width: 1320px; margin: 0 auto; }
+
+  .section-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--primary); margin: 0 0 18px; text-align: center;
+  }
+
+  .portal-frame {
+    position: relative;
+    overflow: hidden;
+    border: 1.5px solid var(--accent);
+    border-radius: 22px;
+    padding: 32px;
+    background: linear-gradient(180deg, #fffdf7 0%, #fbf6ea 100%);
+    box-shadow: 0 1px 2px rgba(15,45,82,.05), 0 10px 30px rgba(15,45,82,.06);
+  }
+  .watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .watermark span {
+    font-size: 108px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    color: var(--primary);
+    opacity: .04;
+  }
+
+  .grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 980px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+    .watermark span { font-size: 72px; }
+  }
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    main { padding: 24px 20px 90px; }
+    .hero { padding: 26px 20px 22px; }
+    .portal-frame { padding: 20px; border-radius: 18px; }
+    .watermark span { font-size: 48px; }
+  }
+  @media (max-width: 440px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    position: relative;
+    background: var(--cream);
+    border: 1.5px solid var(--accent);
+    border-radius: 14px;
+    padding: 18px 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease, background .18s ease;
+    font: inherit;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    min-height: 128px;
+    box-shadow: 0 1px 2px rgba(15,45,82,.04), 0 2px 6px rgba(15,45,82,.05);
+  }
+  .card:hover {
+    background: var(--cream-hover);
+    box-shadow: 0 2px 4px rgba(15,45,82,.06), 0 12px 26px rgba(15,45,82,.14);
+    transform: translateY(-2px);
+    border-color: var(--accent-light);
+  }
+  .card:active { transform: translateY(0); }
+  .card .badge {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: rgba(15,45,82,.07);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+  .card .badge svg { width: 22px; height: 22px; }
+  .card .badge .accent { stroke: var(--accent-dark); }
+  .card .row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex: 1; }
+  .card .name { font-size: 14.5px; font-weight: 700; color: var(--foreground); line-height: 1.3; }
+  .card .hint { font-size: 11.5px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .card .arrow { flex-shrink: 0; margin-top: 2px; color: var(--accent); opacity: .55; transition: opacity .18s ease, transform .18s ease; }
+  .card:hover .arrow { opacity: 1; transform: translateX(2px); }
+
+  .footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 12px 48px; font-size: 11px; color: var(--muted);
+    border-top: 1px solid var(--border); background: var(--surface);
+  }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <img src="logo.png" alt="CCIGA" />
+    <div>
+      <h1>CCIGA App</h1>
+      <p>Centre Interdisciplinaire des Génies Agrégées — plateforme institutionnelle</p>
+    </div>
+  </div>
+
+  <main>
+    <p class="section-label">Accès aux portails</p>
+    <div class="portal-frame">
+      <div class="watermark" aria-hidden="true"><span>CCIGA App</span></div>
+      <div class="grid" id="portals"></div>
+    </div>
+  </main>
+
+  <div class="footer">CCIGA App — version locale Windows</div>
+
+  <script>
+    const ICONS = {
+      // Étudiant — toque de graduation
+      graduation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V17c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5" class="accent"/><path d="M22 9v6"/></svg>',
+      // Parent — adulte + enfant
+      family: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-1a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v1"/><circle class="accent" cx="18" cy="9" r="2.2"/><path class="accent" d="M14.7 21v-.8a4 4 0 0 1 4-4h0"/></svg>',
+      // Enseignant — tableau + pointeur
+      chalkboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/><path class="accent" d="M7 10.5 10 8l2.5 2 3.5-3.5"/></svg>',
+      // Administration — bâtiment de gestion
+      building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-5 8 5v12"/><path d="M4 21h16"/><path d="M9 21v-6h6v6"/><path class="accent" d="M9 12h.01M15 12h.01M12 8h.01"/></svg>',
+      // Secrétariat — dossier + documents
+      folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/><path class="accent" d="M8 13h8M8 16.5h5"/></svg>',
+      // Responsable académique — livre + diplôme
+      book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z"/><path d="M4 18a2.5 2.5 0 0 1 2.5-2.5H20"/><path class="accent" d="M8 7.5h8M8 10.5h5"/></svg>',
+      // Conseiller / Psychologue — personne + cœur
+      heartPerson: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.2"/><path d="M3.5 21v-1c0-3 2.5-5.5 5.5-5.5h1"/><path class="accent" d="M18 21.2s-3.6-2.1-3.6-4.6a2 2 0 0 1 3.6-1.2 2 2 0 0 1 3.6 1.2c0 2.5-3.6 4.6-3.6 4.6Z"/></svg>',
+      // Super Administrateur — bouclier + clé
+      shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><circle class="accent" cx="12" cy="10.5" r="1.8"/><path class="accent" d="M12 12.3V15"/></svg>',
+      // Rectorat — bâtiment institutionnel à colonnes
+      institution: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V10l8-5 8 5v11"/><path d="M8 21v-7M12 21v-7M16 21v-7"/><path class="accent" d="M4 10h16"/></svg>',
+      // Décanat — bouclier académique + livre
+      academicShield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><path class="accent" d="M9 11.5h6M9 14.5h4"/></svg>',
+      // Coordination — organigramme / réseau
+      network: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle class="accent" cx="6" cy="18" r="2.2"/><circle class="accent" cx="18" cy="18" r="2.2"/><path d="M12 7.2V11M12 11 6 15.8M12 11l6 4.8"/></svg>',
+      // Logistique — camion + cartons
+      truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle class="accent" cx="7.5" cy="18" r="1.6"/><circle class="accent" cx="17.5" cy="18" r="1.6"/></svg>',
+    };
+
+    const portals = [
+      { role: "STUDENT", label: "Étudiant", icon: "graduation" },
+      { role: "PARENT", label: "Parent", icon: "family" },
+      { role: "TEACHER", label: "Enseignant", icon: "chalkboard" },
+      { role: "ADMIN", label: "Administration", icon: "building" },
+      { role: "SECRETARIAT", label: "Secrétariat", icon: "folder" },
+      { role: "ACADEMIC_OFFICER", label: "Responsable académique", icon: "book" },
+      { role: "CONSEILLER", label: "Conseiller / Psychologue", icon: "heartPerson" },
+      { role: "SUPER_ADMIN", label: "Super Administrateur", icon: "shield" },
+      { role: "RECTEUR", label: "Rectorat", icon: "institution" },
+      { role: "DOYEN", label: "Décanat", icon: "academicShield" },
+      { role: "COORDONNATEUR", label: "Coordination", icon: "network" },
+      { role: "LOGISTICIEN", label: "Logistique", icon: "truck" },
+    ];
+
+    const grid = document.getElementById("portals");
+    for (const p of portals) {
+      const btn = document.createElement("button");
+      btn.className = "card";
+      btn.innerHTML = `
+        <div class="badge">${ICONS[p.icon]}</div>
+        <div class="row">
+          <div>
+            <div class="name">${p.label}</div>
+            <div class="hint">Ouvrir le portail</div>
+          </div>
+          <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      `;
+      btn.addEventListener("click", () => window.cciga.openPortal(p.role));
+      grid.appendChild(btn);
+    }
+  </script>
+</body>
+</html>

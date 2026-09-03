@@ -6,6 +6,7 @@ import { slugify } from "@/lib/slugify";
 import { resolveTeacherModel } from "@/lib/titulaire";
 import { resolveUniversiteFields } from "@/lib/universiteValidation";
 import { writeAuditLog } from "@/lib/auditLog";
+import { resolveActorId } from "@/lib/devBypass";
 
 async function uniqueSlug(base: string): Promise<string> {
   let slug = base || "programme";
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
     entityType: "Program",
     entityId: program.id,
     action: "create",
-    actorId: session.userId,
+    actorId: resolveActorId(session.userId),
     after: program,
   });
 

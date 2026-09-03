@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/db";
+import { parseRoles, hasRole } from "@/lib/roles";
 import CreateFacultyForm from "@/components/CreateFacultyForm";
 import CreateAcademicYearForm from "@/components/CreateAcademicYearForm";
 import CreateSemesterForm from "@/components/CreateSemesterForm";
 import SectorLogo from "@/components/SectorLogo";
+import AssignDoyenForm from "@/components/AssignDoyenForm";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,7 @@ function formatDateTime(iso: Date) {
 }
 
 export default async function AdminUniversitePage() {
-  const [faculties, academicYears, auditLogs] = await Promise.all([
+  const [faculties, academicYears, auditLogs, allUsers] = await Promise.all([
     prisma.faculty.findMany({ where: { school: "universite" }, orderBy: { name: "asc" } }),
     prisma.academicYear.findMany({
       orderBy: { startDate: "desc" },
@@ -23,7 +25,11 @@ export default async function AdminUniversitePage() {
       orderBy: { createdAt: "desc" },
       take: 50,
     }),
+    prisma.user.findMany(),
   ]);
+  const doyenCandidates = allUsers
+    .filter((u) => hasRole(parseRoles(u.roles), "DOYEN"))
+    .map((u) => ({ id: u.id, name: u.name }));
 
   return (
     <div>
@@ -42,6 +48,7 @@ export default async function AdminUniversitePage() {
               {faculties.map((f) => (
                 <li key={f.id} className="text-foreground">
                   {f.name}
+                  <AssignDoyenForm facultyId={f.id} currentDoyenId={f.doyenId} candidates={doyenCandidates} />
                 </li>
               ))}
             </ul>

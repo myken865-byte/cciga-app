@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
+import { resolveActorId } from "@/lib/devBypass";
 import { createNotification } from "@/lib/notifications";
 
 export async function POST(
@@ -42,7 +43,7 @@ export async function POST(
     entityType: "Grade",
     entityId: id,
     action: "publish",
-    actorId: session.userId,
+    actorId: resolveActorId(session.userId),
     reason: `${validated.length} note(s) publiée(s) pour ${course.name}.`,
   });
 

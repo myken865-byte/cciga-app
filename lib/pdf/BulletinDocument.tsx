@@ -1,9 +1,12 @@
-import { Document, Page, View, Text } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image } from "@react-pdf/renderer";
 import { styles, DocumentHeader, DraftWatermark, SignatureBlock, DocumentFooter } from "@/lib/pdf/shared";
 
 export interface BulletinDocumentProps {
   logoBase64: string;
+  docTitle: string;
   studentName: string;
+  studentPhotoUrl?: string | null;
+  showTotal?: boolean;
   ccigaId: string;
   programName: string;
   periodLabel: string;
@@ -16,6 +19,7 @@ export interface BulletinDocumentProps {
   retards: number;
   appreciation: string | null;
   conduct: string | null;
+  certification: string | null;
   isDraft: boolean;
   reference: string;
   publishedLabel: string;
@@ -27,24 +31,29 @@ export default function BulletinDocument(props: BulletinDocumentProps) {
     <Document>
       <Page size="A4" style={styles.page}>
         <DraftWatermark isDraft={props.isDraft} />
-        <DocumentHeader logoBase64={props.logoBase64} orgTitle="CCIGA" docTitle="Bulletin scolaire — École Classique" />
+        <DocumentHeader logoBase64={props.logoBase64} orgTitle="CCIGA" docTitle={props.docTitle} />
 
         <View style={styles.identityBlock}>
-          <View style={styles.identityRow}>
-            <Text style={styles.label}>Élève</Text>
-            <Text style={styles.value}>{props.studentName}</Text>
-          </View>
-          <View style={styles.identityRow}>
-            <Text style={styles.label}>Identifiant CCIGA</Text>
-            <Text style={styles.value}>{props.ccigaId}</Text>
-          </View>
-          <View style={styles.identityRow}>
-            <Text style={styles.label}>Classe</Text>
-            <Text style={styles.value}>{props.programName}</Text>
-          </View>
-          <View style={styles.identityRow}>
-            <Text style={styles.label}>Période</Text>
-            <Text style={styles.value}>{props.periodLabel}</Text>
+          <View style={styles.identityBlockRow}>
+            <View style={styles.identityFields}>
+              <View style={styles.identityRow}>
+                <Text style={styles.label}>Élève</Text>
+                <Text style={styles.value}>{props.studentName}</Text>
+              </View>
+              <View style={styles.identityRow}>
+                <Text style={styles.label}>Identifiant CCIGA</Text>
+                <Text style={styles.value}>{props.ccigaId}</Text>
+              </View>
+              <View style={styles.identityRow}>
+                <Text style={styles.label}>Classe</Text>
+                <Text style={styles.value}>{props.programName}</Text>
+              </View>
+              <View style={styles.identityRow}>
+                <Text style={styles.label}>Période</Text>
+                <Text style={styles.value}>{props.periodLabel}</Text>
+              </View>
+            </View>
+            {props.studentPhotoUrl && <Image style={styles.identityPhoto} src={props.studentPhotoUrl} />}
           </View>
         </View>
 
@@ -64,6 +73,15 @@ export default function BulletinDocument(props: BulletinDocumentProps) {
         </View>
 
         <View style={styles.summaryBlock}>
+          {props.showTotal && props.courseFinals.every((c) => c.finalGrade !== null) && props.courseFinals.length > 0 && (
+            <View style={styles.summaryRow}>
+              <Text>Total des notes</Text>
+              <Text style={styles.value}>
+                {props.courseFinals.reduce((sum, c) => sum + (c.finalGrade ?? 0), 0).toFixed(1)}/
+                {props.courseFinals.length * 100}
+              </Text>
+            </View>
+          )}
           <View style={styles.summaryRow}>
             <Text>Moyenne générale</Text>
             <Text style={styles.value}>{props.average !== null ? `${props.average.toFixed(1)}/100` : "—"}</Text>
@@ -94,6 +112,12 @@ export default function BulletinDocument(props: BulletinDocumentProps) {
             <View style={styles.summaryRow}>
               <Text>Appréciation</Text>
               <Text style={styles.value}>{props.appreciation}</Text>
+            </View>
+          )}
+          {props.certification && (
+            <View style={styles.summaryRow}>
+              <Text>Certification délivrée</Text>
+              <Text style={styles.value}>{props.certification}</Text>
             </View>
           )}
         </View>

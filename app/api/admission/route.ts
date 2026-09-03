@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getProgramBySlug, getSchoolBySlug } from "@/lib/content";
-import { computeAdmissionStatus } from "@/lib/admission-documents";
+import { computeAdmissionStatus, type AdmissionDocumentEntry } from "@/lib/admission-documents";
 import { admissionStatusLabels } from "@/lib/admission-status";
 import { notifyAdmins } from "@/lib/notifications";
 
@@ -34,8 +34,15 @@ export async function POST(request: Request) {
   }
 
   const documentList: string[] = Array.isArray(documents) ? documents : [];
+  // Ce formulaire déclare seulement quels documents le candidat peut fournir
+  // (pas encore d'upload réel de fichier) — chaque label coché vaut "fourni".
+  const documentEntries: AdmissionDocumentEntry[] = documentList.map((label) => ({
+    label,
+    fileUrl: "declared",
+    fileName: null,
+  }));
   const reference = `CCIGA-${Date.now().toString(36).toUpperCase()}`;
-  const status = computeAdmissionStatus(documentList);
+  const status = computeAdmissionStatus(documentEntries);
 
   const submission = await prisma.admissionSubmission.create({
     data: {

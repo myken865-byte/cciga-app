@@ -57,7 +57,7 @@ export default function AppreciationForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-2 rounded-lg border border-border bg-surface p-4 text-sm">
+    <form onSubmit={submit} className="space-y-2 card p-4 text-sm">
       <p className="font-semibold text-foreground">Appréciation &amp; conduite</p>
       <select className="input" value={semesterId} onChange={(e) => onSemesterChange(e.target.value)}>
         {semesters.map((s) => (

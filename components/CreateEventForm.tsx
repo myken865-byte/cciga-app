@@ -42,12 +42,12 @@ export default function CreateEventForm() {
 
   if (created) {
     return (
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="card p-6">
         <p className="mb-2 text-2xl">✅</p>
         <p className="mb-4 font-semibold text-foreground">Événement créé — {created}</p>
         <button
           onClick={() => setCreated(null)}
-          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-background"
+          className="btn-secondary"
         >
           Créer un autre événement
         </button>
@@ -56,7 +56,7 @@ export default function CreateEventForm() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
+    <form onSubmit={submit} className="space-y-4 card p-6">
       <h2 className="font-semibold text-foreground">Créer un événement</h2>
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Titre</span>

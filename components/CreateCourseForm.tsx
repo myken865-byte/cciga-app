@@ -36,7 +36,8 @@ export default function CreateCourseForm({
   const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
   const isUniversite = selectedProgram?.school === "universite";
   const isEcoleClassique = selectedProgram?.school === "ecole-classique";
-  const showPeriodFields = isUniversite || isEcoleClassique;
+  const isEcoleProfessionnelle = selectedProgram?.school === "ecole-professionnelle";
+  const showPeriodFields = isUniversite || isEcoleClassique || isEcoleProfessionnelle;
   const titulaireName = isTitulaireModel
     ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
     : undefined;
@@ -100,12 +101,12 @@ export default function CreateCourseForm({
 
   if (created) {
     return (
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="card p-6">
         <p className="mb-2 text-2xl">✅</p>
         <p className="mb-4 font-semibold text-foreground">Cours créé</p>
         <button
           onClick={() => setCreated(false)}
-          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-background"
+          className="btn-secondary"
         >
           Créer un autre cours
         </button>
@@ -114,7 +115,7 @@ export default function CreateCourseForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
+    <form onSubmit={submit} className="space-y-4 card p-6">
       <h2 className="font-semibold text-foreground">Créer un cours</h2>
 
       <label className="block text-sm">

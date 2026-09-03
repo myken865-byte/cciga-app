@@ -1,4 +1,4 @@
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatCcigaId } from "@/lib/cciga-id";
@@ -37,9 +37,7 @@ export default async function StudentFinancePage({
 
   return (
     <div>
-      <Link href="/admin/finance" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Toutes les finances
-      </Link>
+      <BackButton fallbackHref="/admin/finance" label="Toutes les finances" />
 
       <div className="mb-6">
         <p className="font-mono text-sm text-muted">{formatCcigaId(student.id)}</p>
@@ -71,7 +69,24 @@ export default async function StudentFinancePage({
                       <p className="font-medium text-foreground">{formatHTG(p.amount)}</p>
                       {p.note && <p className="text-muted">{p.note}</p>}
                     </div>
-                    <span className="text-muted">{formatDate(p.paidAt)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted">{formatDate(p.paidAt)}</span>
+                      <a
+                        href={`/api/admin/finance/${student.id}/payments/${p.id}/pdf`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-secondary text-xs"
+                      >
+                        Voir / PDF
+                      </a>
+                      <a
+                        href={`/api/admin/finance/${student.id}/payments/${p.id}/pdf`}
+                        download
+                        className="btn-secondary text-xs"
+                      >
+                        Imprimer
+                      </a>
+                    </div>
                   </li>
                 ))}
               </ul>

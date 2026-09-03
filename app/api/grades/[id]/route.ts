@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { hasRole } from "@/lib/roles";
 import { writeAuditLog } from "@/lib/auditLog";
+import { resolveActorId } from "@/lib/devBypass";
 import { findDocumentsCoveringGrade, regenerateDocumentVersion } from "@/lib/documents";
 
 export async function PATCH(
@@ -52,7 +53,7 @@ export async function PATCH(
     entityType: "Grade",
     entityId: id,
     action: "score_change",
-    actorId: session.userId,
+    actorId: resolveActorId(session.userId),
     before: { score: grade.score },
     after: { score: updated.score },
     reason: reason.trim(),

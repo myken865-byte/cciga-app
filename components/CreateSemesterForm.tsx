@@ -42,14 +42,14 @@ export default function CreateSemesterForm({ academicYears }: { academicYears: A
 
   if (academicYears.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+      <div className="card p-4 text-sm text-muted">
         Créez d&apos;abord une année académique.
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-lg border border-border bg-surface p-4">
+    <form onSubmit={submit} className="space-y-3 card p-4">
       <h3 className="font-semibold text-foreground">Ajouter un semestre</h3>
       <select className="input" value={academicYearId} onChange={(e) => setAcademicYearId(e.target.value)}>
         {academicYears.map((y) => (

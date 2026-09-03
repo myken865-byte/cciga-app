@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
+import { resolveActorId } from "@/lib/devBypass";
 
 export async function POST(request: Request) {
   const session = await requireAdminSession();
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     entityType: "Faculty",
     entityId: faculty.id,
     action: "create",
-    actorId: session.userId,
+    actorId: resolveActorId(session.userId),
     after: faculty,
   });
 

@@ -71,7 +71,7 @@ export default function ProgramsTable({
         </select>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto card">
         <table className="w-full text-left text-sm">
           <thead className="bg-background text-muted">
             <tr>
@@ -94,6 +94,11 @@ export default function ProgramsTable({
                   <Link href={`/admin/programs/${program.id}`} className="font-medium text-primary hover:underline">
                     {program.name}
                   </Link>
+                  {!program.active && (
+                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                      Archivé
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-muted">{program.level}</td>
                 <td className="px-4 py-3 text-muted">

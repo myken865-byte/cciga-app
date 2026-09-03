@@ -1,4 +1,4 @@
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import MarkMessageTreatedButton from "@/components/MarkMessageTreatedButton";
@@ -26,9 +26,7 @@ export default async function AdminMessageDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link href="/admin/messages" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Tous les messages
-      </Link>
+      <BackButton fallbackHref="/admin/messages" label="Tous les messages" />
 
       <div className="rounded-lg border border-border bg-surface p-6">
         <div className="mb-4 flex items-start justify-between">

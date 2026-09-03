@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 
@@ -43,9 +44,7 @@ export default async function AdminDocumentDetailPage({
 
   return (
     <div>
-      <Link href="/admin/documents" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Bulletins et relevés
-      </Link>
+      <BackButton fallbackHref="/admin/documents" label="Bulletins et relevés" />
 
       <h1 className="mb-1 text-2xl font-bold text-foreground">
         {doc.type === "releve_semestre" ? "Relevé" : "Bulletin"} — {doc.student.name}

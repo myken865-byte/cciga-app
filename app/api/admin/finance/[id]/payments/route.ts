@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { formatHTG } from "@/lib/currency";
+import { resolveActorId } from "@/lib/devBypass";
 
 export async function POST(
   request: Request,
@@ -32,6 +33,7 @@ export async function POST(
       studentId,
       amount: Math.round(parsedAmount),
       note: note || undefined,
+      recordedById: resolveActorId(session.userId),
     },
   });
 

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>CCIGA App</title>
+<style>
+  :root {
+    --background: #f5f6f9;
+    --foreground: #12213b;
+    --primary: #0f2d52;
+    --primary-light: #1e4a82;
+    --muted: #5b6478;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 4px solid var(--border, #e2e5ea);
+    border-top-color: var(--primary);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  p { margin: 0; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <p>Chargement de CCIGA App…</p>
+</body>
+</html>

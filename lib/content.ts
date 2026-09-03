@@ -49,6 +49,7 @@ export interface Program {
   niveau: Niveau | null;
   teacherModel: TeacherModel | null;
   titulaireId: number | null;
+  coordinatorId: number | null;
   programType: ProgramType | null;
   programStatus: ProgramStatus | null;
   authorizationRef: string | null;
@@ -64,6 +65,7 @@ export interface Program {
   description: string;
   admissionConditions: string[];
   tuitionFee: number;
+  active: boolean;
 }
 
 function mapProgram(row: PrismaProgram): Program {
@@ -78,6 +80,7 @@ function mapProgram(row: PrismaProgram): Program {
     niveau: (row.niveau as Niveau | null) ?? null,
     teacherModel: (row.teacherModel as TeacherModel | null) ?? null,
     titulaireId: row.titulaireId ?? null,
+    coordinatorId: row.coordinatorId ?? null,
     programType: (row.programType as ProgramType | null) ?? null,
     programStatus: (row.programStatus as ProgramStatus | null) ?? null,
     authorizationRef: row.authorizationRef ?? null,
@@ -93,6 +96,7 @@ function mapProgram(row: PrismaProgram): Program {
     description: row.description,
     admissionConditions: JSON.parse(row.admissionConditions || "[]"),
     tuitionFee: row.tuitionFee,
+    active: row.active,
   };
 }
 

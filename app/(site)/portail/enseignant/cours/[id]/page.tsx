@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { gradeStatusLabels, usesGradeWorkflow, type GradeStatus } from "@/lib/universite";
@@ -10,6 +10,11 @@ import AddAssignmentForm from "@/components/AddAssignmentForm";
 import RecordGradeForm from "@/components/RecordGradeForm";
 import GradeWorkflowPanel from "@/components/GradeWorkflowPanel";
 import MissingGradesWarning from "@/components/MissingGradesWarning";
+import AddAnnouncementForm from "@/components/AddAnnouncementForm";
+import AddLessonModuleForm from "@/components/AddLessonModuleForm";
+import AddLessonForm from "@/components/AddLessonForm";
+import AddQuizForm from "@/components/AddQuizForm";
+import AddQuizQuestionForm from "@/components/AddQuizQuestionForm";
 import { computeMissingGrades } from "@/lib/gradeCompleteness";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +38,12 @@ export default async function TeacherCoursePage({
       program: { include: { students: true } },
       teacher: true,
       materials: { orderBy: { createdAt: "desc" } },
-      assignments: { orderBy: { createdAt: "desc" } },
+      assignments: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          submissions: { include: { student: true, grade: true }, orderBy: { submittedAt: "desc" } },
+        },
+      },
       evaluationCategories: { orderBy: { createdAt: "asc" } },
       grades: { include: { student: true, assignment: true, evaluationCategory: true }, orderBy: { recordedAt: "desc" } },
     },
@@ -42,6 +52,80 @@ export default async function TeacherCoursePage({
   if (!course || course.teacherId !== session.userId) {
     notFound();
   }
+
+  const [lessonModulesRaw, quizzesRaw, announcements] = await Promise.all([
+    prisma.lessonModule.findMany({
+      where: { courseId: id },
+      include: { lessons: { orderBy: { order: "asc" }, include: { progress: true } } },
+      orderBy: { order: "asc" },
+    }),
+    prisma.quiz.findMany({
+      where: { courseId: id },
+      include: {
+        questions: { orderBy: { order: "asc" } },
+        attempts: { include: { student: true }, orderBy: { submittedAt: "desc" } },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.courseAnnouncement.findMany({
+      where: { courseId: id },
+      include: { author: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const totalEnrolled = course.program.students.length;
+
+  const lessonModules = lessonModulesRaw.map((mod) => ({
+    id: mod.id,
+    title: mod.title,
+    order: mod.order,
+    lessons: mod.lessons.map((l) => ({
+      id: l.id,
+      title: l.title,
+      order: l.order,
+      contentType: l.contentType,
+      body: l.body,
+      fileUrl: l.fileUrl,
+      videoUrl: l.videoUrl,
+      completedCount: l.progress.length,
+    })),
+  }));
+
+  const allModules = lessonModules.map((m) => ({ id: m.id, title: m.title }));
+
+  const quizzes = quizzesRaw.map((q) => ({
+    id: q.id,
+    title: q.title,
+    description: q.description,
+    isGraded: q.isGraded,
+    maxAttempts: q.maxAttempts,
+    questions: q.questions,
+    attempts: q.attempts.map((att) => ({
+      id: att.id,
+      studentName: att.student.name,
+      score: att.score,
+      submittedAt: att.submittedAt,
+    })),
+  }));
+
+  const quizOptions = quizzes.map((q) => ({ id: q.id, title: q.title }));
+
+  const assignmentsWithSubmissions = course.assignments.map((a) => ({
+    id: a.id,
+    title: a.title,
+    description: a.description,
+    dueDate: a.dueDate,
+    submissions: a.submissions.map((s) => ({
+      id: s.id,
+      studentName: s.student.name,
+      textContent: s.textContent,
+      fileUrl: s.fileUrl,
+      submittedAt: s.submittedAt,
+      late: s.late,
+      grade: s.grade ? { score: s.grade.score } : null,
+    })),
+  }));
 
   const usesWorkflow = usesGradeWorkflow(course.program.school);
   const students = course.program.students.map((s) => ({ id: s.id, name: s.name }));
@@ -63,9 +147,7 @@ export default async function TeacherCoursePage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
-      <Link href="/portail/enseignant" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Mon portail
-      </Link>
+      <BackButton fallbackHref="/portail/enseignant" label="Mon portail" />
       <CourseContentView
         course={{
           name: course.name,
@@ -78,7 +160,19 @@ export default async function TeacherCoursePage({
           endTime: course.endTime,
         }}
         materials={course.materials}
-        assignments={course.assignments}
+        assignments={assignmentsWithSubmissions}
+        lessonModules={lessonModules}
+        showSubmissions
+        quizzes={quizzes}
+        showQuizAttempts
+        announcements={announcements.map((a) => ({
+          id: a.id,
+          title: a.title,
+          body: a.body,
+          authorName: a.author.name,
+          createdAt: a.createdAt,
+        }))}
+        totalEnrolled={totalEnrolled}
       />
 
       {usesWorkflow && categoryOptions.length > 0 && (
@@ -108,6 +202,11 @@ export default async function TeacherCoursePage({
         {usesWorkflow && (
           <GradeWorkflowPanel courseId={course.id} counts={gradeCounts} canReview={false} canPublish={false} />
         )}
+        <AddAnnouncementForm courseId={course.id} />
+        <AddLessonModuleForm courseId={course.id} />
+        <AddLessonForm modules={allModules} />
+        <AddQuizForm courseId={course.id} />
+        <AddQuizQuestionForm quizzes={quizOptions} />
       </div>
 
       <div className="mt-8">

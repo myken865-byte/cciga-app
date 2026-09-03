@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import { prisma } from "@/lib/db";
 import { getSchoolBySlug, getProgramBySlug } from "@/lib/content";
 import { admissionStatusLabels, admissionStatusStyles, isAdmissionStatus } from "@/lib/admission-status";
@@ -35,9 +35,7 @@ export default async function AdmissionDetailPage({
 
   return (
     <div>
-      <Link href="/admin/admissions" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Toutes les candidatures
-      </Link>
+      <BackButton fallbackHref="/admin/admissions" label="Toutes les candidatures" />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>

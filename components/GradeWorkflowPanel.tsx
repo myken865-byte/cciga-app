@@ -42,34 +42,23 @@ export default function GradeWorkflowPanel({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
-      <h2 className="mb-3 font-semibold text-foreground">Flux de validation des notes</h2>
-      <ul className="mb-3 space-y-1 text-sm text-muted">
-        <li>
-          {gradeStatusLabels.brouillon} : <span className="font-semibold text-foreground">{counts.brouillon}</span>
-        </li>
-        <li>
-          {gradeStatusLabels.soumis} : <span className="font-semibold text-foreground">{counts.soumis}</span>
-        </li>
-        <li>
-          {gradeStatusLabels.en_verification} :{" "}
-          <span className="font-semibold text-foreground">{counts.en_verification}</span>
-        </li>
-        <li>
-          {gradeStatusLabels.valide} : <span className="font-semibold text-foreground">{counts.valide}</span>
-        </li>
-        <li>
-          {gradeStatusLabels.publie} : <span className="font-semibold text-foreground">{counts.publie}</span>
-        </li>
-      </ul>
+    <div className="card p-5 sm:p-6">
+      <h2 className="section-label mb-3">Flux de validation des notes</h2>
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        <span className="badge badge-neutral">{gradeStatusLabels.brouillon} {counts.brouillon}</span>
+        <span className="badge badge-warning">{gradeStatusLabels.soumis} {counts.soumis}</span>
+        <span className="badge badge-info">{gradeStatusLabels.en_verification} {counts.en_verification}</span>
+        <span className="badge badge-success">{gradeStatusLabels.valide} {counts.valide}</span>
+        <span className="badge badge-neutral">{gradeStatusLabels.publie} {counts.publie}</span>
+      </div>
 
-      {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mb-3 rounded-md bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => trigger("submit")}
           disabled={submitting !== null || counts.brouillon === 0}
-          className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-background disabled:opacity-50"
+          className="btn-secondary text-sm disabled:opacity-50"
         >
           {submitting === "submit" ? "Envoi…" : `Soumettre les brouillons (${counts.brouillon})`}
         </button>
@@ -78,14 +67,14 @@ export default function GradeWorkflowPanel({
             <button
               onClick={() => trigger("review")}
               disabled={submitting !== null || counts.soumis === 0}
-              className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-background disabled:opacity-50"
+              className="btn-secondary text-sm disabled:opacity-50"
             >
               {submitting === "review" ? "Envoi…" : `Mettre en vérification (${counts.soumis})`}
             </button>
             <button
               onClick={() => trigger("validate")}
               disabled={submitting !== null || counts.en_verification === 0}
-              className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-background disabled:opacity-50"
+              className="btn-secondary text-sm disabled:opacity-50"
             >
               {submitting === "validate" ? "Validation…" : `Valider (${counts.en_verification})`}
             </button>
@@ -95,7 +84,7 @@ export default function GradeWorkflowPanel({
           <button
             onClick={() => trigger("publish")}
             disabled={submitting !== null || counts.valide === 0}
-            className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-light disabled:opacity-50"
+            className="btn-primary text-sm disabled:opacity-50"
           >
             {submitting === "publish" ? "Publication…" : `Publier les validées (${counts.valide})`}
           </button>

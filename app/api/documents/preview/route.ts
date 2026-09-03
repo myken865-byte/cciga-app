@@ -101,6 +101,7 @@ export async function POST(request: Request) {
     buffer = await renderToBuffer(
       BulletinDocument({
         logoBase64,
+        docTitle: "Bulletin périodique",
         studentName: student.name,
         ccigaId: formatCcigaId(student.id),
         programName: program.name,
@@ -118,6 +119,7 @@ export async function POST(request: Request) {
         retards: attendances.filter((a) => a.status === "retard").length,
         appreciation: appreciation?.appreciation ?? null,
         conduct: appreciation?.conduct ?? null,
+        certification: null,
         isDraft: true,
         reference: "APERÇU",
         publishedLabel: "Aperçu — non publié",

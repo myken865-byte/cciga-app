@@ -124,6 +124,7 @@ export default function AIAssistantWidget() {
               placeholder="Votre question…"
               className="input flex-1"
               disabled={loading}
+              maxLength={1000}
             />
             <button
               type="submit"

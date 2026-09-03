@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireReviewerSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
+import { resolveActorId } from "@/lib/devBypass";
 
 export async function POST(
   _request: Request,
@@ -32,7 +33,7 @@ export async function POST(
     entityType: "Grade",
     entityId: id,
     action: "validate",
-    actorId: session.userId,
+    actorId: resolveActorId(session.userId),
     reason: `${submitted.length} note(s) validée(s) pour ${course.name}.`,
   });
 

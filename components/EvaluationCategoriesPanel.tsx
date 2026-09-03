@@ -56,7 +56,7 @@ export default function EvaluationCategoriesPanel({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
+    <div className="card p-6">
       <h2 className="mb-3 font-semibold text-foreground">Catégories d&apos;évaluation</h2>
 
       {categories.length > 0 && (

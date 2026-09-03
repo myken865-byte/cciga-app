@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { roleList, roleLabels, type Role } from "@/lib/roles";
+import { upload } from "@vercel/blob/client";
+import { roleList, roleLabels, privilegedRoles, type Role } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
 import type { Program } from "@/lib/content";
 import ProgramSelect from "@/components/ProgramSelect";
@@ -12,25 +13,60 @@ interface StudentOption {
   name: string;
 }
 
+interface ParentOption {
+  id: number;
+  name: string;
+}
+
 export default function CreateUserForm({
   students,
+  parents,
   programs,
+  isSuperAdmin,
+  defaultRoles,
 }: {
   students: StudentOption[];
+  parents: ParentOption[];
   programs: Program[];
+  isSuperAdmin: boolean;
+  defaultRoles?: Role[];
 }) {
   const router = useRouter();
+  const selectableRoles = isSuperAdmin ? roleList : roleList.filter((r) => !privilegedRoles.includes(r));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<Role[]>(defaultRoles ?? []);
   const [childId, setChildId] = useState("");
+  const [parentId, setParentId] = useState("");
   const [programId, setProgramId] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [dob, setDob] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: number; password: string } | null>(null);
 
   function toggleRole(role: Role) {
     setRoles((r) => (r.includes(role) ? r.filter((x) => x !== role) : [...r, role]));
+  }
+
+  async function handlePhotoSelect(file: File | undefined) {
+    if (!file) return;
+    setUploadingPhoto(true);
+    setError(null);
+    try {
+      const blob = await upload(`badge-photos/${crypto.randomUUID()}-${file.name}`, file, {
+        access: "private",
+        handleUploadUrl: "/api/admin/badges/photo/upload",
+      });
+      setPhotoUrl(blob.url);
+    } catch {
+      setError("Échec du téléversement de la photo.");
+    } finally {
+      setUploadingPhoto(false);
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -47,6 +83,11 @@ export default function CreateUserForm({
           roles,
           childId: roles.includes("PARENT") && childId ? Number(childId) : undefined,
           programId: roles.includes("STUDENT") && programId ? programId : undefined,
+          parentId: roles.includes("STUDENT") && parentId ? Number(parentId) : undefined,
+          photoUrl: photoUrl || undefined,
+          dob: dob || undefined,
+          phone: phone || undefined,
+          address: address || undefined,
         }),
       });
       const json = await res.json();
@@ -59,7 +100,12 @@ export default function CreateUserForm({
       setEmail("");
       setRoles([]);
       setChildId("");
+      setParentId("");
       setProgramId("");
+      setPhotoUrl("");
+      setDob("");
+      setPhone("");
+      setAddress("");
       router.refresh();
     } catch {
       setError("Impossible de contacter le serveur.");
@@ -70,7 +116,7 @@ export default function CreateUserForm({
 
   if (created) {
     return (
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="card p-6">
         <p className="mb-2 text-2xl">✅</p>
         <p className="mb-1 font-semibold text-foreground">Compte créé</p>
         <p className="mb-4 text-sm text-muted">
@@ -82,7 +128,7 @@ export default function CreateUserForm({
         </p>
         <button
           onClick={() => setCreated(null)}
-          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-background"
+          className="btn-secondary"
         >
           Créer un autre compte
         </button>
@@ -91,8 +137,30 @@ export default function CreateUserForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
-      <h2 className="font-semibold text-foreground">Créer un compte</h2>
+    <form onSubmit={submit} className="space-y-4 card p-6">
+      <h2 className="font-semibold text-foreground">+ Ajouter un compte</h2>
+
+      <div className="flex items-center gap-4">
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photoUrl} alt="" className="h-14 w-14 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-background text-xs text-muted">
+            Photo
+          </div>
+        )}
+        <label className="cursor-pointer rounded-md border border-border px-3 py-1.5 text-xs font-medium text-primary hover:border-primary">
+          {uploadingPhoto ? "Envoi…" : "Ajouter une photo"}
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            className="hidden"
+            disabled={uploadingPhoto}
+            onChange={(e) => handlePhotoSelect(e.target.files?.[0])}
+          />
+        </label>
+      </div>
+
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Nom complet</span>
         <input required className="input" value={name} onChange={(e) => setName(e.target.value)} />
@@ -107,10 +175,26 @@ export default function CreateUserForm({
           onChange={(e) => setEmail(e.target.value)}
         />
       </label>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-foreground">Date de naissance</span>
+          <input type="date" className="input" value={dob} onChange={(e) => setDob(e.target.value)} />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-foreground">Téléphone</span>
+          <input type="tel" className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </label>
+      </div>
+      <label className="block text-sm">
+        <span className="mb-1 block font-medium text-foreground">Adresse</span>
+        <input className="input" value={address} onChange={(e) => setAddress(e.target.value)} />
+      </label>
+
       <div>
         <span className="mb-2 block text-sm font-medium text-foreground">Rôles</span>
         <div className="flex flex-wrap gap-3">
-          {roleList.map((role) => (
+          {selectableRoles.map((role) => (
             <label key={role} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -125,16 +209,29 @@ export default function CreateUserForm({
       </div>
 
       {roles.includes("STUDENT") && (
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-foreground">Programme (niveau + classe)</span>
-          <ProgramSelect
-            programs={programs}
-            value={programId}
-            onChange={setProgramId}
-            includeEmpty
-            emptyLabel="Aucun (à assigner plus tard)"
-          />
-        </label>
+        <>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Programme (niveau + classe)</span>
+            <ProgramSelect
+              programs={programs}
+              value={programId}
+              onChange={setProgramId}
+              includeEmpty
+              emptyLabel="Aucun (à assigner plus tard)"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-foreground">Parent / tuteur</span>
+            <select className="input" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+              <option value="">Aucun (à lier plus tard)</option>
+              {parents.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
       )}
 
       {roles.includes("PARENT") && (

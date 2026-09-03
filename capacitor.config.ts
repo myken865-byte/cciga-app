@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'CCIGA App',
   webDir: 'public',
   server: {
+    // Real Production. DEV/TEST builds temporarily point this at
+    // https://cciga-app-devtest.vercel.app (isolated preview project) and
+    // must always be reverted here before any Release build.
     url: 'https://cciga-app.vercel.app',
     androidScheme: 'https',
     errorPath: 'offline.html',

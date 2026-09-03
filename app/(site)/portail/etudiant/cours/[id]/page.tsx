@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import CourseContentView from "@/components/CourseContentView";
@@ -32,13 +32,81 @@ export default async function StudentCoursePage({
       program: true,
       teacher: true,
       materials: { orderBy: { createdAt: "desc" } },
-      assignments: { orderBy: { createdAt: "desc" } },
+      assignments: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          submissions: { where: { studentId: session.userId }, include: { grade: true } },
+        },
+      },
     },
   });
 
   if (!course || !user?.programId || course.programId !== user.programId) {
     notFound();
   }
+
+  const [lessonModulesRaw, quizzesRaw, announcements] = await Promise.all([
+    prisma.lessonModule.findMany({
+      where: { courseId: id },
+      include: { lessons: { orderBy: { order: "asc" }, include: { progress: { where: { studentId: user.id } } } } },
+      orderBy: { order: "asc" },
+    }),
+    prisma.quiz.findMany({
+      where: { courseId: id },
+      include: {
+        questions: { orderBy: { order: "asc" } },
+        attempts: { where: { studentId: user.id }, orderBy: { submittedAt: "desc" } },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.courseAnnouncement.findMany({
+      where: { courseId: id },
+      include: { author: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const lessonModules = lessonModulesRaw.map((mod) => ({
+    id: mod.id,
+    title: mod.title,
+    order: mod.order,
+    lessons: mod.lessons.map((l) => ({
+      id: l.id,
+      title: l.title,
+      order: l.order,
+      contentType: l.contentType,
+      body: l.body,
+      fileUrl: l.fileUrl,
+      videoUrl: l.videoUrl,
+      completed: l.progress.length > 0,
+    })),
+  }));
+
+  const quizzes = quizzesRaw.map((q) => ({
+    id: q.id,
+    title: q.title,
+    description: q.description,
+    isGraded: q.isGraded,
+    maxAttempts: q.maxAttempts,
+    questions: q.questions,
+    myAttempts: q.attempts.map((att) => ({ id: att.id, score: att.score, submittedAt: att.submittedAt })),
+  }));
+
+  const assignmentsWithSubmission = course.assignments.map((a) => ({
+    id: a.id,
+    title: a.title,
+    description: a.description,
+    dueDate: a.dueDate,
+    submission: a.submissions[0]
+      ? {
+          textContent: a.submissions[0].textContent,
+          fileUrl: a.submissions[0].fileUrl,
+          submittedAt: a.submissions[0].submittedAt,
+          late: a.submissions[0].late,
+          grade: a.submissions[0].grade ? { score: a.submissions[0].grade.score } : null,
+        }
+      : null,
+  }));
 
   const grades = await prisma.grade.findMany({
     where: {
@@ -57,9 +125,7 @@ export default async function StudentCoursePage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
-      <Link href="/portail/etudiant" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Mon portail
-      </Link>
+      <BackButton fallbackHref="/portail/etudiant" label="Mon portail" />
       <CourseContentView
         course={{
           name: course.name,
@@ -72,7 +138,19 @@ export default async function StudentCoursePage({
           endTime: course.endTime,
         }}
         materials={course.materials}
-        assignments={course.assignments}
+        assignments={assignmentsWithSubmission}
+        lessonModules={lessonModules}
+        showLessonProgress
+        canSubmitAssignments
+        quizzes={quizzes}
+        canTakeQuizzes
+        announcements={announcements.map((a) => ({
+          id: a.id,
+          title: a.title,
+          body: a.body,
+          authorName: a.author.name,
+          createdAt: a.createdAt,
+        }))}
       />
 
       <div className="mt-8">

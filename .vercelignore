@@ -5,3 +5,28 @@
 .env.development.local
 dev.db
 dev.db-journal
+desktop
+Distribution Windows
+backups
+test-builds
+test-results
+tests
+.git-broken-backup-*
+*.docx
+*.pdf
+*.dll
+*.pak
+*.dat
+*.bin
+resources
+resources.pak
+locales
+chrome_100_percent.pak
+chrome_200_percent.pak
+icudtl.dat
+snapshot_blob.bin
+v8_context_snapshot.bin
+CCIGA App.exe
+Uninstall CCIGA App.exe
+_rend.js
+.git-broken-backup*

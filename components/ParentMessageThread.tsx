@@ -52,7 +52,7 @@ export default function ParentMessageThread({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-4">
+    <div className="card p-4">
       <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-accent">
         Communication avec les parents
       </h3>

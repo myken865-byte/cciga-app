@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import ObservationsPanel from "@/components/ObservationsPanel";
@@ -70,9 +71,7 @@ export default async function TitulaireClassePage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
-      <Link href="/portail/enseignant" className="mb-6 inline-block text-sm text-primary hover:underline">
-        ← Mon portail
-      </Link>
+      <BackButton fallbackHref="/portail/enseignant" label="Mon portail" />
       <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-accent">Ma classe</p>
       <h1 className="mb-8 text-2xl font-bold text-foreground">{program.name}</h1>
 

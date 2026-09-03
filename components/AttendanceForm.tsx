@@ -55,7 +55,7 @@ export default function AttendanceForm({
 
   if (students.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="card p-6">
         <h2 className="mb-2 font-semibold text-foreground">Présences</h2>
         <p className="text-sm text-muted">
           Aucun étudiant n&apos;est encore inscrit au programme de ce cours.
@@ -65,7 +65,7 @@ export default function AttendanceForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
+    <form onSubmit={submit} className="space-y-4 card p-6">
       <h2 className="font-semibold text-foreground">Marquer les présences</h2>
 
       <label className="block text-sm">

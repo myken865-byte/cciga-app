@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import PortalNav from "@/components/PortalNav";
+import NavigationTracker from "@/components/NavigationTracker";
 
 export default async function PortailLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -15,6 +16,7 @@ export default async function PortailLayout({ children }: { children: React.Reac
 
   return (
     <div>
+      <NavigationTracker />
       {session && (
         <PortalNav
           name={session.name}

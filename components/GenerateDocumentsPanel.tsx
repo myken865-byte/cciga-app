@@ -42,7 +42,7 @@ export default function GenerateDocumentsPanel({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-4">
+    <div className="card p-4">
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
       {result !== null && (
         <p className="mb-2 text-sm text-emerald-600">{result} document(s) généré(s) et publié(s).</p>

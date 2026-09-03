@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { hasRole } from "@/lib/roles";
 import { writeAuditLog } from "@/lib/auditLog";
+import { resolveActorId } from "@/lib/devBypass";
 
 export async function POST(
   _request: Request,
@@ -36,7 +37,7 @@ export async function POST(
     entityType: "Grade",
     entityId: id,
     action: "submit",
-    actorId: session.userId,
+    actorId: resolveActorId(session.userId),
     reason: `${draftGrades.length} note(s) soumise(s) pour ${course.name}.`,
   });
 

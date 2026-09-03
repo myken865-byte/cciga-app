@@ -34,7 +34,7 @@ export default function CreateFacultyForm() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-lg border border-border bg-surface p-4">
+    <form onSubmit={submit} className="space-y-3 card p-4">
       <h3 className="font-semibold text-foreground">Ajouter une faculté / un domaine</h3>
       <input
         required

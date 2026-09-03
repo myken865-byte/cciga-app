@@ -11,7 +11,7 @@ export default function FaqAccordion({ items }: { items: FaqItem[] }) {
       {items.map((item, i) => {
         const open = openIndex === i;
         return (
-          <div key={item.id} className="rounded-lg border border-border bg-surface">
+          <div key={item.id} className="card overflow-hidden">
             <button
               type="button"
               onClick={() => setOpenIndex(open ? null : i)}

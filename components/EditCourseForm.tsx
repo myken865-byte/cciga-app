@@ -31,6 +31,7 @@ interface CourseInitial {
   coefficient: number | null;
   groupLabel: string | null;
   retakeOfCourseId: string | null;
+  active: boolean;
 }
 
 interface CourseOption {
@@ -45,12 +46,14 @@ export default function EditCourseForm({
   teachers,
   semesters,
   allCourses,
+  isSuperAdmin,
 }: {
   course: CourseInitial;
   programs: Program[];
   teachers: Teacher[];
   semesters?: SemesterOption[];
   allCourses?: CourseOption[];
+  isSuperAdmin: boolean;
 }) {
   const router = useRouter();
   const [programId, setProgramId] = useState(course.programId);
@@ -65,7 +68,8 @@ export default function EditCourseForm({
   const isTitulaireModel = selectedProgram?.teacherModel === "titulaire";
   const isUniversite = selectedProgram?.school === "universite";
   const isEcoleClassique = selectedProgram?.school === "ecole-classique";
-  const showPeriodFields = isUniversite || isEcoleClassique;
+  const isEcoleProfessionnelle = selectedProgram?.school === "ecole-professionnelle";
+  const showPeriodFields = isUniversite || isEcoleClassique || isEcoleProfessionnelle;
   const titulaireName = isTitulaireModel
     ? teachers.find((t) => t.id === selectedProgram?.titulaireId)?.name
     : undefined;
@@ -80,6 +84,54 @@ export default function EditCourseForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [active, setActive] = useState(course.active);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function toggleArchive() {
+    const confirmMsg = active
+      ? "Archiver ce cours ? Il disparaîtra des sélecteurs, mais tout l'historique (notes, présences, matériel) reste intact et vous pourrez le réactiver à tout moment."
+      : "Réactiver ce cours ?";
+    if (!confirm(confirmMsg)) return;
+    setArchiving(true);
+    setArchiveError(null);
+    try {
+      const res = await fetch(`/api/admin/courses/${course.id}/archive`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) {
+        setArchiveError(json.error ?? "Une erreur est survenue.");
+        return;
+      }
+      setActive(json.active);
+      router.refresh();
+    } catch {
+      setArchiveError("Impossible de contacter le serveur.");
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  async function deleteCourse() {
+    if (!confirm("Supprimer définitivement ce cours ? Cette action est irréversible et n'est possible que si aucune donnée n'en dépend.")) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/admin/courses/${course.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok) {
+        setDeleteError(json.error ?? "Une erreur est survenue.");
+        return;
+      }
+      router.push("/admin/courses");
+      router.refresh();
+    } catch {
+      setDeleteError("Impossible de contacter le serveur.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -120,9 +172,16 @@ export default function EditCourseForm({
     }
   }
 
-  return (
-    <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-surface p-6">
-      <h2 className="font-semibold text-foreground">Modifier le cours</h2>
+  const form = (
+    <form onSubmit={submit} className="space-y-4 card p-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-foreground">Modifier le cours</h2>
+        {!active && (
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+            Archivé
+          </span>
+        )}
+      </div>
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-foreground">Programme</span>
@@ -271,5 +330,52 @@ export default function EditCourseForm({
         {submitting ? "Enregistrement…" : "Enregistrer"}
       </button>
     </form>
+  );
+
+  return (
+    <>
+      {form}
+      <div className="card p-6">
+        <h2 className="mb-2 font-semibold text-foreground">Archivage</h2>
+        <p className="mb-4 text-sm text-muted">
+          {active
+            ? "Retire ce cours des sélecteurs de nouvelle notation, sans supprimer aucune donnée. Réversible à tout moment."
+            : "Ce cours est archivé — il n'apparaît plus dans les sélecteurs de nouveau cours."}
+        </p>
+        {archiveError && (
+          <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{archiveError}</p>
+        )}
+        <button
+          type="button"
+          onClick={toggleArchive}
+          disabled={archiving}
+          className="btn-secondary disabled:opacity-50"
+        >
+          {archiving ? "…" : active ? "Archiver ce cours" : "Réactiver ce cours"}
+        </button>
+      </div>
+
+      {isSuperAdmin && (
+        <div className="rounded-lg border border-red-200 bg-surface p-6">
+          <h2 className="mb-2 font-semibold text-foreground">Suppression définitive</h2>
+          <p className="mb-4 text-sm text-muted">
+            Réservée au Super Administrateur, et uniquement possible si aucune note, présence,
+            matériel, devoir ou reprise n&apos;est lié à ce cours. Préférez l&apos;archivage dans
+            tous les autres cas.
+          </p>
+          {deleteError && (
+            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{deleteError}</p>
+          )}
+          <button
+            type="button"
+            onClick={deleteCourse}
+            disabled={deleting}
+            className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            {deleting ? "Suppression…" : "Supprimer définitivement"}
+          </button>
+        </div>
+      )}
+    </>
   );
 }
