@@ -56,7 +56,11 @@ export default async function ProgramDetailPage({
         <span>{program.name}</span>
       </div>
 
-      {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
+      {sector ? (
+        <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />
+      ) : (
+        <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="mb-4 h-14 w-14 object-contain" />
+      )}
       <span className="mb-3 inline-block rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold text-primary-dark">
         {program.level}
       </span>

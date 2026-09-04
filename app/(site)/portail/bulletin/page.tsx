@@ -102,7 +102,11 @@ export default async function BulletinPage({
 
     return (
       <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
-        {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
+        {sector ? (
+          <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />
+        ) : (
+          <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="mb-4 h-14 w-14 object-contain" />
+        )}
         <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
           Bulletin de formation professionnelle
         </p>
@@ -248,7 +252,11 @@ export default async function BulletinPage({
 
     return (
       <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
-        {sector && <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />}
+        {sector ? (
+          <SectorLogo sector={sector} className="mb-4 h-14 w-14 object-contain" />
+        ) : (
+          <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="mb-4 h-14 w-14 object-contain" />
+        )}
         <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
           {isUniversite ? "Relevé de notes universitaire" : "Bulletin scolaire"}
         </p>

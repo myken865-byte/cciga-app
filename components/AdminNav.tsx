@@ -200,7 +200,7 @@ export default function AdminNav({
         <SectorLogo sector={sector} className="h-9 w-9 shrink-0 object-contain" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-8 w-8 shrink-0 rounded-md object-contain" />
+        <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="h-8 w-8 shrink-0 rounded-md object-contain" />
       )}
       {/* "Réduire" (item 7) n'est qu'un mode Desktop — le drawer mobile doit
           toujours garder ses libellés, jamais l'état icônes-seules qui n'a

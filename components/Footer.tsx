@@ -8,7 +8,7 @@ export default function Footer() {
         <div>
           <div className="mb-3 flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-8 w-8 rounded-md object-contain" />
+            <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="h-8 w-8 rounded-md object-contain" />
             <span className="text-lg font-bold">CCIGA</span>
           </div>
           <p className="text-sm text-white/70">

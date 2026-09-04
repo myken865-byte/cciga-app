@@ -28,7 +28,7 @@ export default async function VerifyBadgePage({
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-4 py-14">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-12 w-12 rounded-md object-contain" />
+      <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="h-12 w-12 rounded-md object-contain" />
       <h1 className="mb-6 mt-4 text-xl font-bold text-foreground">Vérification de badge CCIGA</h1>
 
       {!badge ? (

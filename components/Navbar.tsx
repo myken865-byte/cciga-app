@@ -50,7 +50,7 @@ export default function Navbar() {
             <SectorLogo sector={sector} className="h-10 w-10 object-contain" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/branding/CCIGA_App_Icon.png" alt="Logo CCIGA" className="h-9 w-9 rounded-md object-contain" />
+            <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="h-9 w-9 rounded-md object-contain" />
           )}
           <span className="text-lg font-bold text-primary">CCIGA</span>
         </Link>

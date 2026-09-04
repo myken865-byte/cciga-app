@@ -66,6 +66,7 @@ export default async function AdminFinancePage({
               <th className="px-4 py-3 font-semibold">Frais</th>
               <th className="px-4 py-3 font-semibold">Payé</th>
               <th className="px-4 py-3 font-semibold">Solde</th>
+              <th className="px-4 py-3 font-semibold">Carnet</th>
             </tr>
           </thead>
           <tbody>
@@ -87,11 +88,21 @@ export default async function AdminFinancePage({
                 >
                   {formatHTG(s.balance)}
                 </td>
+                <td className="px-4 py-3">
+                  <a
+                    href={`/api/admin/carnet-paiement/${s.id}/pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-secondary text-xs"
+                  >
+                    Voir / PDF
+                  </a>
+                </td>
               </tr>
             ))}
             {students.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted">
                   Aucun étudiant pour ce filtre.
                 </td>
               </tr>

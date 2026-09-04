@@ -1,7 +1,7 @@
 {
   "name": "cciga-app-desktop",
   "productName": "CCIGA App",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "CCIGA App pour Windows",
   "main": "main.js",
   "private": true,

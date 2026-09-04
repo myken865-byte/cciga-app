@@ -7,7 +7,9 @@ const nextConfig: NextConfig = {
   // fonts are silently missing from every deployed PDF-generating route
   // (ENOENT at render time, in production only, never locally).
   outputFileTracingIncludes: {
-    "/api/**": ["./assets/fonts/**"],
+    // Same reasoning as assets/fonts/ above — lib/pdf/logo.ts also reads via
+    // a runtime-constructed path.join(process.cwd(), ...).
+    "/api/**": ["./assets/fonts/**", "./assets/branding-pdf/**"],
   },
 };
 
