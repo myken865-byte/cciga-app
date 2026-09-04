@@ -12,7 +12,13 @@ export default async function FicheInscriptionPage({ params }: { params: Promise
   const form = await prisma.enrollmentForm.findUnique({ where: { id } });
   if (!form) notFound();
 
-  const programs = await getProgramsBySchool("ecole-professionnelle");
+  // Isolation institutionnelle stricte — jamais les programmes d'une autre
+  // institution que celle réellement enregistrée sur cette fiche (voir
+  // PROMPT_OFFICIEL_INSCRIPTION_UNIVERSITE_BADGE_AUTOMATIQUE §2). EnrollmentForm
+  // n'est jamais créé pour "ecole-classique" (POST route dédiée) : seules
+  // "ecole-professionnelle"/"universite" sont réellement possibles ici.
+  const formSchool = form.school === "universite" ? "universite" : "ecole-professionnelle";
+  const programs = await getProgramsBySchool(formSchool);
 
   const fiche = {
     id: form.id,

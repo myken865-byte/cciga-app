@@ -39,10 +39,20 @@ export default async function StudentFinancePage({
     <div>
       <BackButton fallbackHref="/admin/finance" label="Toutes les finances" />
 
-      <div className="mb-6">
-        <p className="font-mono text-sm text-muted">{formatCcigaId(student.id)}</p>
-        <h1 className="text-2xl font-bold text-foreground">{student.name}</h1>
-        <p className="text-sm text-muted">{student.program?.name ?? "Aucun programme associé"}</p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-mono text-sm text-muted">{formatCcigaId(student.id)}</p>
+          <h1 className="text-2xl font-bold text-foreground">{student.name}</h1>
+          <p className="text-sm text-muted">{student.program?.name ?? "Aucun programme associé"}</p>
+        </div>
+        <a
+          href={`/api/admin/carnet-paiement/${student.id}/pdf`}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-secondary text-xs"
+        >
+          Carnet de paiement — Voir / PDF
+        </a>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

@@ -8,84 +8,102 @@ const NAVY = "#00185a";
 const GOLD = "#fcc606";
 
 const styles = StyleSheet.create({
-  page: { padding: 32, paddingTop: 26, fontSize: 9, fontFamily: DOCUMENT_FONT_FAMILY, color: "#1a1a1a" },
-  topBar: { height: 4, backgroundColor: GOLD, marginBottom: 12 },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  logo: { width: 40, height: 40, marginRight: 10 },
+  page: { padding: 26, paddingTop: 20, fontSize: 8.5, fontFamily: DOCUMENT_FONT_FAMILY, color: "#1a1a1a" },
+  topBar: { height: 3, backgroundColor: GOLD, marginBottom: 8 },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
+  logo: { width: 32, height: 32, marginRight: 8 },
   headerTitleBlock: { flex: 1 },
-  orgName: { fontSize: 12, fontWeight: 700, color: NAVY },
-  orgSub: { fontSize: 7.5, color: "#555555", marginTop: 1 },
+  orgName: { fontSize: 11, fontWeight: 700, color: NAVY },
+  orgSub: { fontSize: 7, color: "#555555", marginTop: 1 },
   ficheNumberBox: { alignItems: "flex-end" },
-  ficheNumberLabel: { fontSize: 7, color: "#555555" },
-  ficheNumberValue: { fontSize: 9, fontWeight: 700, color: NAVY, fontFamily: "Courier" },
+  ficheNumberLabel: { fontSize: 6.5, color: "#555555" },
+  ficheNumberValue: { fontSize: 8.5, fontWeight: 700, color: NAVY, fontFamily: "Courier" },
 
-  titleBlock: { marginBottom: 10, paddingBottom: 8, borderBottom: `2 solid ${NAVY}` },
-  ficheTitle: { fontSize: 14, fontWeight: 700, color: NAVY, letterSpacing: 1, textAlign: "center" },
-  classRow: { flexDirection: "row", marginTop: 5, fontSize: 9.5, width: "100%" },
+  titleBlock: { marginBottom: 6, paddingBottom: 5, borderBottom: `1.5 solid ${NAVY}` },
+  ficheTitle: { fontSize: 12, fontWeight: 700, color: NAVY, letterSpacing: 1, textAlign: "center" },
+  classRow: { flexDirection: "row", marginTop: 3, fontSize: 8.5, width: "100%" },
   classLabel: { fontWeight: 700, color: "#1a1a1a" },
   classValue: { marginLeft: 4, fontWeight: 700, color: NAVY, borderBottom: "0.5 solid #999999", flex: 1 },
 
-  bodyRow: { flexDirection: "row", gap: 14 },
+  bodyRow: { flexDirection: "row", gap: 12 },
   bodyLeft: { flex: 1 },
-  photoBox: { width: 70, height: 88, border: `1 solid ${NAVY}`, borderRadius: 2, objectFit: "cover" },
+  photoBox: { width: 60, height: 76, border: `1 solid ${NAVY}`, borderRadius: 2, objectFit: "cover" },
   photoPlaceholder: {
-    width: 70,
-    height: 88,
+    width: 60,
+    height: 76,
     border: `1 dashed ${NAVY}`,
     borderRadius: 2,
     alignItems: "center",
     justifyContent: "center",
-    padding: 4,
+    padding: 3,
   },
-  photoPlaceholderText: { fontSize: 6.5, color: NAVY, textAlign: "center" },
+  photoPlaceholderText: { fontSize: 6, color: NAVY, textAlign: "center" },
 
   sectionTitle: {
-    fontSize: 9.5,
+    fontSize: 8.5,
     fontWeight: 700,
     color: NAVY,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginTop: 9,
-    marginBottom: 4,
+    marginTop: 6,
+    marginBottom: 3,
     borderBottom: `1 solid ${NAVY}`,
     paddingBottom: 2,
   },
-  fieldRow: { flexDirection: "row", marginBottom: 4, alignItems: "flex-end" },
-  fieldLabel: { fontSize: 8, color: "#333333" },
+  fieldRow: { flexDirection: "row", marginBottom: 3, alignItems: "flex-end" },
+  fieldLabel: { fontSize: 7, color: "#333333" },
   fieldValue: {
     flex: 1,
-    fontSize: 8.5,
+    fontSize: 8,
     fontWeight: 700,
     marginLeft: 4,
     borderBottom: "0.5 solid #999999",
     paddingBottom: 1,
-    minHeight: 10,
+    minHeight: 9,
   },
-  fieldRowSplit: { flexDirection: "row", gap: 10 },
+  fieldRowSplit: { flexDirection: "row", gap: 8 },
   fieldHalf: { flex: 1 },
   fieldThird: { flex: 1 },
 
-  checkRow: { flexDirection: "row", gap: 10, marginBottom: 4, flexWrap: "wrap" },
-  checkItem: { fontSize: 8, color: "#333333" },
+  checkRow: { flexDirection: "row", gap: 8, marginBottom: 3, flexWrap: "wrap" },
+  checkItem: { fontSize: 7.5, color: "#333333" },
 
-  table: { marginTop: 3 },
-  tableHeaderRow: { flexDirection: "row", backgroundColor: "#f0f0f0", paddingVertical: 3, paddingHorizontal: 2 },
-  tableRow: { flexDirection: "row", borderBottom: "0.5 solid #dddddd", paddingVertical: 3, paddingHorizontal: 2 },
-  tableCellHeader: { flex: 1, fontSize: 7.5, fontWeight: 700, color: NAVY },
-  tableCell: { flex: 1, fontSize: 8 },
+  table: { marginTop: 2 },
+  tableHeaderRow: { flexDirection: "row", backgroundColor: "#f0f0f0", paddingVertical: 2, paddingHorizontal: 2 },
+  tableRow: { flexDirection: "row", borderBottom: "0.5 solid #dddddd", paddingVertical: 2, paddingHorizontal: 2 },
+  tableCellHeader: { flex: 1, fontSize: 7, fontWeight: 700, color: NAVY },
+  tableCell: { flex: 1, fontSize: 7.5 },
 
-  declarationBox: { marginTop: 4, marginBottom: 8, padding: 8, backgroundColor: "#f7f7f7", borderRadius: 3 },
-  declarationText: { fontSize: 8.5, lineHeight: 1.4 },
-  declarationRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
+  // Grille comparative Père / Mère / Tuteur — remplace les trois sections
+  // empilées de l'ancienne mise en page à deux pages par un seul tableau,
+  // sans retirer aucun champ (regroupement, pas suppression).
+  respTable: { marginTop: 2 },
+  respHeaderRow: { flexDirection: "row", backgroundColor: "#f0f0f0", paddingVertical: 3, paddingHorizontal: 2 },
+  respHeaderLabelCell: { width: "15%" },
+  respHeaderCell: { flex: 1, fontSize: 7, fontWeight: 700, color: NAVY, textAlign: "center" },
+  respRow: { flexDirection: "row", borderBottom: "0.5 solid #dddddd", paddingVertical: 2.5, paddingHorizontal: 2, alignItems: "center" },
+  respRowLabel: { width: "15%", fontSize: 7, fontWeight: 700, color: "#333333" },
+  respCell: { flex: 1, fontSize: 7.5, paddingHorizontal: 2 },
 
-  signatureRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
+  docTable: { marginTop: 2 },
+  docRow: { flexDirection: "row", borderBottom: "0.5 solid #dddddd", paddingVertical: 2.5, alignItems: "center" },
+  docIndex: { width: 12, fontSize: 7.5, color: "#555555" },
+  docLabel: { flex: 1, fontSize: 7.5 },
+  docStatus: { width: 62, fontSize: 7.5, fontWeight: 700, textAlign: "right" },
+  docPlaceholder: { fontSize: 7.5, color: "#b45309", fontWeight: 700 },
+
+  declarationBox: { marginTop: 3, marginBottom: 5, padding: 6, backgroundColor: "#f7f7f7", borderRadius: 3 },
+  declarationText: { fontSize: 7.5, lineHeight: 1.35 },
+  declarationRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+
+  signatureRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
   signatureBox: { width: "45%" },
-  signatureLabel: { fontSize: 8, fontWeight: 700, color: NAVY, marginBottom: 18 },
-  signatureLine: { borderTop: "1 solid #333333", paddingTop: 3, fontSize: 7.5, color: "#555555", textAlign: "center" },
+  signatureLabel: { fontSize: 7.5, fontWeight: 700, color: NAVY, marginBottom: 14 },
+  signatureLine: { borderTop: "1 solid #333333", paddingTop: 3, fontSize: 7, color: "#555555", textAlign: "center" },
 
-  footerRow: { position: "absolute", bottom: 22, left: 32, right: 32, flexDirection: "row", justifyContent: "space-between", borderTop: "1 solid #dddddd", paddingTop: 6 },
-  footerText: { fontSize: 7, color: "#777777" },
-  pageLabel: { fontSize: 7, color: "#777777" },
+  footerRow: { position: "absolute", bottom: 16, left: 26, right: 26, flexDirection: "row", justifyContent: "space-between", borderTop: "1 solid #dddddd", paddingTop: 4 },
+  footerText: { fontSize: 6.5, color: "#777777" },
+  pageLabel: { fontSize: 6.5, color: "#777777" },
 });
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -96,6 +114,20 @@ function Field({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
+
+function ResponsableRow({ label, pere, mere, tuteur }: { label: string; pere: string; mere: string; tuteur: string }) {
+  return (
+    <View style={styles.respRow}>
+      <Text style={styles.respRowLabel}>{label}</Text>
+      <Text style={styles.respCell}>{pere || "—"}</Text>
+      <Text style={styles.respCell}>{mere || "—"}</Text>
+      <Text style={styles.respCell}>{tuteur || "—"}</Text>
+    </View>
+  );
+}
+
+const docStatusLabels: Record<string, string> = { fourni: "Fourni", non_fourni: "Non fourni", a_verifier: "À vérifier" };
+const docStatusColors: Record<string, string> = { fourni: "#0f8a5f", non_fourni: "#c02626", a_verifier: "#b45309" };
 
 const livesWithLabels: Record<string, string> = {
   parents: "Chez les parents",
@@ -156,6 +188,7 @@ export interface ClassicEnrollmentFormDocumentProps {
   medicationDetails: string;
 
   siblings: { firstName: string; birthDate: string; school: string }[];
+  documents: { label: string; status: string }[];
 
   fullName: string;
   declarationAccepted: boolean;
@@ -165,28 +198,22 @@ export interface ClassicEnrollmentFormDocumentProps {
 }
 
 export default function ClassicEnrollmentFormDocument(props: ClassicEnrollmentFormDocumentProps) {
-  const header = (
-    <>
-      <View style={styles.topBar} />
-      <View style={styles.headerRow}>
-        <Image style={styles.logo} src={props.logoBase64} />
-        <View style={styles.headerTitleBlock}>
-          <Text style={styles.orgName}>ÉCOLE CLASSIQUE CCIGA</Text>
-          <Text style={styles.orgSub}>Centre Interdisciplinaire des Génies Agrégées</Text>
-        </View>
-        <View style={styles.ficheNumberBox}>
-          <Text style={styles.ficheNumberLabel}>N°</Text>
-          <Text style={styles.ficheNumberValue}>{props.ficheNumber}</Text>
-        </View>
-      </View>
-    </>
-  );
-
   return (
     <Document>
-      {/* PAGE 1 */}
-      <Page size="A4" style={styles.page}>
-        {header}
+      <Page size="LETTER" style={styles.page}>
+        <View style={styles.topBar} />
+        <View style={styles.headerRow}>
+          <Image style={styles.logo} src={props.logoBase64} />
+          <View style={styles.headerTitleBlock}>
+            <Text style={styles.orgName}>ÉCOLE CLASSIQUE CCIGA</Text>
+            <Text style={styles.orgSub}>Centre Interdisciplinaire des Génies Agrégées</Text>
+          </View>
+          <View style={styles.ficheNumberBox}>
+            <Text style={styles.ficheNumberLabel}>N°</Text>
+            <Text style={styles.ficheNumberValue}>{props.ficheNumber}</Text>
+          </View>
+        </View>
+
         <View style={styles.titleBlock}>
           <Text style={styles.ficheTitle}>FICHE D&apos;INSCRIPTION POUR LA CLASSE</Text>
           <View style={styles.classRow}>
@@ -227,139 +254,57 @@ export default function ClassicEnrollmentFormDocument(props: ClassicEnrollmentFo
 
         <Text style={styles.sectionTitle}>Renseignements de l&apos;enfant</Text>
         <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
+          <View style={styles.fieldThird}>
             <Field label="Nom de famille :" value={props.lastName} />
           </View>
-          <View style={styles.fieldHalf}>
+          <View style={styles.fieldThird}>
             <Field label="Prénom :" value={props.firstName} />
           </View>
-        </View>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
-            <Field label="Lieu de naissance — Ville :" value={props.birthPlaceCity} />
-          </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Lieu de naissance — Département :" value={props.birthPlaceDept} />
+          <View style={styles.fieldThird}>
+            <Field label="Sexe :" value={props.sex} />
           </View>
         </View>
         <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
+          <View style={styles.fieldThird}>
             <Field label="Date de naissance :" value={props.birthDate} />
           </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Sexe :" value={props.sex} />
+          <View style={styles.fieldThird}>
+            <Field label="Lieu de naissance — Ville :" value={props.birthPlaceCity} />
+          </View>
+          <View style={styles.fieldThird}>
+            <Field label="Lieu de naissance — Département :" value={props.birthPlaceDept} />
           </View>
         </View>
         {/* Groupe sanguin volontairement absent du document imprimé —
             conservé uniquement dans le dossier interne. */}
-        <View style={styles.checkRow}>
-          <Text style={styles.checkItem}>L&apos;enfant réside : {livesWithLabels[props.livesWith] ?? "—"}</Text>
-        </View>
         <View style={styles.fieldRowSplit}>
+          <View style={styles.fieldHalf}>
+            <View style={styles.checkRow}>
+              <Text style={styles.checkItem}>L&apos;enfant réside : {livesWithLabels[props.livesWith] ?? "—"}</Text>
+            </View>
+          </View>
           <View style={styles.fieldHalf}>
             <Field label="Religion :" value={props.religion} />
           </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Adresse :" value={props.addressLine} />
-          </View>
         </View>
+        <Field label="Adresse :" value={props.addressLine} />
 
-        <Text style={styles.sectionTitle}>Responsables légaux — Père</Text>
+        <Text style={styles.sectionTitle}>Responsables légaux</Text>
         <Field label="Situation familiale :" value={props.familyStatus} />
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
-            <Field label="Nom et Prénom du père :" value={props.fatherName} />
+        <View style={styles.respTable}>
+          <View style={styles.respHeaderRow}>
+            <View style={styles.respHeaderLabelCell} />
+            <Text style={styles.respHeaderCell}>PÈRE</Text>
+            <Text style={styles.respHeaderCell}>MÈRE</Text>
+            <Text style={styles.respHeaderCell}>TUTEUR / RESPONSABLE (si différent)</Text>
           </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Profession :" value={props.fatherProfession} />
-          </View>
-        </View>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
-            <Field label="Occupation actuelle :" value={props.fatherOccupation} />
-          </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Email :" value={props.fatherEmail} />
-          </View>
-        </View>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldThird}>
-            <Field label="Téléphone :" value={props.fatherPhone} />
-          </View>
-          <View style={styles.fieldThird}>
-            <Field label="NIF :" value={props.fatherNif} />
-          </View>
-          <View style={styles.fieldThird}>
-            <Field label="CIN :" value={props.fatherCin} />
-          </View>
-        </View>
-
-        <View style={styles.footerRow} fixed>
-          <Text style={styles.footerText}>Document N° {props.ficheNumber} — {props.generatedLabel}</Text>
-          <Text style={styles.pageLabel} render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`} />
-        </View>
-      </Page>
-
-      {/* PAGE 2 */}
-      <Page size="A4" style={styles.page}>
-        {header}
-
-        <Text style={styles.sectionTitle}>Responsables légaux — Mère</Text>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
-            <Field label="Nom et Prénom de la mère :" value={props.motherName} />
-          </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Profession :" value={props.motherProfession} />
-          </View>
-        </View>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
-            <Field label="Occupation actuelle :" value={props.motherOccupation} />
-          </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Email :" value={props.motherEmail} />
-          </View>
-        </View>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldThird}>
-            <Field label="Téléphone :" value={props.motherPhone} />
-          </View>
-          <View style={styles.fieldThird}>
-            <Field label="NIF :" value={props.motherNif} />
-          </View>
-          <View style={styles.fieldThird}>
-            <Field label="CIN :" value={props.motherCin} />
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Personne responsable si différente des parents</Text>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
-            <Field label="Nom et Prénom :" value={props.guardianName} />
-          </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Profession :" value={props.guardianProfession} />
-          </View>
-        </View>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldHalf}>
-            <Field label="Occupation actuelle :" value={props.guardianOccupation} />
-          </View>
-          <View style={styles.fieldHalf}>
-            <Field label="Email :" value={props.guardianEmail} />
-          </View>
-        </View>
-        <View style={styles.fieldRowSplit}>
-          <View style={styles.fieldThird}>
-            <Field label="Téléphone :" value={props.guardianPhone} />
-          </View>
-          <View style={styles.fieldThird}>
-            <Field label="NIF :" value={props.guardianNif} />
-          </View>
-          <View style={styles.fieldThird}>
-            <Field label="CIN :" value={props.guardianCin} />
-          </View>
+          <ResponsableRow label="Nom et Prénom" pere={props.fatherName} mere={props.motherName} tuteur={props.guardianName} />
+          <ResponsableRow label="Profession" pere={props.fatherProfession} mere={props.motherProfession} tuteur={props.guardianProfession} />
+          <ResponsableRow label="Occupation actuelle" pere={props.fatherOccupation} mere={props.motherOccupation} tuteur={props.guardianOccupation} />
+          <ResponsableRow label="Email" pere={props.fatherEmail} mere={props.motherEmail} tuteur={props.guardianEmail} />
+          <ResponsableRow label="Téléphone" pere={props.fatherPhone} mere={props.motherPhone} tuteur={props.guardianPhone} />
+          <ResponsableRow label="NIF" pere={props.fatherNif} mere={props.motherNif} tuteur={props.guardianNif} />
+          <ResponsableRow label="CIN" pere={props.fatherCin} mere={props.motherCin} tuteur={props.guardianCin} />
         </View>
 
         {/* Données médicales (vaccins, médication) volontairement absentes du
@@ -392,6 +337,23 @@ export default function ClassicEnrollmentFormDocument(props: ClassicEnrollmentFo
           )}
         </View>
 
+        <Text style={styles.sectionTitle}>Pièces d&apos;inscription</Text>
+        {props.documents.length === 0 ? (
+          <Text style={styles.docPlaceholder}>À COMPLÉTER — LISTE OFFICIELLE DES PIÈCES REQUISE</Text>
+        ) : (
+          <View style={styles.docTable}>
+            {props.documents.map((d, i) => (
+              <View key={i} style={styles.docRow}>
+                <Text style={styles.docIndex}>{i + 1}.</Text>
+                <Text style={styles.docLabel}>{d.label}</Text>
+                <Text style={[styles.docStatus, { color: docStatusColors[d.status] ?? "#555555" }]}>
+                  {docStatusLabels[d.status] ?? d.status}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         <Text style={styles.sectionTitle}>Certification</Text>
         <View style={styles.declarationBox}>
           <Text style={styles.declarationText}>
@@ -399,8 +361,8 @@ export default function ClassicEnrollmentFormDocument(props: ClassicEnrollmentFo
             l&apos;honneur l&apos;exactitude des renseignements ci-dessus.
           </Text>
           <View style={styles.declarationRow}>
-            <Text style={{ fontSize: 8 }}>Confirmation : {props.declarationAccepted ? "☑ Certifié" : "☐ Non certifié"}</Text>
-            <Text style={{ fontSize: 8 }}>Date : {props.declarationDateLabel || "____________"}</Text>
+            <Text style={{ fontSize: 7.5 }}>Confirmation : {props.declarationAccepted ? "☑ Certifié" : "☐ Non certifié"}</Text>
+            <Text style={{ fontSize: 7.5 }}>Date : {props.declarationDateLabel || "____________"}</Text>
           </View>
         </View>
 

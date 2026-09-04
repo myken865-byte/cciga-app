@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import type { ClassicEnrollmentSibling } from "@/lib/classicEnrollmentSiblings";
 import {
+  enrollmentFormDocumentStatuses,
+  enrollmentFormDocumentStatusLabels,
+  type ClassicEnrollmentDocumentEntry,
+  type EnrollmentFormDocumentStatus,
+} from "@/lib/classicEnrollmentDocuments";
+import {
   enrollmentFormStatuses,
   enrollmentFormStatusLabels,
   enrollmentFormStatusStyles,
@@ -73,6 +79,7 @@ interface FicheData {
   medicationDetails: string;
 
   siblings: ClassicEnrollmentSibling[];
+  documents: ClassicEnrollmentDocumentEntry[];
 
   declarationAccepted: boolean;
   studentUserId: number | null;
@@ -188,7 +195,12 @@ export default function ClassicEnrollmentFormEditor({
   async function save(extra?: Partial<FicheData>) {
     setBusy(true);
     setError(null);
-    const payload = { ...f, ...extra, siblings: JSON.stringify(extra?.siblings ?? f.siblings) };
+    const payload = {
+      ...f,
+      ...extra,
+      siblings: JSON.stringify(extra?.siblings ?? f.siblings),
+      documents: JSON.stringify(extra?.documents ?? f.documents),
+    };
     try {
       const res = await fetch(`/api/admin/inscriptions-ecole-classique/${f.id}`, {
         method: "PATCH",
@@ -271,6 +283,28 @@ export default function ClassicEnrollmentFormEditor({
     set(
       "siblings",
       f.siblings.filter((_, i) => i !== index),
+    );
+  }
+
+  // Pièces d'inscription : liste librement éditable (item 5 du prompt
+  // maître de finalisation) — aucune liste officielle EC n'étant confirmée,
+  // le secrétariat ajoute lui-même les pièces réellement exigées au lieu
+  // d'une liste fixe inventée.
+  function addDocument() {
+    set("documents", [...f.documents, { label: "", status: "non_fourni" }]);
+  }
+
+  function updateDocument(index: number, patch: Partial<ClassicEnrollmentDocumentEntry>) {
+    set(
+      "documents",
+      f.documents.map((d, i) => (i === index ? { ...d, ...patch } : d)),
+    );
+  }
+
+  function removeDocument(index: number) {
+    set(
+      "documents",
+      f.documents.filter((_, i) => i !== index),
     );
   }
 
@@ -665,6 +699,42 @@ export default function ClassicEnrollmentFormEditor({
             </div>
             <button type="button" onClick={addSibling} className="btn-secondary mt-3 text-xs">
               + Ajouter un frère / une sœur
+            </button>
+          </div>
+
+          <div>
+            <h2 className="mb-3 border-b border-primary/20 pb-1 text-sm font-bold uppercase tracking-wide text-primary">
+              Pièces d&apos;inscription
+            </h2>
+            {f.documents.length === 0 && (
+              <p className="mb-3 text-xs text-warning">À COMPLÉTER — LISTE OFFICIELLE DES PIÈCES REQUISE</p>
+            )}
+            <div className="space-y-2">
+              {f.documents.map((d, i) => (
+                <div key={i} className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[1fr_auto_auto]">
+                  <Field label="Pièce" value={d.label} onChange={(v) => updateDocument(i, { label: v })} />
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-muted">Statut</span>
+                    <select
+                      className="input !w-auto"
+                      value={d.status}
+                      onChange={(e) => updateDocument(i, { status: e.target.value as EnrollmentFormDocumentStatus })}
+                    >
+                      {enrollmentFormDocumentStatuses.map((s) => (
+                        <option key={s} value={s}>
+                          {enrollmentFormDocumentStatusLabels[s]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button type="button" onClick={() => removeDocument(i)} className="mt-5 self-start text-xs font-semibold text-danger hover:underline">
+                    Retirer
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={addDocument} className="btn-secondary mt-3 text-xs">
+              + Ajouter une pièce
             </button>
           </div>
 

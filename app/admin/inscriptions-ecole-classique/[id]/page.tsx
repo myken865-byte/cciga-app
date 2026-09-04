@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getProgramsBySchool } from "@/lib/content";
 import { formatClassicEnrollmentFormReference } from "@/lib/classicEnrollmentFormReference";
 import { parseClassicEnrollmentSiblings } from "@/lib/classicEnrollmentSiblings";
+import { parseClassicEnrollmentDocuments } from "@/lib/classicEnrollmentDocuments";
 import ClassicEnrollmentFormEditor from "@/components/ClassicEnrollmentFormEditor";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,7 @@ export default async function InscriptionEcoleClassiqueDetailPage({
         medicationDetails: fiche.medicationDetails ?? "",
 
         siblings: parseClassicEnrollmentSiblings(fiche.siblings),
+        documents: parseClassicEnrollmentDocuments(fiche.documents),
 
         declarationAccepted: fiche.declarationAccepted,
         studentUserId: fiche.studentUserId,

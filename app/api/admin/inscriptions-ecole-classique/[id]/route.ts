@@ -5,6 +5,7 @@ import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
 import { ensureBadgeForUser } from "@/lib/badgeAuto";
 import { isEnrollmentFormStatus } from "@/lib/enrollmentFormStatus";
+import { parseClassicEnrollmentDocuments } from "@/lib/classicEnrollmentDocuments";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -93,6 +94,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       medicationDetails: nullableStr(body.medicationDetails),
 
       siblings: typeof body.siblings === "string" ? body.siblings : "[]",
+      documents:
+        typeof body.documents === "string"
+          ? JSON.stringify(parseClassicEnrollmentDocuments(body.documents))
+          : existing.documents,
 
       declarationAccepted,
       declarationDate: declarationAccepted ? (existing.declarationDate ?? new Date()) : null,

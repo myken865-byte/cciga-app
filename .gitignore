@@ -54,3 +54,8 @@ next-env.d.ts
 
 # downloaded build artifacts
 /apk-output
+
+# local data backups/exports (may contain institutional/personal data) - never
+# committed; kept locally outside the repo, see "CCIGA App - Sauvegardes
+# securisees" on the Desktop
+/backups

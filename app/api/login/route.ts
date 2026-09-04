@@ -21,6 +21,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Identifiants invalides." }, { status: 401 });
   }
 
+  if (!user.active) {
+    return NextResponse.json({ error: "Ce compte a été archivé. Contactez l'administration." }, { status: 403 });
+  }
+
   const roles = parseRoles(user.roles);
   const token = await signSession({ userId: user.id, email: user.email, name: user.name, roles });
 

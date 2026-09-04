@@ -49,6 +49,14 @@ export default async function AdminUserDetailPage({
             <div className="mb-4">
               <GenerateBadgeButton userId={user.id} />
             </div>
+            <a
+              href={`/api/admin/carnet-paiement/${user.id}/pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary mb-4 inline-block text-sm"
+            >
+              Carnet de paiement — Voir / PDF
+            </a>
           </>
         )}
         <EditUserForm

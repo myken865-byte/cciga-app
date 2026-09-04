@@ -4,10 +4,14 @@ import { requireSecretariatSession } from "@/lib/auth";
 import { resolveActorId } from "@/lib/devBypass";
 import { writeAuditLog } from "@/lib/auditLog";
 import { defaultEnrollmentFormDocuments } from "@/lib/enrollmentFormDocuments";
+import { isSchoolKey } from "@/lib/institutions";
 
-// Création d'une fiche d'inscription École Professionnelle — le strict
-// minimum (nom/prénoms, requis par le modèle Prisma) est saisi ici ; le
-// reste se complète ensuite dans l'éditeur complet (EnrollmentFormEditor).
+// Création d'une fiche d'inscription — le strict minimum (nom/prénoms,
+// requis par le modèle Prisma) est saisi ici ; le reste se complète ensuite
+// dans l'éditeur complet (EnrollmentFormEditor). Modèle EnrollmentForm
+// partagé École Professionnelle / Université (champ `school` déjà prévu au
+// schéma) — jamais un second moteur d'inscription, voir
+// PROMPT_OFFICIEL_INSCRIPTION_UNIVERSITE_BADGE_AUTOMATIQUE.
 export async function POST(request: Request) {
   const session = await requireSecretariatSession();
   if (!session) {
@@ -18,9 +22,13 @@ export async function POST(request: Request) {
     lastName?: string;
     firstName?: string;
     programId?: string | null;
+    school?: string;
   };
   const lastName = (body.lastName ?? "").trim();
   const firstName = (body.firstName ?? "").trim();
+  // École Professionnelle par défaut : préserve le comportement existant
+  // pour tout appelant qui n'envoie pas encore `school` explicitement.
+  const school = body.school === "universite" && isSchoolKey(body.school) ? body.school : "ecole-professionnelle";
 
   if (!lastName || !firstName) {
     return NextResponse.json({ error: "Nom et prénoms requis." }, { status: 400 });
@@ -30,7 +38,7 @@ export async function POST(request: Request) {
 
   const form = await prisma.enrollmentForm.create({
     data: {
-      school: "ecole-professionnelle",
+      school,
       lastName,
       firstName,
       programId: body.programId || undefined,

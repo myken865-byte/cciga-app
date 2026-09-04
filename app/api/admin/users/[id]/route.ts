@@ -19,7 +19,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Compte introuvable." }, { status: 404 });
   }
 
-  const { name, roles, programId } = (await request.json()) ?? {};
+  const { name, roles, programId, active } = (await request.json()) ?? {};
 
   if (!name) {
     return NextResponse.json({ error: "Nom requis." }, { status: 400 });
@@ -34,6 +34,11 @@ export async function PATCH(
     );
   }
 
+  const newActive = typeof active === "boolean" ? active : user.active;
+  if (userId === session.userId && !newActive) {
+    return NextResponse.json({ error: "Vous ne pouvez pas archiver votre propre compte." }, { status: 400 });
+  }
+
   let newProgramId: string | null = null;
   if (roles.includes("STUDENT") && programId) {
     const program = await prisma.program.findUnique({ where: { id: programId } });
@@ -45,7 +50,7 @@ export async function PATCH(
 
   await prisma.user.update({
     where: { id: userId },
-    data: { name, roles: JSON.stringify(roles), programId: newProgramId },
+    data: { name, roles: JSON.stringify(roles), programId: newProgramId, active: newActive },
   });
 
   return NextResponse.json({ ok: true });

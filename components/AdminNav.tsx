@@ -129,6 +129,19 @@ export default function AdminNav({
       { href: "/admin/fiches-inscription?status=validee", label: "Fiches validées", roles: SECRETARIAT_LEVEL, icon: "✅", group: "Inscriptions" },
     );
   }
+  // Inscriptions Université — mêmes routes que l'École Professionnelle
+  // ci-dessus (modèle EnrollmentForm partagé via le champ `school`, jamais
+  // un second moteur d'inscription) — voir
+  // PROMPT_OFFICIEL_INSCRIPTION_UNIVERSITE_BADGE_AUTOMATIQUE.
+  if (hasAnyRole(roles, SECRETARIAT_LEVEL) && activeSchool === "universite") {
+    visibleTabs.push(
+      { href: "/admin/fiches-inscription/nouvelle", label: "Nouvelle fiche d'inscription", roles: SECRETARIAT_LEVEL, icon: "🆕", group: "Inscriptions" },
+      { href: "/admin/fiches-inscription", label: "Fiches enregistrées", roles: SECRETARIAT_LEVEL, icon: "🗒️", group: "Inscriptions" },
+      { href: "/admin/fiches-inscription?status=incomplet", label: "Fiches incomplètes", roles: SECRETARIAT_LEVEL, icon: "⚠️", group: "Inscriptions" },
+      { href: "/admin/fiches-inscription?status=a_verifier", label: "Fiches à vérifier", roles: SECRETARIAT_LEVEL, icon: "🔎", group: "Inscriptions" },
+      { href: "/admin/fiches-inscription?status=validee", label: "Fiches validées", roles: SECRETARIAT_LEVEL, icon: "✅", group: "Inscriptions" },
+    );
+  }
   // Inscriptions — module du Secrétariat propre à l'École Classique, modèle
   // et routes strictement distincts de la fiche École Professionnelle
   // ci-dessus (voir ClassicEnrollmentForm) — jamais mélangés.

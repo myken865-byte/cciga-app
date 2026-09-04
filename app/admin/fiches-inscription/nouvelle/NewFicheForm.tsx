@@ -8,7 +8,15 @@ import BackButton from "@/components/BackButton";
 // modèle (voir prisma/schema.prisma model EnrollmentForm). Toute autre
 // information se saisit ensuite dans l'éditeur complet (EnrollmentFormEditor),
 // vers lequel on redirige immédiatement après création.
-export default function NewFicheForm({ programs }: { programs: { id: string; name: string }[] }) {
+export default function NewFicheForm({
+  school,
+  institutionLabel,
+  programs,
+}: {
+  school: string;
+  institutionLabel: string;
+  programs: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const [lastName, setLastName] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -28,7 +36,7 @@ export default function NewFicheForm({ programs }: { programs: { id: string; nam
       const res = await fetch("/api/admin/fiches-inscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lastName: lastName.trim(), firstName: firstName.trim(), programId: programId || null }),
+        body: JSON.stringify({ lastName: lastName.trim(), firstName: firstName.trim(), programId: programId || null, school }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -46,7 +54,9 @@ export default function NewFicheForm({ programs }: { programs: { id: string; nam
   return (
     <div>
       <BackButton fallbackHref="/admin/fiches-inscription" label="Fiches d'inscription" />
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Nouvelle fiche d&apos;inscription</h1>
+      <h1 className="mb-6 text-2xl font-bold text-foreground">
+        Nouvelle fiche d&apos;inscription <span className="text-base font-normal text-muted">— {institutionLabel}</span>
+      </h1>
 
       <form onSubmit={handleSubmit} className="card max-w-lg space-y-4 p-6">
         <p className="text-sm text-muted">
@@ -65,7 +75,9 @@ export default function NewFicheForm({ programs }: { programs: { id: string; nam
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-muted">À la formation (optionnel)</span>
+          <span className="mb-1 block text-xs font-semibold text-muted">
+            {school === "universite" ? "Au programme (optionnel)" : "À la formation (optionnel)"}
+          </span>
           <select className="input" value={programId} onChange={(e) => setProgramId(e.target.value)}>
             <option value="">— Sélectionner —</option>
             {programs.map((p) => (

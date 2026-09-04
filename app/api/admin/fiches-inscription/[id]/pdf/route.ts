@@ -4,6 +4,7 @@ import { requireSecretariatSession } from "@/lib/auth";
 import { formatEnrollmentFormReference } from "@/lib/enrollmentFormReference";
 import { parseEnrollmentFormDocuments } from "@/lib/enrollmentFormDocuments";
 import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
+import { schoolToSector } from "@/lib/branding";
 import FicheInscriptionDocument from "@/lib/pdf/FicheInscriptionDocument";
 
 export const runtime = "nodejs";
@@ -27,7 +28,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const form = await prisma.enrollmentForm.findUnique({ where: { id }, include: { program: true } });
+  const form = await prisma.enrollmentForm.findUnique({
+    where: { id },
+    include: { program: { include: { academicFaculty: true } } },
+  });
   if (!form) {
     return new Response("Fiche introuvable.", { status: 404 });
   }
@@ -35,10 +39,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const reference = formatEnrollmentFormReference(form.id);
   const documents = parseEnrollmentFormDocuments(form.documents);
   const photoBase64 = form.photoUrl ? await toDataUri(form.photoUrl) : null;
-  // EPS = École Professionnelle : seul logo institutionnel disponible pour
-  // ce secteur (voir lib/branding.ts) — pas de second logo EPS distinct sous
-  // public/branding/, donc epsLogoBase64 reste null plutôt qu'inventé.
-  const logoBase64 = getDocumentLogoDataUri("PROFESSIONNELLE");
+  const isUniversite = form.school === "universite";
+  // Logo/couleur du secteur réellement enregistré sur la fiche — jamais
+  // celui d'une autre institution (voir schoolToSector, lib/branding.ts).
+  // Pas de second logo EPS/Université distinct sous public/branding/, donc
+  // epsLogoBase64 reste null plutôt qu'inventé.
+  const logoBase64 = getDocumentLogoDataUri(schoolToSector(form.school));
   const generatedLabel = `Généré le ${new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}`;
   const declarationDateLabel = form.declarationDate
     ? form.declarationDate.toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })
@@ -48,6 +54,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     FicheInscriptionDocument({
       logoBase64,
       epsLogoBase64: null,
+      institutionLabel: isUniversite ? "CCIGA — Université" : "CCIGA — École Professionnelle",
+      formationFieldLabel: isUniversite ? "Au programme :" : "À la formation :",
+      facultyLabel: form.program?.academicFaculty?.name ?? "",
       ficheNumber: reference,
       formationLabel: form.program?.name ?? "",
       photoBase64,

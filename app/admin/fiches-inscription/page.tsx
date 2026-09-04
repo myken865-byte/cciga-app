@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatEnrollmentFormReference } from "@/lib/enrollmentFormReference";
 import { normalizeEnrollmentSearchQuery } from "@/lib/enrollmentReferenceSearch";
+import { getActiveSchool, schoolLabels } from "@/lib/institutionContext";
 import {
   enrollmentFormStatuses,
   enrollmentFormStatusLabels,
@@ -31,8 +32,23 @@ export default async function FichesInscriptionListPage({
   const search = (q ?? "").trim();
   const searchNorm = search ? normalizeEnrollmentSearchQuery(search).toUpperCase() : "";
 
+  // Modèle partagé École Professionnelle / Université (voir AdminNav.tsx :
+  // ce lien n'apparaît que dans l'un de ces deux contextes) — isolation
+  // stricte par institution active, jamais un mélange des deux.
+  const activeSchool = await getActiveSchool();
+  if (activeSchool !== "ecole-professionnelle" && activeSchool !== "universite") {
+    return (
+      <div>
+        <h1 className="mb-4 text-2xl font-bold text-foreground">Fiches d&apos;inscription</h1>
+        <div className="empty-state">
+          Choisissez École Professionnelle ou Université pour accéder à ses fiches d&apos;inscription.
+        </div>
+      </div>
+    );
+  }
+
   const forms = await prisma.enrollmentForm.findMany({
-    where: { school: "ecole-professionnelle", status: filter },
+    where: { school: activeSchool, status: filter },
     include: { program: true },
     orderBy: { createdAt: "desc" },
   });
@@ -53,7 +69,7 @@ export default async function FichesInscriptionListPage({
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Fiches d&apos;inscription — École Professionnelle</h1>
+          <h1 className="text-2xl font-bold text-foreground">Fiches d&apos;inscription — {schoolLabels[activeSchool]}</h1>
           <p className="text-sm text-muted">{filtered.length} fiche(s)</p>
         </div>
         <Link href="/admin/fiches-inscription/nouvelle" className="btn-primary text-sm">

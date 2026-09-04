@@ -183,6 +183,12 @@ model ClassicEnrollmentForm {
   // Fratrie — JSON [{firstName, birthDate, school}], voir lib/classicEnrollmentSiblings.ts.
   siblings String @default("[]")
 
+  // Pièces d'inscription — JSON [{label, status, fileUrl, fileName}], statuts
+  // partagés avec lib/enrollmentFormDocuments.ts (fourni/non_fourni/a_verifier).
+  // Liste des pièces éditable au cas par cas (aucune liste officielle EC
+  // confirmée à ce jour) — voir lib/classicEnrollmentDocuments.ts.
+  documents String @default("[]")
+
   // Certification
   declarationAccepted Boolean   @default(false)
   declarationDate     DateTime?

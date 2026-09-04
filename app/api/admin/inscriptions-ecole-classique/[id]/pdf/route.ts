@@ -5,6 +5,7 @@ import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
 import { schoolToSector } from "@/lib/branding";
 import { formatClassicEnrollmentFormReference } from "@/lib/classicEnrollmentFormReference";
 import { parseClassicEnrollmentSiblings } from "@/lib/classicEnrollmentSiblings";
+import { parseClassicEnrollmentDocuments } from "@/lib/classicEnrollmentDocuments";
 import { niveauLabels, type Niveau } from "@/lib/niveaux";
 import ClassicEnrollmentFormDocument from "@/lib/pdf/ClassicEnrollmentFormDocument";
 
@@ -99,6 +100,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       medicationDetails: fiche.medicationDetails ?? "",
 
       siblings: parseClassicEnrollmentSiblings(fiche.siblings),
+      documents: parseClassicEnrollmentDocuments(fiche.documents),
 
       fullName: `${fiche.firstName} ${fiche.lastName}`.trim(),
       declarationAccepted: fiche.declarationAccepted,
