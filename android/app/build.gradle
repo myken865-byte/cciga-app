@@ -34,8 +34,13 @@ android {
         // docs/ANDROID_VERSION_HISTORY.md) — mandat "Automatisation Google
         // Play" (2026-09-07) §7 : jamais réutiliser un versionCode, incrémenter
         // avant le premier candidat réellement destiné à un track Google Play.
-        versionCode 2
-        versionName "1.0"
+        // versionCode 2 a été réellement uploadé sur Internal Test le
+        // 2026-09-08 (voir docs/ANDROID_VERSION_HISTORY.md) — mandat "Freeze
+        // version testeur 1.1" (2026-09-08) : versionCode 3 / versionName
+        // "1.1" couvre les Phases C1-C3 (séparation institutionnelle réelle)
+        // + les 2 correctifs DEV-BYPASS + le correctif PDF NotoSans italique.
+        versionCode 3
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

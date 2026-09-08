@@ -45,3 +45,19 @@ Caused by: java.net.SocketException: Invalid argument: connect
 ## Pourquoi ce document existe
 
 Documenter la procédure et l'état exact séparément — plutôt que de la garder uniquement en mémoire de session — permet de reprendre exactement là où cette phase s'est arrêtée, sur n'importe quelle machine, sans rien refaire de ce qui est déjà vérifié et correct.
+
+## §7 — Correction du conflit Application ID (2026-09-07)
+
+Entre la rédaction du §1-5 ci-dessus et cette date, `android/app/build.gradle` avait dérivé sans qu'aucun document ne l'explique : `applicationId` valait `"ht.cciga.app.test"` au lieu de `"ht.cciga.app"` — en contradiction directe avec le point 4 ci-dessus, avec `namespace` (resté `"ht.cciga.app"`), avec `capacitor.config.ts` (`appId: 'ht.cciga.app'`), et avec l'APK de test déjà validé sur appareil réel (`test-builds/cciga-app-test-v1.1-2.apk`, package confirmé `ht.cciga.app` via `aapt2 dump badging`).
+
+**Corrigé** : `applicationId` remis à `"ht.cciga.app"` (Production, redevient cohérent avec le §4 ci-dessus). Une séparation DEV/TEST propre a été introduite via le mécanisme Gradle standard — `buildTypes { debug { applicationIdSuffix ".test" } }` — plutôt qu'un `applicationId` fixe : un `assembleDebug` (utilisé par `.github/workflows/android-debug-apk.yml`) produit désormais `ht.cciga.app.test`, un `assembleRelease`/`bundleRelease` produit `ht.cciga.app`, sans dupliquer aucune configuration.
+
+`scripts/install-cciga-usb.ps1` (installation USB) a été ajusté pour accepter les deux identités selon la provenance de l'APK trouvé, au lieu d'un seul package attendu codé en dur — l'artefact déjà validé continue de s'installer exactement comme avant.
+
+Le blocage de build local documenté au §6 (`Unable to establish loopback connection`) a été re-confirmé identique à cette date — aucune régression introduite par cette correction, la limitation reste celle de la machine, pas du projet.
+
+## §8 — Version testeur 1.1 / versionCode 3 (2026-09-08)
+
+Le point 4 ci-dessus affirmait `versionCode 2` / `versionName "1.1"` par anticipation — au moment de sa rédaction, `build.gradle` portait en réalité `versionName "1.0"` (confirmé lors de l'audit final PREPROD, cf. `docs/ANDROID_VERSION_HISTORY.md`). Ce point 4 décrivait aussi un état antérieur au premier upload réel : `versionCode 2` **a depuis été uploadé avec succès sur Internal Test** le 2026-09-08.
+
+**Freeze version testeur** : `versionCode 3` / `versionName "1.1"` — couvre les Phases C1-C3 (séparation institutionnelle réelle), le correctif du bug PDF NotoSans italique et les 2 correctifs DEV-BYPASS (`issuedById`/`reviewedById`). `applicationId "ht.cciga.app"` inchangé. Voir `docs/ANDROID_VERSION_HISTORY.md` pour le commit exact et le résultat du build CI signé.
