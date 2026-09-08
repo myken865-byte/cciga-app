@@ -89,8 +89,13 @@ const styles = StyleSheet.create({
   colMontant: { width: 42, fontSize: 5.5, textAlign: "right" },
   colSignature: { width: 42, fontSize: 5.5, borderBottom: "0.5 solid #cccccc" },
   colHeaderText: { fontSize: 5, fontWeight: 700, color: NAVY },
-  emptyRowText: { fontSize: 5.5, color: "#888888", fontStyle: "italic" as const },
-  truncatedNote: { fontSize: 5, color: "#667085", marginTop: 3, fontStyle: "italic" as const },
+  // Pas de fontStyle: "italic" — seul un régulier/gras NotoSans est enregistré
+  // (lib/pdf/fonts.ts, aucun fichier italique disponible hors-ligne) ; le
+  // demander faisait échouer le rendu (@react-pdf/renderer ne peut pas
+  // résoudre une graisse/style non enregistrée). Distinction visuelle par
+  // couleur/taille uniquement, cause confirmée (2026-09-08).
+  emptyRowText: { fontSize: 5.5, color: "#888888" },
+  truncatedNote: { fontSize: 5, color: "#667085", marginTop: 3 },
 
   noteBox: { marginTop: 6, padding: 5, borderLeft: `2.5 solid ${GOLD}`, backgroundColor: "#fffbea" },
   noteText: { fontSize: 6, fontWeight: 700, color: "#4a3a00" },
