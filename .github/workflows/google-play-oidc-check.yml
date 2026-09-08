@@ -1,0 +1,80 @@
+name: Google Play OIDC Auth Check
+
+# Mandat "Finalisation GitHub Actions + Workload Identity Federation"
+# (2026-09-07/08). Workflow séparé et minimal, distinct de
+# android-release-aab.yml (NO REDO — ne touche pas au pipeline de build/
+# signature déjà validé). Objectif unique : prouver que la chaîne
+# GitHub Actions -> OIDC -> Google Workload Identity Federation -> compte
+# de service -> Android Publisher API fonctionne réellement, sans clé
+# privée JSON, sans jamais toucher Production.
+#
+# Déclenchement manuel uniquement — jamais automatique.
+on:
+  workflow_dispatch: {}
+
+# Permissions minimales : id-token pour l'échange OIDC, contents:read pour
+# le checkout. Aucune autre permission accordée.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify-auth:
+    runs-on: ubuntu-latest
+    steps:
+      # Défense en profondeur : le binding IAM côté Google Cloud (attribute
+      # condition sur le pool WIF) est la vraie frontière de sécurité —
+      # invérifiable depuis cet environnement (pas d'accès gcloud/IAM ici,
+      # voir le rapport de mission). Ce garde-fou local est une seconde
+      # couche, pas un substitut.
+      - name: Guard — restrict to this exact repository
+        if: github.repository != 'myken865-byte/cciga-app'
+        run: |
+          echo "::error::This workflow must only run from myken865-byte/cciga-app — refusing."
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/575161100644/locations/global/workloadIdentityPools/cciga-github-actions/providers/cciga-github-actions
+          service_account: cciga-google-play-automation@automatic-curve-508002-k3.iam.gserviceaccount.com
+          token_format: access_token
+
+      # Test non destructif : un "edit" Google Play est un brouillon —
+      # créer puis supprimer un edit ne touche aucun track, aucune release,
+      # aucune donnée publique. C'est le test de fumée standard recommandé
+      # pour valider un accès Android Publisher API sans rien publier.
+      - name: Validate end-to-end reach to Android Publisher API (non-destructive)
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -e
+          PACKAGE="ht.cciga.app"
+          echo "Creating a draft edit (non-destructive smoke test, never committed, auto-expires)…"
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE/edits")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "$BODY"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Android Publisher API call failed (HTTP $HTTP_CODE) — authentication or permissions issue."
+            exit 1
+          fi
+          EDIT_ID=$(echo "$BODY" | grep -oP '"id"\s*:\s*"\K[^"]+' || true)
+          if [ -z "$EDIT_ID" ]; then
+            echo "::error::No editId returned — authentication succeeded but response was unexpected."
+            exit 1
+          fi
+          echo "OK — draft edit $EDIT_ID created. Confirms GitHub Actions -> OIDC -> WIF -> service account -> Android Publisher API works end-to-end."
+          echo "Deleting the draft edit now (leaves no residue — never committed, no track or release touched)…"
+          DELETE_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE/edits/$EDIT_ID")
+          echo "Delete response: HTTP $DELETE_CODE"
+          echo "Cleanup done. Production untouched — this workflow never uploads an AAB, never commits an edit, never promotes or publishes anything."
