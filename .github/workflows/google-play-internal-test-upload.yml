@@ -154,7 +154,7 @@ jobs:
       - name: Validate package identity and versionCode uniqueness
         id: validate
         env:
-          LAST_UPLOADED_VERSION_CODE: 3
+          LAST_UPLOADED_VERSION_CODE: 4
         run: |
           AAB=android/app/build/outputs/bundle/release/app-release.aab
           DUMP=$(java -jar bundletool.jar dump manifest --bundle="$AAB")
