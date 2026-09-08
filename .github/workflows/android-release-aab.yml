@@ -106,13 +106,33 @@ jobs:
           fi
           echo "--- Détail du certificat (information publique uniquement) ---"
           jarsigner -verify -verbose -certs "$AAB" | grep -E "^(sm|s|m| |jar verified|CN=)" | head -30
-          echo "--- Confirm no DEV/TEST devtest URL leaked into the bundle ---"
-          if unzip -p "$AAB" | strings | grep -q "cciga-app-devtest.vercel.app"; then
-            echo "::error::devtest URL found in Release AAB — build must not ship with this."
+          # Mandat "Option 2 confirmée : DEVTEST/PREPROD" (2026-09-08) : ce
+          # contrôle vérifiait auparavant l'ABSENCE d'une URL devtest —
+          # protection contre un oubli accidentel uniquement. capacitor.config.ts
+          # peut désormais pointer délibérément vers DEVTEST le temps que
+          # Production soit redéployée (voir docs/ANDROID_RELEASE_CONFIG.md
+          # §9) : le contrôle confirme maintenant que l'URL réellement
+          # embarquée dans l'AAB correspond EXACTEMENT à celle committée dans
+          # capacitor.config.ts, quelle que soit sa valeur — protège contre
+          # une dérive silencieuse dans les deux sens (Production ou DEVTEST).
+          echo "--- Confirm bundled server URL matches capacitor.config.ts exactly ---"
+          EXPECTED_URL=$(grep -oP "url:\s*'\K[^']+" capacitor.config.ts)
+          if [ -z "$EXPECTED_URL" ]; then
+            echo "::error::Impossible d'extraire server.url depuis capacitor.config.ts — build refusé."
             exit 1
-          else
-            echo "OK — no devtest URL present in the Release AAB."
           fi
+          echo "URL attendue (capacitor.config.ts) : $EXPECTED_URL"
+          ACTUAL_URL=$(python3 -c "import json,zipfile; z=zipfile.ZipFile('$AAB'); print(json.loads(z.read('base/assets/capacitor.config.json'))['server']['url'])" 2>/dev/null || true)
+          if [ -z "$ACTUAL_URL" ]; then
+            echo "::error::Impossible de lire server.url depuis capacitor.config.json embarqué dans l'AAB — build refusé."
+            exit 1
+          fi
+          echo "URL embarquée (AAB, base/assets/capacitor.config.json) : $ACTUAL_URL"
+          if [ "$EXPECTED_URL" != "$ACTUAL_URL" ]; then
+            echo "::error::L'AAB embarque '$ACTUAL_URL' mais capacitor.config.ts déclare '$EXPECTED_URL' — build refusé (source et artifact incohérents)."
+            exit 1
+          fi
+          echo "OK — l'AAB pointe exactement vers l'URL committée ($EXPECTED_URL)."
 
       # Mandat "Automatisation Google Play" (2026-09-07), §6.7-9, §7, §20 :
       # ne pas se contenter d'afficher package/versionCode, les valider
@@ -122,7 +142,7 @@ jobs:
       # pour ne jamais valider silencieusement une régression de version.
       - name: Validate package identity and versionCode uniqueness
         env:
-          LAST_UPLOADED_VERSION_CODE: 2
+          LAST_UPLOADED_VERSION_CODE: 3
         run: |
           AAB=android/app/build/outputs/bundle/release/app-release.aab
           DUMP=$(java -jar bundletool.jar dump manifest --bundle="$AAB")

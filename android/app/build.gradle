@@ -39,7 +39,15 @@ android {
         // version testeur 1.1" (2026-09-08) : versionCode 3 / versionName
         // "1.1" couvre les Phases C1-C3 (séparation institutionnelle réelle)
         // + les 2 correctifs DEV-BYPASS + le correctif PDF NotoSans italique.
-        versionCode 3
+        // versionCode 3 a lui aussi été réellement uploadé (2026-09-08) mais
+        // embarquait encore capacitor.config.ts pointé vers Production —
+        // resté obsolète (rollback jamais rattrapé cette session). Mandat
+        // "Option 2 confirmée : DEVTEST/PREPROD" (2026-09-08) : versionCode 4
+        // reprend exactement le même code (versionName "1.1" inchangé), seul
+        // capacitor.config.ts change (→ DEVTEST temporaire, voir
+        // docs/ANDROID_RELEASE_CONFIG.md §9) — nouveau versionCode requis
+        // uniquement parce que Google Play l'exige pour tout nouvel AAB.
+        versionCode 4
         versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

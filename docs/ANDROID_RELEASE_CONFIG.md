@@ -61,3 +61,16 @@ Le blocage de build local documenté au §6 (`Unable to establish loopback conne
 Le point 4 ci-dessus affirmait `versionCode 2` / `versionName "1.1"` par anticipation — au moment de sa rédaction, `build.gradle` portait en réalité `versionName "1.0"` (confirmé lors de l'audit final PREPROD, cf. `docs/ANDROID_VERSION_HISTORY.md`). Ce point 4 décrivait aussi un état antérieur au premier upload réel : `versionCode 2` **a depuis été uploadé avec succès sur Internal Test** le 2026-09-08.
 
 **Freeze version testeur** : `versionCode 3` / `versionName "1.1"` — couvre les Phases C1-C3 (séparation institutionnelle réelle), le correctif du bug PDF NotoSans italique et les 2 correctifs DEV-BYPASS (`issuedById`/`reviewedById`). `applicationId "ht.cciga.app"` inchangé. Voir `docs/ANDROID_VERSION_HISTORY.md` pour le commit exact et le résultat du build CI signé.
+
+## §9 — `capacitor.config.ts` pointé temporairement vers DEVTEST (2026-09-08)
+
+**Constat** : `versionCode 3` était déjà signé, uploadé et confirmé live sur Internal Test (§8) — mais `server.url` valait encore `https://cciga-app.vercel.app` (Production) au moment de ce build, et Production n'a pas été redéployée depuis un incident antérieur cette session (rollback vers un déploiement vieux de 18+ jours, jamais rattrapé). L'app Android est un client léger pur (`webDir: 'public'` n'est jamais utilisé tant que `server.url` est défini) : elle affiche donc, à chaque lancement, exactement ce que sert l'URL configurée — indépendamment du contenu réel de l'AAB. Confirmé par comparaison directe : le HTML de `cciga-app-devtest.vercel.app` contient la photo campus ajoutée cette session, celui de `cciga-app.vercel.app` non.
+
+**Mandat "Option 2 confirmée : DEVTEST/PREPROD" (2026-09-08)** : plutôt qu'un redéploiement Production (option 1, explicitement écartée par l'utilisateur), `server.url` pointe désormais **temporairement** vers `https://cciga-app-devtest.vercel.app` — testeurs Internal Testing voient ainsi la dernière interface réellement validée cette session. Documenté dans `capacitor.config.ts` lui-même.
+
+**Garde-fou CI adapté, pas désactivé** : `android-release-aab.yml` et `google-play-internal-test-upload.yml` vérifiaient auparavant l'ABSENCE d'une URL devtest dans l'AAB (protection contre un oubli accidentel). Le contrôle vérifie maintenant que l'URL réellement embarquée dans l'AAB **correspond exactement** à celle actuellement committée dans `capacitor.config.ts` — protège aussi bien contre un oubli accidentel (URL différente de celle du code source) que contre une dérive silencieuse, dans les deux sens (Production ou DEVTEST).
+
+**Restauration vers Production** (à faire dès que Production est explicitement redéployée et à jour) :
+1. `capacitor.config.ts` → remettre `url: 'https://cciga-app.vercel.app'`, supprimer ce commentaire temporaire.
+2. `android/app/build.gradle` → incrémenter `versionCode` (jamais réutiliser une valeur déjà uploadée, voir `docs/ANDROID_VERSION_HISTORY.md`).
+3. Relancer `android-release-aab.yml` puis `google-play-internal-test-upload.yml` — le garde-fou confirmera de lui-même que l'AAB pointe bien vers Production.

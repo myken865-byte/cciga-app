@@ -5,10 +5,21 @@ const config: CapacitorConfig = {
   appName: 'CCIGA App',
   webDir: 'public',
   server: {
-    // Real Production. DEV/TEST builds temporarily point this at
-    // https://cciga-app-devtest.vercel.app (isolated preview project) and
-    // must always be reverted here before any Release build.
-    url: 'https://cciga-app.vercel.app',
+    // TEMPORAIRE (mandat "Option 2 confirmée : DEVTEST/PREPROD", 2026-09-08).
+    // La valeur normale ici est https://cciga-app.vercel.app (Production) —
+    // voir docs/ANDROID_RELEASE_CONFIG.md §9 pour la restauration exacte.
+    // Production n'a pas été redéployée depuis un incident antérieur cette
+    // session : tant qu'elle sert une interface obsolète, la version testeur
+    // Internal Testing pointe explicitement vers PREPROD/devtest (déjà
+    // validée) au lieu de Production, pour que les testeurs voient la
+    // dernière interface réelle. Le garde-fou CI (android-release-aab.yml,
+    // google-play-internal-test-upload.yml) vérifie que l'AAB correspond
+    // exactement à CETTE valeur — il ne "laisse pas passer" une URL devtest
+    // par erreur, il confirme la cohérence source/artifact.
+    // À REVENIR à 'https://cciga-app.vercel.app' dès que Production est
+    // remise à jour (redéploiement + migration explicitement autorisés),
+    // puis relancer android-release-aab.yml avec un nouveau versionCode.
+    url: 'https://cciga-app-devtest.vercel.app',
     androidScheme: 'https',
     errorPath: 'offline.html',
   },
