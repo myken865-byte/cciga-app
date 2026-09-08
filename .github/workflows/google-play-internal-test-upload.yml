@@ -174,12 +174,22 @@ jobs:
           echo "Edit: $EDIT_ID"
 
           echo "2/4 — Upload du bundle ($AAB)…"
-          UPLOAD_RESPONSE=$(curl -sS -X POST \
+          LOCAL_SIZE=$(wc -c < "$AAB")
+          echo "Taille locale du fichier : $LOCAL_SIZE octets"
+          UPLOAD_OUT=$(curl -sS -w "\n%{http_code}\n%{size_upload}" -X POST \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
             -H "Content-Type: application/octet-stream" \
             --data-binary "@$AAB" \
             "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$PACKAGE/edits/$EDIT_ID/bundles?uploadType=media")
+          UPLOAD_HTTP_CODE=$(echo "$UPLOAD_OUT" | tail -2 | head -1)
+          UPLOAD_BYTES_SENT=$(echo "$UPLOAD_OUT" | tail -1)
+          UPLOAD_RESPONSE=$(echo "$UPLOAD_OUT" | sed '$d' | sed '$d')
+          echo "HTTP $UPLOAD_HTTP_CODE — octets envoyés par curl : $UPLOAD_BYTES_SENT (attendu : $LOCAL_SIZE)"
           echo "$UPLOAD_RESPONSE"
+          if [ "$UPLOAD_BYTES_SENT" != "$LOCAL_SIZE" ]; then
+            echo "::error::Upload tronqué — curl n'a envoyé que $UPLOAD_BYTES_SENT/$LOCAL_SIZE octets."
+            exit 1
+          fi
           UPLOADED_CODE=$(echo "$UPLOAD_RESPONSE" | grep -oP '"versionCode"\s*:\s*\K[0-9]+')
           if [ "$UPLOADED_CODE" != "$VERSION_CODE" ]; then
             echo "::error::versionCode uploadé ($UPLOADED_CODE) différent de celui attendu ($VERSION_CODE)."
