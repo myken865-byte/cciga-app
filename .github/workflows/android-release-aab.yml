@@ -24,6 +24,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Mandat "Automatisation Google Play" (2026-09-07), §6.2-3 et §20 :
+      # aucun AAB défectueux ne doit être produit — lint et tests bloquent
+      # le build (le job échoue ici, avant tout accès aux secrets de
+      # signature) plutôt que de laisser passer un bundle non vérifié.
+      - name: Lint (STOP — build non autorisé si erreur)
+        run: npm run lint
+
+      - name: Automated tests (STOP — build non autorisé si échec)
+        run: npm run test
+
       - name: Sync Capacitor Android project
         run: npx cap sync android
 
@@ -84,6 +94,31 @@ jobs:
           else
             echo "OK — no devtest URL present in the Release AAB."
           fi
+
+      # Mandat "Automatisation Google Play" (2026-09-07), §6.7-9, §7, §20 :
+      # ne pas se contenter d'afficher package/versionCode, les valider
+      # explicitement. LAST_UPLOADED_VERSION_CODE doit être mis à jour à la
+      # main dans docs/ANDROID_VERSION_HISTORY.md (source de vérité) à
+      # chaque nouvel upload réel vers Google Play — jamais automatiquement,
+      # pour ne jamais valider silencieusement une régression de version.
+      - name: Validate package identity and versionCode uniqueness
+        env:
+          LAST_UPLOADED_VERSION_CODE: 1
+        run: |
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          DUMP=$(java -jar bundletool.jar dump manifest --bundle="$AAB")
+          PACKAGE=$(echo "$DUMP" | grep -oP 'package="\K[^"]+')
+          VERSION_CODE=$(echo "$DUMP" | grep -oP 'versionCode="\K[0-9]+')
+          echo "Package: $PACKAGE — versionCode: $VERSION_CODE"
+          if [ "$PACKAGE" != "ht.cciga.app" ]; then
+            echo "::error::Package attendu ht.cciga.app, trouvé $PACKAGE — build refusé."
+            exit 1
+          fi
+          if [ "$VERSION_CODE" -le "$LAST_UPLOADED_VERSION_CODE" ]; then
+            echo "::error::versionCode $VERSION_CODE <= dernier versionCode connu ($LAST_UPLOADED_VERSION_CODE, voir docs/ANDROID_VERSION_HISTORY.md). Incrémenter android/app/build.gradle avant de relancer."
+            exit 1
+          fi
+          echo "OK — package et versionCode valides pour un nouvel upload."
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4

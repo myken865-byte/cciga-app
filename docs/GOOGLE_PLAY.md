@@ -64,9 +64,8 @@ Satisfaite via le processus documenté : la page [Politique de confidentialité]
 
 Uniquement :
 - `android.permission.INTERNET`
-- `android.permission.ACCESS_NETWORK_STATE`
 
-Aucune autre autorisation (caméra, stockage, contacts, localisation) — vérifié directement dans `android/app/src/main/AndroidManifest.xml` et dans les manifestes des plugins Capacitor utilisés.
+Correction (audit du 2026-09-07, mandat "Automatisation Google Play") : `ACCESS_NETWORK_STATE` était listée ici par erreur — elle n'apparaît pas dans `android/app/src/main/AndroidManifest.xml`, qui ne déclare qu'`INTERNET`. Aucune autre autorisation (caméra, stockage, contacts, localisation) — vérifié directement dans le manifeste et dans les manifestes des plugins Capacitor utilisés.
 
 ## Fiche Store — descriptions (brouillon)
 

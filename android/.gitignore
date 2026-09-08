@@ -52,17 +52,22 @@ captures/
 # Comment next line if keeping position of elements in Navigation Editor is relevant for you
 .idea/navEditor.xml
 
-# Keystore files
-# Uncomment the following lines if you do not want to check your keystore files in.
-#*.jks
-#*.keystore
+# Keystore files — jamais commis (mandat "Automatisation Google Play", §8 :
+# le workflow android-release-aab.yml écrit ces fichiers temporairement sur
+# le disque à partir des GitHub Secrets avant de les supprimer explicitement
+# après le build ; cette exclusion garantit qu'un `git add` accidentel
+# pendant cette fenêtre ne peut jamais les faire entrer dans l'historique).
+*.jks
+*.keystore
+keystore.properties
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
 .cxx/
 
-# Google Services (e.g. APIs or Firebase)
-# google-services.json
+# Google Services (e.g. APIs or Firebase) — pas encore utilisé par CCIGA
+# App (aucun google-services.json présent), exclu par précaution.
+google-services.json
 
 # Freeline
 freeline.py
