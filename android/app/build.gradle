@@ -4,7 +4,15 @@ android {
     namespace = "ht.cciga.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ht.cciga.app.test"
+        // Identité Production officielle — doit rester alignée avec le
+        // namespace ci-dessus et capacitor.config.ts (appId). Mandat
+        // "Correction du conflit Application ID" (2026-09-07) : cette valeur
+        // avait dérivé vers "ht.cciga.app.test" sans que rien ne le
+        // documente ; l'APK de test déjà validé sur appareil réel
+        // (test-builds/cciga-app-test-v1.1-2.apk, confirmé via aapt2) et
+        // docs/ANDROID_RELEASE_CONFIG.md (2026-08-27) confirment tous deux
+        // que "ht.cciga.app" est la valeur historique correcte.
+        applicationId "ht.cciga.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -20,6 +28,13 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        // DEV/TEST : mécanisme Android standard (applicationIdSuffix sur le
+        // buildType debug, déjà utilisé par .github/workflows/android-debug-apk.yml
+        // via `assembleDebug`) — produit "ht.cciga.app.test", distinct de la
+        // Production "ht.cciga.app" ci-dessus, sans dupliquer aucune config.
+        debug {
+            applicationIdSuffix ".test"
         }
     }
 }
