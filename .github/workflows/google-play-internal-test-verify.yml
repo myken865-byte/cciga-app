@@ -1,0 +1,93 @@
+name: Verify Google Play Internal Test status
+
+# Mandat "Autorisation Verification Internal Test" (2026-09-08). Lecture
+# seule — aucune modification de piste, de testeurs, de fiche Play Store,
+# ni action Production/Closed/Open Test. Réutilise exactement le motif
+# d'authentification déjà validé (google-play-oidc-check.yml,
+# google-play-internal-test-upload.yml) — NO REDO.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard — restrict to this exact repository
+        if: github.repository != 'myken865-byte/cciga-app'
+        run: |
+          echo "::error::This workflow must only run from myken865-byte/cciga-app — refusing."
+          exit 1
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/575161100644/locations/global/workloadIdentityPools/cciga-github-actions/providers/cciga-github-actions
+          service_account: cciga-google-play-automation@automatic-curve-508002-k3.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      # Lecture seule : un edit est créé uniquement parce que l'API v3 exige
+      # ce contexte pour lire tracks/testers, jamais commité, toujours
+      # abandonné en fin d'étape (aucune trace, rien de changé côté Play).
+      - name: Read Internal Test track + testers configuration
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -e
+          PACKAGE="ht.cciga.app"
+          API="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE"
+
+          echo "Ouverture d'un edit de lecture (jamais commité)…"
+          EDIT_RESPONSE=$(curl -sS -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" "$API/edits")
+          EDIT_ID=$(echo "$EDIT_RESPONSE" | grep -oP '"id"\s*:\s*"\K[^"]+')
+          if [ -z "$EDIT_ID" ]; then
+            echo "::error::Impossible de créer un edit de lecture — arrêt."
+            echo "$EDIT_RESPONSE"
+            exit 1
+          fi
+          echo "Edit (lecture seule): $EDIT_ID"
+
+          cleanup() {
+            echo "Abandon de l'edit de lecture $EDIT_ID (aucune trace laissée)…"
+            curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$API/edits/$EDIT_ID" || true
+          }
+          trap cleanup EXIT
+
+          echo ""
+          echo "=== ÉTAT DE LA PISTE internal ==="
+          TRACK_STATE=$(curl -sS -H "Authorization: Bearer $ACCESS_TOKEN" "$API/edits/$EDIT_ID/tracks/internal")
+          echo "$TRACK_STATE"
+
+          echo ""
+          echo "=== TESTEURS CONFIGURÉS SUR LA PISTE internal ==="
+          TESTERS_STATE=$(curl -sS -w "\n%{http_code}" -H "Authorization: Bearer $ACCESS_TOKEN" "$API/edits/$EDIT_ID/testers/internal")
+          TESTERS_CODE=$(echo "$TESTERS_STATE" | tail -1)
+          TESTERS_BODY=$(echo "$TESTERS_STATE" | sed '$d')
+          echo "HTTP $TESTERS_CODE"
+          echo "$TESTERS_BODY"
+
+          echo ""
+          echo "=== RÉSUMÉ ==="
+          if echo "$TRACK_STATE" | grep -q '"2"'; then
+            echo "Release versionCode 2 : PRÉSENTE sur la piste internal."
+          else
+            echo "::warning::Release versionCode 2 non trouvée dans la réponse tracks/internal — à vérifier manuellement."
+          fi
+
+          HAS_GROUPS=$(echo "$TESTERS_BODY" | grep -c "googleGroups" || true)
+          HAS_EMAILS=$(echo "$TESTERS_BODY" | grep -c '"value"' || true)
+          if [ "$TESTERS_CODE" != "200" ]; then
+            echo "::warning::Lecture des testeurs a échoué (HTTP $TESTERS_CODE) — voir le corps de réponse ci-dessus."
+          elif [ "$HAS_GROUPS" = "0" ] && [ "$HAS_EMAILS" = "0" ]; then
+            echo "::warning::AUCUN testeur (ni groupe Google, ni email individuel) n'est configuré sur la piste internal — même si la release est live, personne n'y a accès pour l'instant."
+          else
+            echo "Au moins un groupe/testeur semble configuré (voir le détail JSON ci-dessus)."
+          fi
+
+          echo ""
+          echo "Note : l'URL d'opt-in testeur (lien 'Copier le lien' de Play Console) n'est pas exposée par l'Android Publisher API — elle ne peut être récupérée que depuis Play Console (Testing > Internal testing > onglet Testeurs)."
