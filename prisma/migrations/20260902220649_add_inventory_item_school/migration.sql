@@ -1,15 +1,14 @@
-/*
-  Warnings:
-
-  - Added the required column `school` to the `InventoryItem` table without a default value. This is not possible if the table is not empty.
-
-*/
+-- Corrigé (mandat "Phase C1 / InventoryItem nullable", 2026-09-08) : cette
+-- migration n'avait jamais été appliquée sur preprod (1 ligne réelle
+-- existante y aurait violé la contrainte NOT NULL sans valeur par défaut).
+-- `school` passe nullable, même principe que les 10 champs Phase C1 —
+-- aucune attribution automatique, aucun backfill.
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_InventoryItem" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "school" TEXT NOT NULL,
+    "school" TEXT,
     "name" TEXT NOT NULL,
     "category" TEXT NOT NULL,
     "identifier" TEXT,

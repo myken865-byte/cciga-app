@@ -851,7 +851,13 @@ model Employee {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Phase C1 (2026-09-07) : rattachement institutionnel, nullable tant que
+  // le backfill (C2/C3) n'a pas été autorisé. Aucune valeur automatique.
+  school String?
+
   leaveRequests EmployeeLeaveRequest[]
+
+  @@index([school])
 }
 
 model EmployeeLeaveRequest {
@@ -880,6 +886,13 @@ model Badge {
   issuedAt    DateTime @default(now())
   issuedById  Int?
   issuedBy    User?    @relation("BadgeIssuedBy", fields: [issuedById], references: [id])
+
+  // Phase C1 (2026-09-07) : rattachement institutionnel, nullable tant que
+  // le backfill (C2/C3) n'a pas été autorisé. Aucune valeur automatique.
+  school String?
+
+  @@index([school])
+  @@index([school, status])
 }
 
 /** Infirmerie — registre des passages, accès limité au personnel autorisé. */
@@ -895,7 +908,12 @@ model InfirmaryVisit {
   recordedBy        User     @relation("InfirmaryVisitRecordedBy", fields: [recordedById], references: [id])
   createdAt         DateTime @default(now())
 
+  // Phase C1 (2026-09-07) : rattachement institutionnel, nullable tant que
+  // le backfill (C2/C3) n'a pas été autorisé. Aucune valeur automatique.
+  school String?
+
   @@index([studentId])
+  @@index([school])
 }
 
 /** Suivi psychosocial — dossier protégé, accès strictement restreint. */
@@ -911,7 +929,13 @@ model PsychosocialCase {
 
   notes      PsychosocialNote[]
 
+  // Phase C1 (2026-09-07) : rattachement institutionnel, nullable tant que
+  // le backfill (C2/C3) n'a pas été autorisé. Aucune valeur automatique.
+  school String?
+
   @@index([studentId])
+  @@index([school])
+  @@index([school, status])
 }
 
 model PsychosocialNote {
@@ -936,7 +960,13 @@ model Book {
   totalCopies Int      @default(1)
   createdAt   DateTime @default(now())
 
+  // Phase C1 (2026-09-07) : rattachement institutionnel, nullable tant que
+  // le backfill (C2/C3) n'a pas été autorisé. Aucune valeur automatique.
+  school String?
+
   loans       BookLoan[]
+
+  @@index([school])
 }
 
 model BookLoan {
@@ -951,7 +981,13 @@ model BookLoan {
   recordedById Int?
   recordedBy   User?     @relation("BookLoanRecordedBy", fields: [recordedById], references: [id])
 
+  // Phase C1 (2026-09-07) : copie dénormalisée de Book.school — un livre
+  // appartient à une bibliothèque d'institution, pas à celle de chaque
+  // emprunteur. Nullable tant que le backfill n'a pas été autorisé.
+  school String?
+
   @@index([bookId])
+  @@index([school])
   @@index([borrowerId])
 }
 
@@ -965,7 +1001,13 @@ model Vehicle {
   driverName String?
   schedule String?
 
+  // Phase C1 (2026-09-07) : rattachement institutionnel, nullable tant que
+  // le backfill (C2/C3) n'a pas été autorisé. Aucune valeur automatique.
+  school String?
+
   assignments TransportAssignment[]
+
+  @@index([school])
 }
 
 model TransportAssignment {
@@ -976,8 +1018,13 @@ model TransportAssignment {
   student   User     @relation("TransportAssignmentStudent", fields: [studentId], references: [id])
   createdAt DateTime @default(now())
 
+  // Phase C1 (2026-09-07) : copie dénormalisée de Vehicle.school. Nullable
+  // tant que le backfill n'a pas été autorisé.
+  school String?
+
   @@index([vehicleId])
   @@index([studentId])
+  @@index([school])
 }
 
 /** Cantine — menus et réservations. */
@@ -988,7 +1035,14 @@ model CanteenMenu {
   description String?
   createdAt   DateTime @default(now())
 
+  // Phase C1 (2026-09-07) : rattachement institutionnel, nullable tant que
+  // le backfill (C2/C3) n'a pas été autorisé. Aucune valeur automatique.
+  school String?
+
   reservations CanteenReservation[]
+
+  @@index([school])
+  @@index([school, date])
 }
 
 model CanteenReservation {
@@ -1000,8 +1054,13 @@ model CanteenReservation {
   status    String   @default("reserve") // reserve | servi | annule
   createdAt DateTime @default(now())
 
+  // Phase C1 (2026-09-07) : copie dénormalisée de CanteenMenu.school.
+  // Nullable tant que le backfill n'a pas été autorisé.
+  school String?
+
   @@index([menuId])
   @@index([studentId])
+  @@index([school])
 }
 
 /** Inventaire / Patrimoine. */
@@ -1009,7 +1068,10 @@ model InventoryItem {
   id           String   @id @default(cuid())
   // Cloisonnement strict par institution (portail Logistique) — jamais de
   // fuite d'inventaire entre École Classique, École Professionnelle et Université.
-  school       String // ecole-classique | ecole-professionnelle | universite
+  // Nullable (mandat "Phase C1 / InventoryItem nullable", 2026-09-08) : même
+  // principe que les 10 champs school de Phase C1 — aucune attribution
+  // automatique d'institution aux lignes existantes, jamais de backfill.
+  school       String? // ecole-classique | ecole-professionnelle | universite
   name         String
   category     String // equipement | mobilier | informatique | pedagogique | laboratoire
   identifier   String?  @unique
