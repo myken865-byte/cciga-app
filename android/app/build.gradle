@@ -15,7 +15,12 @@ android {
         applicationId "ht.cciga.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // versionCode 1 n'a jamais été uploadé sur Google Play mais est déjà
+        // "pris" (présent dans ce fichier depuis le début du projet, voir
+        // docs/ANDROID_VERSION_HISTORY.md) — mandat "Automatisation Google
+        // Play" (2026-09-07) §7 : jamais réutiliser un versionCode, incrémenter
+        // avant le premier candidat réellement destiné à un track Google Play.
+        versionCode 2
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

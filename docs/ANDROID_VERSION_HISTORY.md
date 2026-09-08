@@ -5,10 +5,11 @@ _Mandat "Automatisation Google Play" (2026-09-07), §7 — Versioning automatiqu
 | versionCode | versionName | Commit Git | Date | Environnement | Track Google Play | Résultat |
 |---|---|---|---|---|---|---|
 | 1 | 1.0 | (non tracé — build initial, avant la mise en place de cet historique) | — | Local / test-builds | Aucun (jamais uploadé) | N/A |
+| 2 | 1.0 | 1385077 (correctif applicationId) + suivant (bump versionCode) | 2026-09-08 | CI GitHub Actions (`android-release-aab.yml`) | Aucun — AAB produit et vérifié en CI, aucun upload Google Play effectué | Build/signature/vérifications réussis (voir run CI) |
 
 ## Règle de progression
 
-- Le prochain AAB envoyé à Google Play (n'importe quel track) doit utiliser **versionCode 2** au minimum — jamais 1, déjà présent dans `android/app/build.gradle` sans avoir été distribué.
+- Le prochain AAB **réellement envoyé à Google Play** (n'importe quel track) doit utiliser un versionCode strictement supérieur à **2** — mettre à jour `LAST_UPLOADED_VERSION_CODE` dans `.github/workflows/android-release-aab.yml` uniquement après un upload réel confirmé, jamais avant.
 - `versionCode` doit être strictement croissant, sans exception, y compris entre deux tracks différents (Internal Testing puis Closed Testing partagent la même séquence).
 - Ne jamais réutiliser un `versionCode` déjà listé ci-dessus, même si l'upload correspondant a échoué côté Google Play — incrémenter et réessayer.
 
