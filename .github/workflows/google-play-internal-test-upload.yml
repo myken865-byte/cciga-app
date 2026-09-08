@@ -99,6 +99,26 @@ jobs:
           echo "--- Manifest: applicationId / versionCode / versionName / targetSdk / compileSdk ---"
           java -jar bundletool.jar dump manifest --bundle="$AAB" | grep -E "package=|versionCode=|versionName=|targetSdkVersion|minSdkVersion|compileSdkVersion"
           echo "--- Signing certificate (public info only, jarsigner — AABs are jar-signed, not apksigner-signed) ---"
+          # Bug corrigé (2026-09-08) : l'ancien grep ne filtrait que la
+          # légende de jarsigner ("s = signature was verified"), jamais le
+          # verdict réel — un AAB non signé passait silencieusement (c'est
+          # ce qui a causé le rejet Google Play "must be signed" sur le
+          # premier essai d'upload). Vérifié empiriquement : le code de
+          # sortie de jarsigner reste 0 même sur un jar totalement non
+          # signé (y compris avec -strict) — seul le texte du verdict fait
+          # foi ici, jamais le code de sortie seul.
+          jarsigner -verify -strict "$AAB" > jarsigner-verify.log 2>&1 || true
+          cat jarsigner-verify.log
+          if grep -qE "jar is unsigned|no manifest" jarsigner-verify.log; then
+            echo "::error::jarsigner signale un bundle non signé — upload/release refusé."
+            exit 1
+          fi
+          if ! grep -q "jar verified" jarsigner-verify.log; then
+            echo "::error::jarsigner n'a pas confirmé « jar verified » — bundle traité comme non signé par prudence."
+            exit 1
+          fi
+          cat jarsigner-verify.log
+          echo "--- Détail du certificat (information publique uniquement) ---"
           jarsigner -verify -verbose -certs "$AAB" | grep -E "^(sm|s|m| |jar verified|CN=)" | head -30
           echo "--- Confirm no DEV/TEST devtest URL leaked into the bundle ---"
           if unzip -p "$AAB" | strings | grep -q "cciga-app-devtest.vercel.app"; then
