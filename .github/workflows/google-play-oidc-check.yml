@@ -43,6 +43,11 @@ jobs:
           workload_identity_provider: projects/575161100644/locations/global/workloadIdentityPools/cciga-github-actions/providers/cciga-github-actions
           service_account: cciga-google-play-automation@automatic-curve-508002-k3.iam.gserviceaccount.com
           token_format: access_token
+          # L'Android Publisher API n'est pas couverte par le scope par
+          # défaut (cloud-platform) — elle exige explicitement son propre
+          # scope OAuth. Sans cette ligne : 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT
+          # (confirmé lors du premier essai de ce workflow, 2026-09-08).
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       # Test non destructif : un "edit" Google Play est un brouillon —
       # créer puis supprimer un edit ne touche aucun track, aucune release,
