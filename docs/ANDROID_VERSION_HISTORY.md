@@ -6,6 +6,7 @@ _Mandat "Automatisation Google Play" (2026-09-07), §7 — Versioning automatiqu
 |---|---|---|---|---|---|---|
 | 1 | 1.0 | (non tracé — build initial, avant la mise en place de cet historique) | — | Local / test-builds | Aucun (jamais uploadé) | N/A |
 | 2 | 1.0 | 0cdd48c (correctif signature) | 2026-09-08 | CI GitHub Actions (`google-play-internal-test-upload.yml`) | **Internal Test** | ✅ **Premier upload réel réussi** — edit `15161737921180393799`, commité et confirmé live sur le track. SHA-256 `a5bb839f82cab9d05bfa53e963d562304d69f6c8028523a75a5fe21056100059`, 6 172 070 octets. |
+| 3 | 1.1 | 3d5c5f8 (freeze version testeur 1.1) | 2026-09-08 | CI GitHub Actions (`android-release-aab.yml`, run [34269931666](https://github.com/myken865-byte/cciga-app/actions/runs/34269931666)) | Aucun (build testeur, pas encore uploadé) | ✅ **Build signé produit et vérifié** — lint/tests/TypeScript verts, `package="ht.cciga.app"`, `versionCode="3"`, `versionName="1.1"`, `minSdkVersion="24"`, `targetSdkVersion="36"`, jarsigner confirme "jar verified", aucune URL devtest dans le bundle. SHA-256 `d9cb7a170bae0bae608d9b4544531497828a6e6ee926c4dc8fe7cb82154a00ee`, 6 230 968 octets. Couvre les Phases C1-C3 (séparation institutionnelle) + correctif PDF NotoSans + 2 correctifs DEV-BYPASS. **STOP avant tout upload Google Play** (mandat "Freeze version testeur 1.1"). |
 
 ## Règle de progression
 
