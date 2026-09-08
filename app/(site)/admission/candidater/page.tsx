@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getPrograms, isPubliclyVisible, usesAuthorizationWorkflow } from "@/lib/content";
 import CandidatureForm from "./CandidatureForm";
+import BackButton from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Candidater",
@@ -15,6 +16,7 @@ export default async function CandidaterPage() {
   const programs = allPrograms.filter((p) => !usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p));
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
+      <BackButton fallbackHref="/admission" label="Admission" confirmIfUnsaved />
       <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
         Candidature en ligne
       </p>

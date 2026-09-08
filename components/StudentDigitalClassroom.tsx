@@ -128,7 +128,7 @@ export default function StudentDigitalClassroom() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <CalendarIcon className="h-4 w-4" /> Emploi du temps <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {env.emploiDuTemps.map((c, i) => (
             <li key={i} className="flex items-center justify-between gap-3 bg-surface px-3.5 py-2.5 text-sm">
               <div className="min-w-0">
@@ -212,7 +212,7 @@ export default function StudentDigitalClassroom() {
             <p className="text-lg font-bold text-foreground">{env.presence.totaux.retards}</p>
           </div>
         </div>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {env.presence.historique.map((h, i) => (
             <li key={i} className="flex items-center justify-between bg-surface px-3.5 py-2.5 text-sm">
               <span className="text-foreground">{h.date} — {h.cours}</span>
@@ -245,7 +245,7 @@ export default function StudentDigitalClassroom() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <ClockIcon className="h-4 w-4" /> Examens / Évaluations <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {env.examens.map((ex) => (
             <li key={ex.titre} className="flex items-center justify-between gap-3 bg-surface px-3.5 py-2.5 text-sm">
               <div>
@@ -342,7 +342,7 @@ export default function StudentDigitalClassroom() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <CalendarIcon className="h-4 w-4" /> Calendrier personnel <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {studentDemoCalendar.map((c) => (
             <li key={c.titre} className="flex items-center justify-between gap-3 bg-surface px-3.5 py-2.5 text-sm">
               <div>

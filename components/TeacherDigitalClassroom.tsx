@@ -137,7 +137,7 @@ export default function TeacherDigitalClassroom() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <UsersIcon className="h-4 w-4" /> Cahier de présence <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {env.attendance.map((a) => (
             <li key={a.nom} className="flex items-center justify-between bg-surface px-3.5 py-2.5 text-sm">
               <span className="text-foreground">{a.nom}</span>
@@ -204,7 +204,7 @@ export default function TeacherDigitalClassroom() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <AlertIcon className="h-4 w-4" /> Examens / Évaluations <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {env.examens.map((ex) => (
             <li key={ex.titre} className="flex items-center justify-between gap-3 bg-surface px-3.5 py-2.5 text-sm">
               <div>
@@ -232,7 +232,7 @@ export default function TeacherDigitalClassroom() {
             </thead>
             <tbody>
               {env.gradebook.map((g) => (
-                <tr key={g.apprenant} className="border-t border-border">
+                <tr key={g.apprenant} className="border-t border-row-divider">
                   <td className="px-3 py-2 text-foreground">{g.apprenant}</td>
                   <td className="px-3 py-2 font-semibold text-primary">
                     {g.note !== null ? `${g.note}/${g.max}` : <span className="badge badge-neutral">Manquante</span>}
@@ -282,7 +282,7 @@ export default function TeacherDigitalClassroom() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <BookIcon className="h-4 w-4" /> Palmarès <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {env.palmares.map((p) => (
             <li key={p.nom} className="flex items-center justify-between bg-surface px-3.5 py-2.5 text-sm">
               <span className="text-foreground">
@@ -321,7 +321,7 @@ export default function TeacherDigitalClassroom() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <CalendarIcon className="h-4 w-4" /> Calendrier professeur <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {teacherDemoCalendar.map((c) => (
             <li key={c.titre} className="flex items-center justify-between gap-3 bg-surface px-3.5 py-2.5 text-sm">
               <div>

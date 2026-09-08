@@ -61,7 +61,7 @@ export default function PeriodResultCard({
           </thead>
           <tbody>
             {courseResults.map((c) => (
-              <tr key={c.courseId} className="border-t border-border">
+              <tr key={c.courseId} className="border-t border-row-divider">
                 <td className="px-3 py-2.5 text-foreground">
                   {c.courseName}
                   {c.retake && <span className="ml-1.5 badge badge-warning">reprise</span>}

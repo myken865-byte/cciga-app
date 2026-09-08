@@ -86,7 +86,7 @@ export default function ProgramsTable({
           </thead>
           <tbody>
             {filtered.map((program) => (
-              <tr key={program.id} className="border-t border-border">
+              <tr key={program.id} className="border-t border-row-divider">
                 <td className="px-4 py-3 text-muted">
                   {schoolsBySlug.get(program.school)?.name ?? program.school}
                 </td>

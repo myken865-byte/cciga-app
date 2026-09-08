@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db";
 import { hasAnyRole } from "@/lib/roles";
 import { parentRequestServices, parentRequestServiceRoles } from "@/lib/parentRequests";
 import ParentRequestList, { type ParentRequestSummary } from "@/components/ParentRequestList";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { ChatIcon } from "@/components/icons";
+import BackButton from "@/components/BackButton";
 
 export const metadata: Metadata = { title: "Demandes des parents" };
 
@@ -41,12 +44,15 @@ export default async function AdminDemandesParentsPage() {
   }));
 
   return (
-    <div>
-      <h1 className="mb-1 text-2xl font-bold text-foreground">Demandes des parents</h1>
+    <AdminShell>
+      <BackButton fallbackHref="/admin/centre-de-commandement" />
+      <AdminTitleBand eyebrow="CCIGA — Guichet institutionnel" title="Demandes des parents" />
       <p className="mb-6 text-sm text-muted">
         Guichet numérique — demandes routées vers votre service.
       </p>
-      <ParentRequestList requests={summaries} basePath="/admin/demandes-parents" />
-    </div>
+      <AdminCard title="Demandes reçues" icon={ChatIcon}>
+        <ParentRequestList requests={summaries} basePath="/admin/demandes-parents" />
+      </AdminCard>
+    </AdminShell>
   );
 }

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { formatClassicEnrollmentFormReference } from "@/lib/classicEnrollmentFormReference";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
 import BackButton from "@/components/BackButton";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { UsersIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +18,23 @@ const badgeStatusLabels: Record<string, string> = {
 };
 
 export default async function ElevesEcoleClassiquePage() {
+  // Mandat "Mise en état opérationnel" (2026-09-06) : même garde de contexte
+  // que app/admin/inscriptions-ecole-classique/page.tsx — voir son commentaire.
+  const activeSchool = await getActiveSchoolOrAll();
+  if (activeSchool !== "ecole-classique" && activeSchool !== "toutes") {
+    return (
+      <AdminShell>
+        <BackButton fallbackHref="/admin/inscriptions-ecole-classique" label="Fiches d'inscription — École Classique" />
+        <AdminTitleBand eyebrow="CCIGA — École Classique" title="Élèves inscrits — École Classique" />
+        <AdminCard>
+          <p className="text-sm text-muted">
+            Sélectionnez l&apos;institution École Classique pour accéder à cette liste.
+          </p>
+        </AdminCard>
+      </AdminShell>
+    );
+  }
+
   // Élèves déjà inscrits (item 4) : fiches validées et effectivement
   // rattachées à un compte élève — même paire de conditions que le hook
   // badge automatique (lib/badgeAuto.ts), jamais une simple lecture du statut.
@@ -25,11 +45,12 @@ export default async function ElevesEcoleClassiquePage() {
   });
 
   return (
-    <div>
+    <AdminShell>
       <BackButton fallbackHref="/admin/inscriptions-ecole-classique" label="Fiches d'inscription — École Classique" />
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Élèves inscrits — École Classique</h1>
+      <AdminTitleBand eyebrow="CCIGA — École Classique" title="Élèves inscrits — École Classique" />
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <AdminCard title="Élèves inscrits" icon={UsersIcon}>
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm">
           <thead className="bg-background text-muted">
             <tr>
@@ -47,7 +68,7 @@ export default async function ElevesEcoleClassiquePage() {
             {forms.map((f) => {
               const badge = f.student?.badge ?? null;
               return (
-                <tr key={f.id} className="border-t border-border">
+                <tr key={f.id} className="border-t border-row-divider">
                   <td className="px-4 py-3 font-mono">
                     {f.studentUserId ? formatCcigaId(f.studentUserId) : "—"}
                   </td>
@@ -81,6 +102,7 @@ export default async function ElevesEcoleClassiquePage() {
           </tbody>
         </table>
       </div>
-    </div>
+      </AdminCard>
+    </AdminShell>
   );
 }

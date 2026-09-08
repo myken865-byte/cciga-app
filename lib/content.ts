@@ -100,6 +100,12 @@ function mapProgram(row: PrismaProgram): Program {
   };
 }
 
+/** Public pages must never surface test/QA/preprod fixtures — display-only filter, data untouched. */
+export function isTestProgram(program: Pick<Program, "name" | "level" | "faculty">): boolean {
+  const haystack = `${program.name} ${program.level} ${program.faculty}`.toLowerCase();
+  return /\b(test|qa|preprod)\b/.test(haystack);
+}
+
 export function getSchools(): School[] {
   return schools;
 }

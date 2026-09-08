@@ -15,6 +15,8 @@ import EvaluationCategoriesPanel from "@/components/EvaluationCategoriesPanel";
 import GradeWorkflowPanel from "@/components/GradeWorkflowPanel";
 import MissingGradesWarning from "@/components/MissingGradesWarning";
 import { computeMissingGrades } from "@/lib/gradeCompleteness";
+import { AdminShell, AdminTitleBand, AdminCard, AdminTile } from "@/components/AdminPremium";
+import { ClipboardIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -79,8 +81,9 @@ export default async function AdminCourseDetailPage({
   }
 
   return (
-    <div>
+    <AdminShell>
       <BackButton fallbackHref="/admin/courses" label="Tous les cours" />
+      <AdminTitleBand eyebrow="CCIGA — Gestion des cours" title={course.name} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
@@ -100,20 +103,19 @@ export default async function AdminCourseDetailPage({
           />
 
           {isUniversite && (
-            <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+            <AdminTile className="text-sm text-muted">
               {course.semester ? `${course.semester.academicYear.label} — ${course.semester.name}` : "Aucun semestre"}
               {course.groupLabel && ` · ${course.groupLabel}`}
               {course.credits !== null && ` · ${course.credits} crédit(s)`}
               {course.coefficient !== null && ` · coefficient ${course.coefficient}`}
-            </div>
+            </AdminTile>
           )}
 
-          <div>
-            <h2 className="mb-4 text-lg font-semibold text-foreground">Notes enregistrées</h2>
+          <AdminCard icon={ClipboardIcon} title="Notes enregistrées">
             {course.grades.length === 0 ? (
               <p className="text-sm text-muted">Aucune note enregistrée pour ce cours.</p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+              <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-background text-muted">
                     <tr>
@@ -126,7 +128,7 @@ export default async function AdminCourseDetailPage({
                   </thead>
                   <tbody>
                     {course.grades.map((g) => (
-                      <tr key={g.id} className="border-t border-border">
+                      <tr key={g.id} className="border-t border-row-divider">
                         <td className="px-4 py-3 text-foreground">{g.student.name}</td>
                         <td className="px-4 py-3 text-muted">
                           {usesWorkflow ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}
@@ -144,7 +146,7 @@ export default async function AdminCourseDetailPage({
                 </table>
               </div>
             )}
-          </div>
+          </AdminCard>
         </div>
 
         <div className="space-y-6">
@@ -188,6 +190,6 @@ export default async function AdminCourseDetailPage({
           )}
         </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }

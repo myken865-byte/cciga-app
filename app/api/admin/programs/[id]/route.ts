@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireAdminSession, requireSuperAdminSession } from "@/lib/auth";
 import { getSchools } from "@/lib/content";
 import { resolveTeacherModel, cascadeTitulaireToCourses } from "@/lib/titulaire";
 import { resolveUniversiteFields } from "@/lib/universiteValidation";
@@ -125,6 +125,58 @@ export async function PATCH(
       after: updated,
     });
   }
+
+  return NextResponse.json({ ok: true });
+}
+
+// Mandat "Mise en état opérationnel" (2026-09-06) : le bouton "Supprimer"
+// existe déjà côté UI (EditProgramForm.tsx) et promet cette exacte garantie
+// ("uniquement possible si aucun étudiant, cours, document ou observation
+// n'est lié") mais la route n'a jamais été implémentée — bouton mort en
+// production. Réservé SUPER_ADMIN, comme le bouton lui-même.
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await requireSuperAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "Réservé au Super Administrateur." }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const program = await prisma.program.findUnique({ where: { id } });
+  if (!program) {
+    return NextResponse.json({ error: "Programme introuvable." }, { status: 404 });
+  }
+
+  const [students, courses, observations, documents, appreciations, snapshots, enrollmentForms, classicForms] =
+    await Promise.all([
+      prisma.user.count({ where: { programId: id } }),
+      prisma.course.count({ where: { programId: id } }),
+      prisma.observation.count({ where: { programId: id } }),
+      prisma.academicDocument.count({ where: { programId: id } }),
+      prisma.studentAppreciation.count({ where: { programId: id } }),
+      prisma.enrollmentSnapshot.count({ where: { programId: id } }),
+      prisma.enrollmentForm.count({ where: { programId: id } }),
+      prisma.classicEnrollmentForm.count({ where: { programId: id } }),
+    ]);
+
+  const dependents = students + courses + observations + documents + appreciations + snapshots + enrollmentForms + classicForms;
+  if (dependents > 0) {
+    return NextResponse.json(
+      { error: "Impossible de supprimer : des données réelles dépendent de ce programme. Utilisez l'archivage." },
+      { status: 400 },
+    );
+  }
+
+  await prisma.program.delete({ where: { id } });
+  await writeAuditLog({
+    entityType: "Program",
+    entityId: id,
+    action: "delete",
+    actorId: resolveActorId(session.userId),
+    before: program,
+  });
 
   return NextResponse.json({ ok: true });
 }

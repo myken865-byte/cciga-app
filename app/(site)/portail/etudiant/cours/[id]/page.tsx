@@ -168,7 +168,7 @@ export default async function StudentCoursePage({
               </thead>
               <tbody>
                 {attendances.map((a) => (
-                  <tr key={a.id} className="border-t border-border">
+                  <tr key={a.id} className="border-t border-row-divider">
                     <td className="px-4 py-3 text-muted">{formatDate(a.date)}</td>
                     <td className="px-4 py-3 font-medium text-foreground">
                       {isAttendanceStatus(a.status) ? attendanceStatusLabels[a.status] : a.status}

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { canAccessParentRequest } from "@/lib/parentRequestAccess";
 import BackButton from "@/components/BackButton";
 import ParentRequestThread, { type ParentRequestDetail } from "@/components/ParentRequestThread";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
 
 export const dynamic = "force-dynamic";
 
@@ -52,9 +53,12 @@ export default async function AdminDemandeParentDetailPage({
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <BackButton fallbackHref="/admin/demandes-parents" />
-      <ParentRequestThread request={detail} canChangeStatus={true} />
-    </div>
+    <AdminShell>
+      <AdminTitleBand eyebrow="CCIGA — Demande parent" title={detail.subject} />
+      <div className="mx-auto max-w-2xl">
+        <BackButton fallbackHref="/admin/demandes-parents" />
+        <ParentRequestThread request={detail} canChangeStatus={true} />
+      </div>
+    </AdminShell>
   );
 }

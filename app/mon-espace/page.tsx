@@ -5,6 +5,7 @@ import { verifySession, SESSION_COOKIE } from "@/lib/auth";
 import { roleLabels, rolePortalPath } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
 import LogoutButton from "@/components/LogoutButton";
+import BackButton from "@/components/BackButton";
 
 export default async function MonEspacePage() {
   const cookieStore = await cookies();
@@ -17,6 +18,7 @@ export default async function MonEspacePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 lg:px-6">
+      <BackButton fallbackHref={rolePortalPath[session.roles[0]]} />
       <div className="mb-10 flex items-start justify-between">
         <div>
           <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">

@@ -19,6 +19,17 @@
   --warning-bg: #fdf3e0;
   --info: #0f2d52;
   --info-bg: #e9edf5;
+  /* Séparateur horizontal entre deux enregistrements successifs (deux
+  lignes de tableau, deux éléments de liste) — mandat "Correction des
+  séparations horizontales" : --border (utilisé aussi pour les contours
+  de cartes/inputs/boutons, volontairement non modifiés) est trop pâle
+  pour ce rôle précis. Teinte bleu marine CCIGA à opacité modérée. */
+  --row-divider: rgba(15, 45, 82, 0.32);
+  /* Refonte visuelle du dashboard (barre latérale admin) — crème dédié,
+  distinct de --background (gris pâle utilisé partout ailleurs) pour ne
+  jamais faire dériver le reste des pages admin. */
+  --dash-cream: #f9f2e2;
+  --dash-cream-deep: #f1e5c8;
 }
 
 @theme inline {
@@ -40,6 +51,9 @@
   --color-warning-bg: var(--warning-bg);
   --color-info: var(--info);
   --color-info-bg: var(--info-bg);
+  --color-row-divider: var(--row-divider);
+  --color-dash-cream: var(--dash-cream);
+  --color-dash-cream-deep: var(--dash-cream-deep);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -186,6 +200,176 @@ body {
   padding: 0.75rem 0.875rem;
 }
 
+/* Séparateurs de lignes (mandat "Correction des séparations horizontales",
+révision "plus épaisses") : épaissit le trait bleu marine sans toucher à sa
+largeur de colonne ni à la structure. Sélecteurs qualifiés par balise
+(tr./li./ul.) au lieu d'une classe nue : Tailwind reconnaît `border-row-
+divider`/`divide-row-divider` comme des utilitaires de COULEUR valides (le
+thème déclare --color-row-divider) et régénère lui-même `.border-row-
+divider{border-color:...}` — une règle nue portant le même nom se ferait
+donc silencieusement remplacer par la sienne (couleur only) au lieu de s'y
+ajouter. Un sélecteur composé (tr.border-row-divider) n'entre pas dans ce
+schéma et n'est jamais généré par Tailwind, donc jamais écrasé. */
+tr.border-row-divider,
+li.border-row-divider {
+  border-top-width: 2px !important;
+  border-bottom-width: 2px !important;
+}
+
+ul.divide-row-divider > :not([hidden]) ~ :not([hidden]) {
+  border-top-width: 2px !important;
+}
+
+/* --- Centre de commandement : classes dédiées à ce seul écran -------------
+   Mandat "Design premium Centre de commandement" — préfixées `cc-` et
+   utilisées uniquement par components/AdminCommandCenter.tsx, pour ne
+   jamais faire dériver le design des autres pages admin (qui gardent
+   .card/.stat-tile/.badge inchangés). */
+
+.cc-shell {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 2px solid var(--primary);
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgba(15, 45, 82, 0.06),
+    0 24px 48px -24px rgba(15, 45, 82, 0.4);
+  padding: 1.25rem;
+}
+
+.cc-shell::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--accent);
+  border-radius: 0.875rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .cc-shell {
+    padding: 1.75rem;
+  }
+}
+
+.cc-title-band {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary) 60%, var(--primary-light));
+  padding: 1.1rem 1.25rem 1.35rem;
+  box-shadow: 0 14px 30px -16px rgba(15, 45, 82, 0.6);
+}
+
+.cc-title-band::after {
+  /* Sépare le bandeau-titre (un "grand titre") du contenu qui suit — trait
+  jaune or, volontairement plus épais qu'un simple séparateur de ligne
+  (mandat "Correction des séparations horizontales", révision "grands
+  titres/grands blocs = jaune or"). */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--accent-light), var(--accent), var(--accent-light), transparent);
+}
+
+.cc-card {
+  position: relative;
+  border-radius: 0.875rem;
+  border: 1.5px solid var(--primary);
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgba(15, 45, 82, 0.05),
+    0 14px 28px -20px rgba(15, 45, 82, 0.4);
+}
+
+.cc-card::before {
+  /* Marque le début d'un nouveau grand bloc de contenu (une carte = une
+  section) — trait jaune or, volontairement plus épais qu'un simple
+  séparateur de ligne entre deux enregistrements du même tableau (mandat
+  "Correction des séparations horizontales", révision "grands titres/grands
+  blocs = jaune or"). */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0.875rem;
+  right: 0.875rem;
+  height: 4px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+}
+
+.cc-tile {
+  position: relative;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--primary);
+  background: linear-gradient(160deg, var(--surface), var(--background));
+  box-shadow:
+    0 1px 2px rgba(15, 45, 82, 0.05),
+    0 10px 20px -16px rgba(15, 45, 82, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cc-tile:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 2px rgba(15, 45, 82, 0.06),
+    0 16px 26px -14px rgba(15, 45, 82, 0.5);
+}
+
+.cc-tile::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+
+.cc-tile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  background: rgba(15, 45, 82, 0.08);
+  color: var(--primary);
+}
+
+.cc-section-title {
+  position: relative;
+  padding-left: 0.75rem;
+}
+
+.cc-section-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.05rem;
+  bottom: 0.05rem;
+  width: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-light));
+}
+
+.cc-pill {
+  border: 1.5px solid var(--border);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.cc-pill-active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 8px 18px -10px rgba(15, 45, 82, 0.65);
+}
+
 .skeleton {
   position: relative;
   overflow: hidden;
@@ -207,4 +391,144 @@ body {
   100% {
     transform: translateX(100%);
   }
+}
+
+/* --- Dashboard admin (barre latérale) : refonte visuelle ------------------
+   Mandat "Refonte visuelle du dashboard" (2026-09-07) — classes dédiées à
+   components/AdminNav.tsx uniquement, jamais aux autres pages admin (qui
+   gardent .card/.stat-tile/.cc-* inchangés, comme pour les classes cc- déjà
+   documentées ci-dessus). Fond crème + encadrement bleu marine + accents
+   jaune or, cohérent avec le langage visuel déjà établi (var(--primary),
+   var(--accent)) plutôt que d'inventer une nouvelle palette. */
+
+.dash-shell {
+  background: var(--dash-cream);
+  border-right: 2px solid var(--primary);
+}
+
+@media (min-width: 1024px) {
+  .dash-shell {
+    border-radius: 0 1.5rem 1.5rem 0;
+  }
+}
+
+.dash-group-title {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dash-link {
+  color: var(--foreground);
+}
+
+.dash-link:hover {
+  background: rgba(15, 45, 82, 0.07);
+  color: var(--primary-dark);
+}
+
+.dash-link-active {
+  background: rgba(201, 154, 46, 0.16);
+  border-left-color: var(--accent) !important;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.dash-admin-block {
+  position: relative;
+  border: 2px solid var(--primary);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 10px 24px -18px rgba(15, 45, 82, 0.5);
+}
+
+.dash-admin-block::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0.875rem;
+  right: 0.875rem;
+  height: 4px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+}
+
+.dash-logo-wrap {
+  background: var(--dash-cream);
+  border-radius: 0.75rem;
+}
+
+/* Repli du titre "Administration SIGA" en mode barre réduite (desktop
+uniquement) — sélecteur qualifié (deux classes) pour battre de façon fiable
+la spécificité de `.dash-admin-title-special { display: inline-flex }`
+ci-dessus, plutôt que de dépendre de l'ordre de génération des utilitaires
+Tailwind face à une règle CSS nue (lg:hidden seul s'est révélé peu fiable
+ici). */
+@media (min-width: 1024px) {
+  .dash-shell.is-collapsed .dash-admin-title-special {
+    display: none;
+  }
+}
+
+/* Mandat "Correction ciblée du dashboard" (2026-09-07) : bande supérieure
+crème à double bordure (bleu marine + jaune or), clairement séparée du
+contenu — même technique de double-liseré que .cc-shell (bordure extérieure
+pleine + bordure intérieure fine via ::before), pour rester cohérent. */
+.dash-topbar {
+  position: relative;
+  background: var(--dash-cream);
+  border: 2px solid var(--primary);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 24px -18px rgba(15, 45, 82, 0.45);
+}
+
+.dash-topbar::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1.5px solid var(--accent);
+  border-radius: 0.95rem;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.dash-topbar-case {
+  border-radius: 0.65rem;
+  border: 1.5px solid rgba(15, 45, 82, 0.22);
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.dash-topbar-case-active {
+  border-color: var(--accent);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 6px 14px -8px rgba(15, 45, 82, 0.6);
+}
+
+/* Titre "Administration SIGA" du bloc spécial : volontairement distinct des
+pastilles de groupe (.dash-group-title, bleu marine uni) pour rester
+immédiatement identifiable comme zone spéciale — dégradé bleu marine → or,
+texte blanc conservé pour la lisibilité. */
+.dash-admin-title-special {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: linear-gradient(120deg, var(--primary-dark), var(--primary) 55%, var(--accent) 145%);
+  color: #fff;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 14px -8px rgba(15, 45, 82, 0.5);
 }

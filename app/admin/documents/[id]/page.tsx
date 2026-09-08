@@ -2,6 +2,8 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { DocumentIcon, ClockIcon, ClipboardIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -43,20 +45,20 @@ export default async function AdminDocumentDetailPage({
   const isCurrent = !doc.supersededBy;
 
   return (
-    <div>
+    <AdminShell>
       <BackButton fallbackHref="/admin/documents" label="Bulletins et relevés" />
 
-      <h1 className="mb-1 text-2xl font-bold text-foreground">
-        {doc.type === "releve_semestre" ? "Relevé" : "Bulletin"} — {doc.student.name}
-      </h1>
+      <AdminTitleBand
+        eyebrow="CCIGA — Bulletins et relevés"
+        title={`${doc.type === "releve_semestre" ? "Relevé" : "Bulletin"} — ${doc.student.name}`}
+      />
       <p className="mb-6 text-sm text-muted">
         {doc.program.name} · {doc.semester ? `${doc.semester.academicYear.label} — ${doc.semester.name}` : "—"} ·
         Version {doc.version} {!isCurrent && <span className="text-amber-600">(remplacée)</span>}
       </p>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface p-6">
-          <h2 className="mb-3 font-semibold text-foreground">Résultats</h2>
+        <AdminCard icon={DocumentIcon} title="Résultats">
           <p className="mb-2 text-sm text-muted">
             Moyenne :{" "}
             <span className="font-semibold text-foreground">
@@ -75,10 +77,9 @@ export default async function AdminDocumentDetailPage({
           >
             Télécharger le PDF →
           </a>
-        </div>
+        </AdminCard>
 
-        <div className="rounded-lg border border-border bg-surface p-6">
-          <h2 className="mb-3 font-semibold text-foreground">Historique des versions</h2>
+        <AdminCard icon={ClockIcon} title="Historique des versions">
           <ul className="space-y-2 text-sm">
             {versions.map((v) => (
               <li key={v.id} className="flex items-center justify-between">
@@ -92,17 +93,16 @@ export default async function AdminDocumentDetailPage({
               </li>
             ))}
           </ul>
-        </div>
+        </AdminCard>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-6">
-        <h2 className="mb-3 font-semibold text-foreground">Journal d&apos;audit</h2>
+      <AdminCard icon={ClipboardIcon} title="Journal d'audit">
         {auditLogs.length === 0 ? (
           <p className="text-sm text-muted">Aucune entrée pour ce document.</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {auditLogs.map((log) => (
-              <li key={log.id} className="border-t border-border pt-2">
+              <li key={log.id} className="border-t border-row-divider pt-2">
                 <span className="font-medium text-foreground">{log.action}</span>{" "}
                 <span className="text-muted">
                   par {log.actor?.name ?? "—"} le {formatDateTime(log.createdAt)}
@@ -112,7 +112,7 @@ export default async function AdminDocumentDetailPage({
             ))}
           </ul>
         )}
-      </div>
-    </div>
+      </AdminCard>
+    </AdminShell>
   );
 }

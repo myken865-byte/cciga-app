@@ -5,6 +5,8 @@ import { getSession } from "@/lib/auth";
 import { parseRoles, hasRole } from "@/lib/roles";
 import EditProgramForm from "@/components/EditProgramForm";
 import GenerateBadgesBulkButton from "@/components/GenerateBadgesBulkButton";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { BookIcon, ClipboardIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +34,8 @@ export default async function AdminProgramDetailPage({
   const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
 
   return (
-    <div>
+    <AdminShell>
+      <AdminTitleBand eyebrow="CCIGA — Programmes" title={program.name} />
       <div className="mx-auto max-w-xl space-y-6">
         <EditProgramForm
           program={program}
@@ -43,14 +46,12 @@ export default async function AdminProgramDetailPage({
           isSuperAdmin={isSuperAdmin}
         />
 
-        <div className="rounded-lg border border-border bg-surface p-6">
-          <h2 className="mb-3 font-semibold text-foreground">Badges</h2>
+        <AdminCard title="Badges" icon={ClipboardIcon}>
           <GenerateBadgesBulkButton programId={program.id} />
-        </div>
+        </AdminCard>
 
         {program.teacherModel && (
-          <div className="rounded-lg border border-border bg-surface p-6">
-            <h2 className="mb-3 font-semibold text-foreground">Cours de cette classe</h2>
+          <AdminCard title="Cours de cette classe" icon={BookIcon}>
             {courses.length === 0 ? (
               <p className="text-sm text-muted">Aucun cours créé pour cette classe pour le moment.</p>
             ) : (
@@ -63,9 +64,9 @@ export default async function AdminProgramDetailPage({
                 ))}
               </ul>
             )}
-          </div>
+          </AdminCard>
         )}
       </div>
-    </div>
+    </AdminShell>
   );
 }

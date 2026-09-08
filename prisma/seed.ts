@@ -412,118 +412,6 @@ async function seedEcoleClassiqueNiveaux() {
   }
 }
 
-interface TestDemoStudent {
-  email: string;
-  name: string;
-  programSlug: string;
-  courseName: string;
-}
-
-const testDemoStudents: TestDemoStudent[] = [
-  {
-    email: "test.prescolaire@cciga.edu",
-    name: "TEST Élève Préscolaire",
-    programSlug: "prescolaire-petite-section",
-    courseName: "TEST Cours — Éveil et découverte",
-  },
-  {
-    email: "test.primaire@cciga.edu",
-    name: "TEST Élève Primaire",
-    programSlug: "primaire-5e-af",
-    courseName: "TEST Cours — Mathématiques",
-  },
-  {
-    email: "test.secondaire@cciga.edu",
-    name: "TEST Élève Secondaire",
-    programSlug: "secondaire-ns2",
-    courseName: "TEST Cours — Sciences",
-  },
-];
-
-async function seedTestNiveauDemoData() {
-  let created = 0;
-  for (const demo of testDemoStudents) {
-    const existing = await prisma.user.findUnique({ where: { email: demo.email } });
-    if (existing) continue;
-
-    const program = await prisma.program.findUnique({ where: { slug: demo.programSlug } });
-    if (!program) continue;
-
-    const passwordHash = await bcrypt.hash("TEST-demo-2026", 10);
-    const student = await prisma.user.create({
-      data: {
-        email: demo.email,
-        passwordHash,
-        name: demo.name,
-        roles: JSON.stringify(["STUDENT"]),
-        programId: program.id,
-      },
-    });
-
-    const course = await prisma.course.create({
-      data: {
-        programId: program.id,
-        name: demo.courseName,
-        description: "Cours de démonstration (données TEST) pour ce niveau.",
-        dayOfWeek: 1,
-        startTime: "08:00",
-        endTime: "09:00",
-      },
-    });
-
-    await prisma.grade.create({
-      data: {
-        studentId: student.id,
-        courseId: course.id,
-        score: 85,
-        comment: "TEST — note de démonstration.",
-      },
-    });
-
-    await prisma.attendance.create({
-      data: {
-        courseId: course.id,
-        studentId: student.id,
-        date: new Date(),
-        status: "present",
-      },
-    });
-
-    created += 1;
-  }
-  if (created > 0) {
-    console.log(`Seeded ${created} TEST demo students (one per new niveau).`);
-  } else {
-    console.log("TEST demo niveau data already seeded.");
-  }
-}
-
-async function seedTestTitulaireDemo() {
-  const email = "test.titulaire@cciga.edu";
-  const program = await prisma.program.findUnique({ where: { slug: "prescolaire-petite-section" } });
-  if (!program) return;
-
-  let teacher = await prisma.user.findUnique({ where: { email } });
-  if (!teacher) {
-    const passwordHash = await bcrypt.hash("TEST-demo-2026", 10);
-    teacher = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        name: "TEST Titulaire Préscolaire",
-        roles: JSON.stringify(["TEACHER"]),
-      },
-    });
-    console.log("Seeded 1 TEST titulaire teacher.");
-  }
-
-  if (program.titulaireId !== teacher.id) {
-    await prisma.program.update({ where: { id: program.id }, data: { titulaireId: teacher.id } });
-    await prisma.course.updateMany({ where: { programId: program.id }, data: { teacherId: teacher.id } });
-    console.log(`Assigned TEST titulaire to ${program.name}.`);
-  }
-}
-
 interface UniversiteProgramSeed {
   slug: string;
   facultyName: string;
@@ -807,8 +695,6 @@ async function main() {
   await seedEvents();
   await seedFaq();
   await seedEcoleClassiqueNiveaux();
-  await seedTestNiveauDemoData();
-  await seedTestTitulaireDemo();
   await seedUniversiteStructure();
   await seedEcoleProfessionnelleStructure();
 }

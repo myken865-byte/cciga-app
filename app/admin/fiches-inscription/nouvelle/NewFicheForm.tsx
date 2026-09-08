@@ -54,9 +54,6 @@ export default function NewFicheForm({
   return (
     <div>
       <BackButton fallbackHref="/admin/fiches-inscription" label="Fiches d'inscription" />
-      <h1 className="mb-6 text-2xl font-bold text-foreground">
-        Nouvelle fiche d&apos;inscription <span className="text-base font-normal text-muted">— {institutionLabel}</span>
-      </h1>
 
       <form onSubmit={handleSubmit} className="card max-w-lg space-y-4 p-6">
         <p className="text-sm text-muted">

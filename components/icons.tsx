@@ -122,3 +122,58 @@ export function ArrowLeftIcon({ className = "h-4 w-4 shrink-0" }: IconProps) {
     </svg>
   );
 }
+
+export function BuildingIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className} aria-hidden>
+      <rect x="4" y="3" width="11" height="18" rx="1" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 9h4.5a.5.5 0 0 1 .5.5V20.5a.5.5 0 0 1-.5.5H15M7.5 7h1.5M7.5 10.5h1.5M7.5 14h1.5M11 7h1.5M11 10.5h1.5M11 14h1.5M8 21v-3h3v3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function LaptopIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className} aria-hidden>
+      <rect x="4" y="4.5" width="16" height="10.5" rx="1.25" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2.5 19.5h19M9.5 15v1.5M14.5 15v1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function BrainIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className} aria-hidden>
+      <path d="M9 4.5a2.75 2.75 0 0 0-2.75 2.75v.35A2.75 2.75 0 0 0 4.5 10.3v.9a2.75 2.75 0 0 0 1 5.32h.25a2.75 2.75 0 0 0 2.75 2.73H9" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 4.5a2.75 2.75 0 0 1 2.75 2.75v.35a2.75 2.75 0 0 1 1.75 2.7v.9a2.75 2.75 0 0 1-1 5.32h-.25a2.75 2.75 0 0 1-2.75 2.73H15" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 4.5v14.75M15 4.5v14.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function GraduationCapIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className} aria-hidden>
+      <path d="m12 4 9.5 4.5L12 13 2.5 8.5 12 4Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6.5 10.8v4.2c0 1.5 2.46 2.75 5.5 2.75s5.5-1.25 5.5-2.75v-4.2M21.5 8.5v6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function GearIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className} aria-hidden>
+      <circle cx="12" cy="12" r="3.25" />
+      <path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M17.66 6.34l-1.56 1.56M7.9 16.16l-1.56 1.56M17.66 17.66l-1.56-1.56M7.9 7.9 6.34 6.34" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ColumnsIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className} aria-hidden>
+      <path d="M2.5 8 12 3l9.5 5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 9.5v10M8 9.5v10M12 9.5v10M16 9.5v10M20 9.5v10M2.5 19.5h19" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

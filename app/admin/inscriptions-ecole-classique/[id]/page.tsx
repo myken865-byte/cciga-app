@@ -5,6 +5,7 @@ import { formatClassicEnrollmentFormReference } from "@/lib/classicEnrollmentFor
 import { parseClassicEnrollmentSiblings } from "@/lib/classicEnrollmentSiblings";
 import { parseClassicEnrollmentDocuments } from "@/lib/classicEnrollmentDocuments";
 import ClassicEnrollmentFormEditor from "@/components/ClassicEnrollmentFormEditor";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,12 @@ export default async function InscriptionEcoleClassiqueDetailPage({
   if (!fiche) notFound();
 
   return (
-    <ClassicEnrollmentFormEditor
+    <AdminShell>
+      <AdminTitleBand
+        eyebrow="CCIGA — École Classique"
+        title={`Fiche d'inscription — ${fiche.firstName} ${fiche.lastName}`}
+      />
+      <ClassicEnrollmentFormEditor
       fiche={{
         id: fiche.id,
         reference: formatClassicEnrollmentFormReference(fiche.id),
@@ -92,5 +98,6 @@ export default async function InscriptionEcoleClassiqueDetailPage({
       programs={programs.map((p) => ({ id: p.id, name: p.name, niveau: p.niveau }))}
       academicYears={academicYears.map((y) => ({ id: y.id, label: y.label, isActive: y.isActive }))}
     />
+    </AdminShell>
   );
 }

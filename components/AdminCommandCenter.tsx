@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatHTG } from "@/lib/currency";
+import BackButton from "@/components/BackButton";
 import {
   UsersIcon,
   BookIcon,
@@ -89,15 +90,28 @@ export default function AdminCommandCenter({
   }
 
   return (
-    <div>
-      <h1 className="mb-1 text-2xl font-bold text-foreground">Centre de commandement</h1>
-      <p className="mb-6 text-sm text-muted">Supervision institutionnelle en temps réel — {scopeLabel}</p>
+    <div className="cc-shell">
+      <BackButton fallbackHref="/mon-espace" label="Mon espace" />
+      {/* Bandeau-titre premium */}
+      <div className="cc-title-band mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-light">
+              CCIGA — Supervision institutionnelle
+            </p>
+            <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">Centre de commandement</h1>
+          </div>
+          <span className="badge border border-white/25 bg-white/10 !py-1.5 !px-3 text-white backdrop-blur-sm">
+            {scopeLabel} · temps réel
+          </span>
+        </div>
+      </div>
 
       {/* Sélecteur institutionnel */}
       <div className="mb-6 flex flex-wrap gap-2">
         <button
           onClick={() => selectScope(null)}
-          className={`badge !py-1.5 !px-3 ${scope === null ? "badge-info" : "badge-neutral hover:bg-primary/10"}`}
+          className={`cc-pill rounded-full !py-1.5 !px-3.5 text-xs font-semibold ${scope === null ? "cc-pill-active" : "bg-surface text-muted hover:border-primary-light"}`}
         >
           Vue globale
         </button>
@@ -105,7 +119,7 @@ export default function AdminCommandCenter({
           <button
             key={e.key}
             onClick={() => selectScope(e.key)}
-            className={`badge !py-1.5 !px-3 ${scope === e.key ? "badge-info" : "badge-neutral hover:bg-primary/10"}`}
+            className={`cc-pill rounded-full !py-1.5 !px-3.5 text-xs font-semibold ${scope === e.key ? "cc-pill-active" : "bg-surface text-muted hover:border-primary-light"}`}
           >
             {e.label}
           </button>
@@ -118,27 +132,32 @@ export default function AdminCommandCenter({
         <StatTile icon={UsersIcon} label="Enseignants" value={stats.teachersCount} />
         <StatTile icon={BookIcon} label="Classes / Programmes" value={stats.programsCount} />
         <StatTile icon={ClipboardIcon} label="Candidatures en attente" value={stats.admissionsPending} />
-        <StatTile icon={CalendarIcon} label="Présents aujourd'hui" value={stats.presentToday} tone="text-success" />
-        <StatTile icon={AlertIcon} label="Absents aujourd'hui" value={stats.absentToday} tone="text-danger" />
-        <StatTile icon={ClockIcon} label="Retards aujourd'hui" value={stats.retardToday} tone="text-warning" />
-        <StatTile icon={ClipboardIcon} label="Notes à valider" value={stats.pendingGradesCount} tone={stats.pendingGradesCount > 0 ? "text-warning" : undefined} />
+        <StatTile icon={CalendarIcon} label="Présents aujourd'hui" value={stats.presentToday} tone="success" />
+        <StatTile icon={AlertIcon} label="Absents aujourd'hui" value={stats.absentToday} tone="danger" />
+        <StatTile icon={ClockIcon} label="Retards aujourd'hui" value={stats.retardToday} tone="warning" />
+        <StatTile
+          icon={ClipboardIcon}
+          label="Notes à valider"
+          value={stats.pendingGradesCount}
+          tone={stats.pendingGradesCount > 0 ? "warning" : undefined}
+        />
       </div>
 
       {/* Finances */}
-      <div className="card mb-4 p-5 sm:p-6">
-        <h2 className="section-label mb-3 flex items-center gap-1.5">
-          <WalletIcon className="h-4 w-4" /> Finances — {scopeLabel}
+      <div className="cc-card mb-4 p-5 sm:p-6">
+        <h2 className="cc-section-title section-label mb-3 flex items-center gap-1.5">
+          <WalletIcon className="h-4 w-4 text-primary" /> Finances — {scopeLabel}
         </h2>
         <div className="grid grid-cols-3 gap-3">
-          <div className="stat-tile">
+          <div className="cc-tile p-3">
             <p className="section-label mb-1">Prévu</p>
             <p className="text-sm font-semibold text-foreground">{formatHTG(stats.totalExpected)}</p>
           </div>
-          <div className="stat-tile">
+          <div className="cc-tile p-3">
             <p className="section-label mb-1">Perçu</p>
             <p className="text-sm font-semibold text-success">{formatHTG(stats.totalPaid)}</p>
           </div>
-          <div className="stat-tile">
+          <div className="cc-tile p-3">
             <p className="section-label mb-1">Solde</p>
             <p className="text-sm font-semibold text-danger">{formatHTG(stats.balanceOutstanding)}</p>
           </div>
@@ -149,15 +168,19 @@ export default function AdminCommandCenter({
       </div>
 
       {/* Workflow académique */}
-      <div className="card mb-4 p-5 sm:p-6">
-        <h2 className="section-label mb-3 flex items-center gap-1.5">
-          <ClipboardIcon className="h-4 w-4" /> Workflow académique
+      <div className="cc-card mb-4 p-5 sm:p-6">
+        <h2 className="cc-section-title section-label mb-3 flex items-center gap-1.5">
+          <ClipboardIcon className="h-4 w-4 text-primary" /> Workflow académique
         </h2>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {["Brouillon", "Soumis", "À vérifier", "Validé", "Publié"].map((step, i, arr) => (
             <span key={step} className="flex items-center gap-2">
-              <span className="badge badge-neutral">{step}</span>
-              {i < arr.length - 1 && <span className="text-muted" aria-hidden>→</span>}
+              <span className="badge badge-neutral border border-border">{step}</span>
+              {i < arr.length - 1 && (
+                <span className="text-accent" aria-hidden>
+                  →
+                </span>
+              )}
             </span>
           ))}
         </div>
@@ -172,12 +195,12 @@ export default function AdminCommandCenter({
       </div>
 
       {/* Historisation pluriannuelle — données réelles (dates de soumission), pas d'effectif rétroactif inventé */}
-      <div className="card mb-6 p-5 sm:p-6">
-        <h2 className="section-label mb-3 flex items-center gap-1.5">
-          <ClipboardIcon className="h-4 w-4" /> Évolution des admissions par année — {scopeLabel}
+      <div className="cc-card mb-6 p-5 sm:p-6">
+        <h2 className="cc-section-title section-label mb-3 flex items-center gap-1.5">
+          <ClipboardIcon className="h-4 w-4 text-primary" /> Évolution des admissions par année — {scopeLabel}
         </h2>
         {stats.admissionsByYear.length === 0 ? (
-          <p className="text-sm text-muted">Aucune candidature enregistrée pour cette portée.</p>
+          <p className="empty-state text-sm">Aucune candidature enregistrée pour cette portée.</p>
         ) : (
           <div className="flex items-end gap-3 overflow-x-auto pb-1">
             {stats.admissionsByYear.map((y) => {
@@ -186,7 +209,7 @@ export default function AdminCommandCenter({
                 <div key={y.year} className="flex shrink-0 flex-col items-center gap-1">
                   <span className="text-xs font-semibold text-foreground">{y.count}</span>
                   <div
-                    className="w-8 rounded-t-md bg-primary/70"
+                    className="w-8 rounded-t-md bg-gradient-to-t from-primary to-primary-light"
                     style={{ height: `${Math.max((y.count / max) * 80, 6)}px` }}
                   />
                   <span className="text-[11px] text-muted">{y.year}</span>
@@ -199,10 +222,10 @@ export default function AdminCommandCenter({
       </div>
 
       {/* Effectifs pluriannuels — capture explicite, jamais rétroactive */}
-      <div className="card mb-6 p-5 sm:p-6">
+      <div className="cc-card mb-6 p-5 sm:p-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="section-label flex items-center gap-1.5">
-            <UsersIcon className="h-4 w-4" /> Effectifs par année — {scopeLabel}
+          <h2 className="cc-section-title section-label flex items-center gap-1.5">
+            <UsersIcon className="h-4 w-4 text-primary" /> Effectifs par année — {scopeLabel}
           </h2>
           <button onClick={captureEnrollment} disabled={capturing} className="btn-secondary !min-h-0 !py-1.5 text-xs">
             {capturing ? "Capture…" : `Capturer l'effectif actuel${activeAcademicYearLabel ? ` (${activeAcademicYearLabel})` : ""}`}
@@ -210,7 +233,7 @@ export default function AdminCommandCenter({
         </div>
         {captureMessage && <p className="mb-3 text-xs text-muted">{captureMessage}</p>}
         {stats.enrollmentByYear.length === 0 ? (
-          <p className="text-sm text-muted">
+          <p className="empty-state text-sm">
             Aucun effectif capturé pour le moment. Chaque capture enregistre l&apos;effectif réel du jour pour
             l&apos;année académique active — l&apos;historique se construit au fil des années, sans donnée rétroactive inventée.
           </p>
@@ -222,7 +245,7 @@ export default function AdminCommandCenter({
                 <div key={y.label} className="flex shrink-0 flex-col items-center gap-1">
                   <span className="text-xs font-semibold text-foreground">{y.count}</span>
                   <div
-                    className="w-8 rounded-t-md bg-success/70"
+                    className="w-8 rounded-t-md bg-gradient-to-t from-success to-success/60"
                     style={{ height: `${Math.max((y.count / max) * 80, 6)}px` }}
                   />
                   <span className="text-[11px] text-muted">{y.label}</span>
@@ -234,39 +257,52 @@ export default function AdminCommandCenter({
       </div>
 
       {/* Accès rapide */}
-      <p className="section-label mb-2">Accès rapide</p>
+      <p className="cc-section-title section-label mb-2">Accès rapide</p>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {quickLinks.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} className="card card-interactive p-3.5">
-            <Icon className="mb-2 h-5 w-5 text-primary" />
+          <Link key={href} href={href} className="cc-card card-interactive flex flex-col p-3.5">
+            <span className="cc-tile-icon mb-2">
+              <Icon className="h-4 w-4" />
+            </span>
             <p className="text-sm font-semibold text-foreground">{label}</p>
           </Link>
         ))}
       </div>
 
       {/* Modules à venir — honnêtement marqués, aucune donnée fabriquée */}
-      <div className="card p-5 sm:p-6">
-        <h2 className="section-label mb-3 flex items-center gap-1.5">
-          <DocumentIcon className="h-4 w-4" /> Modules complémentaires
+      <div className="cc-card p-5 sm:p-6">
+        <h2 className="cc-section-title section-label mb-3 flex items-center gap-1.5">
+          <DocumentIcon className="h-4 w-4 text-primary" /> Modules complémentaires
         </h2>
         <ul className="space-y-2 text-sm">
           <li className="flex items-center justify-between gap-2">
             <span className="text-foreground">Centre d&apos;incidents / discipline institutionnelle</span>
-            <span className="badge badge-neutral">À COMPLÉTER</span>
+            <span className="badge badge-neutral border border-border">À COMPLÉTER</span>
           </li>
           <li className="flex items-center justify-between gap-2">
             <span className="text-foreground">Rapports et analytique avancée</span>
-            <span className="badge badge-neutral">À COMPLÉTER</span>
+            <span className="badge badge-neutral border border-border">À COMPLÉTER</span>
           </li>
           <li className="flex items-center justify-between gap-2">
             <span className="text-foreground">Aperçu bulletins/palmarès avant publication</span>
-            <span className="badge badge-neutral">À COMPLÉTER</span>
+            <span className="badge badge-neutral border border-border">À COMPLÉTER</span>
           </li>
         </ul>
       </div>
     </div>
   );
 }
+
+const toneColors: Record<string, string> = {
+  success: "var(--success)",
+  danger: "var(--danger)",
+  warning: "var(--warning)",
+};
+const toneText: Record<string, string> = {
+  success: "text-success",
+  danger: "text-danger",
+  warning: "text-warning",
+};
 
 function StatTile({
   icon: Icon,
@@ -277,15 +313,20 @@ function StatTile({
   icon: (props: { className?: string }) => React.ReactElement;
   label: string;
   value: number;
-  tone?: string;
+  tone?: "success" | "danger" | "warning";
 }) {
   return (
-    <div className="stat-tile">
-      <p className="mb-1 flex items-center gap-1.5 text-primary">
-        <Icon className="h-3.5 w-3.5" />
+    <div className="cc-tile p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span
+          className="cc-tile-icon"
+          style={tone ? { background: `color-mix(in srgb, ${toneColors[tone]} 14%, transparent)`, color: toneColors[tone] } : undefined}
+        >
+          <Icon className="h-3.5 w-3.5" />
+        </span>
         <span className="section-label">{label}</span>
-      </p>
-      <p className={`text-xl font-bold ${tone ?? "text-foreground"}`}>{value}</p>
+      </div>
+      <p className={`text-xl font-bold ${tone ? toneText[tone] : "text-foreground"}`}>{value}</p>
     </div>
   );
 }

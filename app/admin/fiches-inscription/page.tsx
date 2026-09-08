@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { formatEnrollmentFormReference } from "@/lib/enrollmentFormReference";
 import { normalizeEnrollmentSearchQuery } from "@/lib/enrollmentReferenceSearch";
 import { getActiveSchool, schoolLabels } from "@/lib/institutionContext";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { ClipboardIcon } from "@/components/icons";
+import BackButton from "@/components/BackButton";
 import {
   enrollmentFormStatuses,
   enrollmentFormStatusLabels,
@@ -38,12 +41,13 @@ export default async function FichesInscriptionListPage({
   const activeSchool = await getActiveSchool();
   if (activeSchool !== "ecole-professionnelle" && activeSchool !== "universite") {
     return (
-      <div>
-        <h1 className="mb-4 text-2xl font-bold text-foreground">Fiches d&apos;inscription</h1>
+      <AdminShell>
+        <BackButton fallbackHref="/admin/centre-de-commandement" />
+        <AdminTitleBand eyebrow="CCIGA — Supervision institutionnelle" title="Fiches d'inscription" />
         <div className="empty-state">
           Choisissez École Professionnelle ou Université pour accéder à ses fiches d&apos;inscription.
         </div>
-      </div>
+      </AdminShell>
     );
   }
 
@@ -66,16 +70,20 @@ export default async function FichesInscriptionListPage({
     : forms;
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Fiches d&apos;inscription — {schoolLabels[activeSchool]}</h1>
-          <p className="text-sm text-muted">{filtered.length} fiche(s)</p>
-        </div>
-        <Link href="/admin/fiches-inscription/nouvelle" className="btn-primary text-sm">
-          Nouvelle fiche
-        </Link>
-      </div>
+    <AdminShell>
+      <BackButton fallbackHref="/admin/centre-de-commandement" />
+      <AdminTitleBand
+        eyebrow="CCIGA — Supervision institutionnelle"
+        title={`Fiches d'inscription — ${schoolLabels[activeSchool]}`}
+        trailing={
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/80">{filtered.length} fiche(s)</span>
+            <Link href="/admin/fiches-inscription/nouvelle" className="btn-primary text-sm">
+              Nouvelle fiche
+            </Link>
+          </div>
+        }
+      />
 
       <form className="mb-6 flex flex-wrap items-center gap-2" action="/admin/fiches-inscription">
         {filter && <input type="hidden" name="status" value={filter} />}
@@ -121,8 +129,9 @@ export default async function FichesInscriptionListPage({
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-left text-sm">
+      <AdminCard icon={ClipboardIcon} title="Fiches enregistrées">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-left text-sm">
           <thead className="bg-background text-muted">
             <tr>
               <th className="px-4 py-3 font-semibold">N° de fiche</th>
@@ -136,7 +145,7 @@ export default async function FichesInscriptionListPage({
             {filtered.map((f) => {
               const statusKey = isEnrollmentFormStatus(f.status) ? f.status : "brouillon";
               return (
-                <tr key={f.id} className="border-t border-border">
+                <tr key={f.id} className="border-t border-row-divider">
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/fiches-inscription/${f.id}`}
@@ -170,6 +179,7 @@ export default async function FichesInscriptionListPage({
           </tbody>
         </table>
       </div>
-    </div>
+      </AdminCard>
+    </AdminShell>
   );
 }

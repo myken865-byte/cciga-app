@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 
 export default function NouvelleInscriptionEcoleClassiquePage() {
   const router = useRouter();
@@ -35,27 +36,32 @@ export default function NouvelleInscriptionEcoleClassiquePage() {
   }
 
   return (
-    <div>
+    <AdminShell>
       <BackButton fallbackHref="/admin/inscriptions-ecole-classique" label="Fiches d'inscription — École Classique" />
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Nouvelle fiche d&apos;inscription — École Classique</h1>
-      <form onSubmit={submit} className="card max-w-md space-y-4 p-6">
-        <p className="text-sm text-muted">
-          Renseignez le nom de l&apos;enfant pour créer la fiche — la photo, les responsables, la santé et la fratrie se
-          complètent sur la page suivante.
-        </p>
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-muted">Nom de famille</span>
-          <input required className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-muted">Prénom</span>
-          <input required className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-        </label>
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <button type="submit" disabled={busy} className="btn-primary text-sm">
-          {busy ? "Création…" : "Créer la fiche"}
-        </button>
-      </form>
-    </div>
+      <AdminTitleBand
+        eyebrow="CCIGA — École Classique"
+        title="Nouvelle fiche d'inscription — École Classique"
+      />
+      <AdminCard className="max-w-md">
+        <form onSubmit={submit} className="space-y-4">
+          <p className="text-sm text-muted">
+            Renseignez le nom de l&apos;enfant pour créer la fiche — la photo, les responsables, la santé et la fratrie se
+            complètent sur la page suivante.
+          </p>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-muted">Nom de famille</span>
+            <input required className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-muted">Prénom</span>
+            <input required className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          </label>
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <button type="submit" disabled={busy} className="btn-primary text-sm">
+            {busy ? "Création…" : "Créer la fiche"}
+          </button>
+        </form>
+      </AdminCard>
+    </AdminShell>
   );
 }

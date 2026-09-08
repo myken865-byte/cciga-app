@@ -151,7 +151,7 @@ export default async function BulletinPage({
                 </thead>
                 <tbody>
                   {courseFinals.map((c) => (
-                    <tr key={c.courseId} className="border-t border-border">
+                    <tr key={c.courseId} className="border-t border-row-divider">
                       <td className="px-4 py-3 font-medium text-foreground">{c.courseName}</td>
                       <td className="px-4 py-3 font-semibold text-primary">
                         {c.finalGrade !== null ? `${c.finalGrade.toFixed(1)}/100` : "En attente"}
@@ -320,7 +320,7 @@ export default async function BulletinPage({
               </thead>
               <tbody>
                 {periodSections.map((sec) => (
-                  <tr key={sec.semesterId} className="border-t border-border">
+                  <tr key={sec.semesterId} className="border-t border-row-divider">
                     <td className="px-3 py-2 text-foreground">{sec.periodLabel}</td>
                     <td className="px-3 py-2 text-muted">
                       {sec.result.average !== null ? `${sec.result.average.toFixed(1)}/100` : "—"}

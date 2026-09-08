@@ -227,7 +227,7 @@ export default async function TeacherCoursePage({
               </thead>
               <tbody>
                 {course.grades.map((g) => (
-                  <tr key={g.id} className="border-t border-border">
+                  <tr key={g.id} className="border-t border-row-divider">
                     <td className="px-4 py-3 text-foreground">{g.student.name}</td>
                     <td className="px-4 py-3 text-muted">
                       {usesWorkflow ? g.evaluationCategory?.name ?? "—" : g.assignment?.title ?? "Général"}

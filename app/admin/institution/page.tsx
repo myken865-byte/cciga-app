@@ -1,6 +1,8 @@
 import { getSession } from "@/lib/auth";
 import { hasRole } from "@/lib/roles";
 import InstitutionPicker from "@/components/InstitutionPicker";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
+import BackButton from "@/components/BackButton";
 
 export default async function AdminInstitutionPage({
   searchParams,
@@ -12,12 +14,12 @@ export default async function AdminInstitutionPage({
   const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-14">
-      <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-accent">
-        CCIGA App
-      </p>
-      <h1 className="mb-8 text-center text-2xl font-bold text-foreground">Choisir une institution</h1>
-      <InstitutionPicker next={next && next.startsWith("/") ? next : "/admin/dashboard"} showAllSchools={isSuperAdmin} />
-    </div>
+    <AdminShell>
+      <BackButton fallbackHref="/mon-espace" label="Mon espace" />
+      <AdminTitleBand eyebrow="CCIGA — Sélection d'institution" title="Choisir une institution" />
+      <div className="mx-auto max-w-3xl">
+        <InstitutionPicker next={next && next.startsWith("/") ? next : "/admin/dashboard"} showAllSchools={isSuperAdmin} />
+      </div>
+    </AdminShell>
   );
 }

@@ -55,23 +55,40 @@ export default function Navbar() {
           <span className="text-lg font-bold text-primary">CCIGA</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
-          {primaryLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-background hover:text-primary"
-            >
-              {link.label}
-            </Link>
-          ))}
+        {/* Mandat "Refonte Page Nos Programmes" (2026-09-06), section 10-11 :
+        conteneur jaune abricot clair, chaque lien = sa propre pastille,
+        élément actif en bleu marine + texte clair + bordure or. */}
+        <nav className="hidden items-center gap-1.5 rounded-full border border-accent/40 bg-[#fdecd3] px-2 py-1.5 shadow-sm lg:flex">
+          {primaryLinks.map((link) => {
+            const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                className={`rounded-full px-3.5 py-2 text-sm font-medium transition ${
+                  isActive
+                    ? "border-2 border-accent bg-primary-dark text-white shadow-sm"
+                    : "text-primary-dark hover:bg-white/70"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
 
           <div
             className="relative"
             onMouseEnter={() => setSchoolsOpen(true)}
             onMouseLeave={() => setSchoolsOpen(false)}
           >
-            <button className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-background hover:text-primary">
+            <button
+              className={`rounded-full px-3.5 py-2 text-sm font-medium transition ${
+                schoolLinks.some((l) => pathname.startsWith(l.href))
+                  ? "border-2 border-accent bg-primary-dark text-white shadow-sm"
+                  : "text-primary-dark hover:bg-white/70"
+              }`}
+            >
               Nos écoles
             </button>
             {schoolsOpen && (
@@ -94,7 +111,7 @@ export default function Navbar() {
             onMouseEnter={() => setPortalsOpen(true)}
             onMouseLeave={() => setPortalsOpen(false)}
           >
-            <button className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-background hover:text-primary">
+            <button className="rounded-full px-3.5 py-2 text-sm font-medium text-primary-dark transition hover:bg-white/70">
               Portails
             </button>
             {portalsOpen && (

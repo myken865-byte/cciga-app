@@ -4,6 +4,7 @@ import { getProgramsBySchool } from "@/lib/content";
 import { formatEnrollmentFormReference } from "@/lib/enrollmentFormReference";
 import { parseEnrollmentFormDocuments } from "@/lib/enrollmentFormDocuments";
 import EnrollmentFormEditor from "@/components/EnrollmentFormEditor";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
 
 export const dynamic = "force-dynamic";
 
@@ -53,9 +54,12 @@ export default async function FicheInscriptionPage({ params }: { params: Promise
   };
 
   return (
-    <EnrollmentFormEditor
-      fiche={fiche}
-      programs={programs.map((p) => ({ id: p.id, name: p.name, duration: p.duration }))}
-    />
+    <AdminShell>
+      <AdminTitleBand eyebrow="CCIGA — Fiche d'inscription" title={fiche.reference} />
+      <EnrollmentFormEditor
+        fiche={fiche}
+        programs={programs.map((p) => ({ id: p.id, name: p.name, duration: p.duration }))}
+      />
+    </AdminShell>
   );
 }

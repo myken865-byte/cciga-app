@@ -575,6 +575,22 @@ export default function EnrollmentFormEditor({
             Marquer incomplète
           </button>
         )}
+        {statusKey !== "archivee" ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Archiver cette fiche ?")) changeStatus("archivee");
+            }}
+            disabled={busy}
+            className="text-xs text-muted hover:underline"
+          >
+            Archiver
+          </button>
+        ) : (
+          <button type="button" onClick={() => changeStatus("a_verifier")} disabled={busy} className="btn-secondary text-sm">
+            Désarchiver (remettre à vérifier)
+          </button>
+        )}
       </div>
       {statusKey === "validee" && !f.studentUserId && (
         <p className="mt-3 text-xs text-warning">

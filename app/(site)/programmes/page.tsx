@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getPrograms, getSchools, isPubliclyVisible, usesAuthorizationWorkflow } from "@/lib/content";
-import ProgramCard from "@/components/ProgramCard";
+import { getPrograms, getSchools, isPubliclyVisible, isTestProgram, usesAuthorizationWorkflow } from "@/lib/content";
+import ProgramInstitutionalCard from "@/components/ProgramInstitutionalCard";
 
 export const metadata: Metadata = {
   title: "Programmes",
@@ -13,28 +13,29 @@ export default async function ProgrammesPage() {
   const schools = getSchools();
   const allPrograms = await getPrograms();
   // Université/École Professionnelle programs only appear here once officially Autorisé with a justificatif on file.
-  const programs = allPrograms.filter((p) => !usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p));
+  const visiblePrograms = allPrograms.filter((p) => !usesAuthorizationWorkflow(p.school) || isPubliclyVisible(p));
+  const programs = visiblePrograms.filter((p) => !isTestProgram(p));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 lg:px-6">
-      <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">
-        Formations
-      </p>
-      <h1 className="mb-3 text-3xl font-bold text-foreground lg:text-4xl">Nos programmes</h1>
-      <p className="mb-10 max-w-2xl text-muted">
-        Explorez l&apos;ensemble des programmes offerts par l&apos;École Classique,
-        l&apos;École Professionnelle et l&apos;Université du CCIGA.
-      </p>
+      {/* Mandat "Refonte Page Nos Programmes" (2026-09-06) : titre seul, dans
+      un grand encadrement bleu marine à bordure or ; phrase explicative
+      supprimée sans remplacement. */}
+      <div className="mx-auto mb-14 max-w-2xl rounded-[32px] border-[6px] border-accent bg-primary-dark px-8 py-10 text-center shadow-lg">
+        <h1 className="text-3xl font-bold uppercase tracking-wide text-white lg:text-4xl">Nos programmes</h1>
+      </div>
 
       {schools.map((school) => {
         const schoolPrograms = programs.filter((p) => p.school === school.slug);
         if (schoolPrograms.length === 0) return null;
         return (
-          <div key={school.slug} className="mb-14">
-            <h2 className="mb-6 text-xl font-semibold text-foreground">{school.name}</h2>
+          <div key={school.slug} className="mb-14 rounded-[32px] border-[3px] border-accent bg-[#fdf8ec] p-6 shadow-sm sm:p-8">
+            <div className="mb-8 w-full rounded-2xl border-[3px] border-accent bg-white px-6 py-4 text-center shadow-sm">
+              <h2 className="text-xl font-bold uppercase tracking-wide text-primary-dark">{school.name}</h2>
+            </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {schoolPrograms.map((program) => (
-                <ProgramCard key={program.slug} program={program} />
+                <ProgramInstitutionalCard key={program.slug} program={program} />
               ))}
             </div>
           </div>

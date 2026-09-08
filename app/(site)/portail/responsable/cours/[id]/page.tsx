@@ -178,7 +178,7 @@ export default async function ResponsableCoursePage({
               </thead>
               <tbody>
                 {course.grades.map((g) => (
-                  <tr key={g.id} className="border-t border-border">
+                  <tr key={g.id} className="border-t border-row-divider">
                     <td className="px-4 py-3 text-foreground">{g.student.name}</td>
                     <td className="px-4 py-3 text-muted">{g.evaluationCategory?.name ?? "—"}</td>
                     <td className="px-4 py-3 font-semibold text-foreground">{g.score}/100</td>

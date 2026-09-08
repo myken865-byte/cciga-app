@@ -1,65 +1,82 @@
 import Link from "next/link";
 import SocialLinksSection from "@/components/SocialLinksSection";
 
+const footerColumns = [
+  {
+    title: "Institution",
+    links: [
+      { href: "/a-propos", label: "À propos" },
+      { href: "/programmes", label: "Programmes" },
+      { href: "/actualites", label: "Actualités" },
+      { href: "/evenements", label: "Événements" },
+      { href: "/galerie", label: "Galerie" },
+    ],
+  },
+  {
+    title: "Admission",
+    links: [
+      { href: "/admission", label: "Conditions & frais" },
+      { href: "/admission/candidater", label: "Candidater" },
+      { href: "/faq", label: "FAQ" },
+      { href: "/contact", label: "Contact" },
+    ],
+  },
+  {
+    title: "Portails",
+    links: [
+      { href: "/portail/etudiant", label: "Étudiant" },
+      { href: "/portail/parent", label: "Parent" },
+      { href: "/portail/enseignant", label: "Enseignant" },
+      { href: "/portail/administration", label: "Administration" },
+    ],
+  },
+];
+
+function FooterLogo() {
+  return (
+    <div className="flex items-center justify-center lg:w-28">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="h-16 w-16 rounded-xl object-contain" />
+    </div>
+  );
+}
+
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-border bg-primary-dark text-white">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/branding/Logo_CCIGA_General.png" alt="Logo CCIGA" className="h-8 w-8 rounded-md object-contain" />
-            <span className="text-lg font-bold">CCIGA</span>
+    <footer className="mt-16 border-t border-border bg-background">
+      <div className="mx-auto max-w-6xl px-4 py-12 lg:px-6">
+        {/* Grand cadre supérieur — mandat "Refonte Pied de Page" (2026-09-06) :
+        LOGO | Institution | Admission | Portails | LOGO, un seul encadrement
+        bleu marine foncé aux angles arrondis, fond crème clair. */}
+        <div className="rounded-[40px] border-[10px] border-primary-dark bg-[#fdf8ec] p-6 shadow-lg sm:p-8">
+          <div className="flex flex-col items-stretch gap-6 lg:flex-row lg:items-stretch lg:justify-center">
+            <FooterLogo />
+            {footerColumns.map((column) => (
+              <div key={column.title} className="flex-1 rounded-2xl border-2 border-accent/60 bg-white p-6 text-center shadow-sm">
+                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-primary-dark">{column.title}</h3>
+                <ul className="space-y-2 text-sm text-muted">
+                  {column.links.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="hover:text-primary">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <FooterLogo />
           </div>
-          <p className="text-sm text-white/70">
-            Centre Interdisciplinaire des Génies Agrégées — École Classique, École
-            Professionnelle et Université réunies dans un campus numérique intégré.
-          </p>
         </div>
 
-        <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-light">
-            Institution
-          </h3>
-          <ul className="space-y-2 text-sm text-white/80">
-            <li><Link href="/a-propos" className="hover:text-white">À propos</Link></li>
-            <li><Link href="/programmes" className="hover:text-white">Programmes</Link></li>
-            <li><Link href="/actualites" className="hover:text-white">Actualités</Link></li>
-            <li><Link href="/evenements" className="hover:text-white">Événements</Link></li>
-            <li><Link href="/galerie" className="hover:text-white">Galerie</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-light">
-            Admission
-          </h3>
-          <ul className="space-y-2 text-sm text-white/80">
-            <li><Link href="/admission" className="hover:text-white">Conditions & frais</Link></li>
-            <li><Link href="/admission/candidater" className="hover:text-white">Candidater</Link></li>
-            <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
-            <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-light">
-            Portails
-          </h3>
-          <ul className="space-y-2 text-sm text-white/80">
-            <li><Link href="/portail/etudiant" className="hover:text-white">Étudiant</Link></li>
-            <li><Link href="/portail/parent" className="hover:text-white">Parent</Link></li>
-            <li><Link href="/portail/enseignant" className="hover:text-white">Enseignant</Link></li>
-            <li><Link href="/portail/administration" className="hover:text-white">Administration</Link></li>
-          </ul>
+        <div className="mt-8">
+          <SocialLinksSection />
         </div>
       </div>
 
-      <SocialLinksSection />
-
-      <div className="flex flex-col items-center gap-2 border-t border-white/10 px-4 py-4 text-center text-xs text-white/60 sm:flex-row sm:justify-between">
+      <div className="flex flex-col items-center gap-2 border-t border-border px-4 py-4 text-center text-xs text-muted sm:flex-row sm:justify-between lg:px-6">
         <span>© {new Date().getFullYear()} CCIGA — Centre Interdisciplinaire des Génies Agrégées. Tous droits réservés.</span>
-        <Link href="/politique-de-confidentialite" className="hover:text-white">
+        <Link href="/politique-de-confidentialite" className="hover:text-primary">
           Politique de confidentialité
         </Link>
       </div>

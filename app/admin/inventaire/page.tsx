@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { SCHOOL_COOKIE, isSchoolKey, schoolLabels } from "@/lib/institutions";
 import InventoryManager from "@/components/InventoryManager";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
+import BackButton from "@/components/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +14,14 @@ export default async function AdminInventairePage() {
 
   if (!activeSchool) {
     return (
-      <div>
-        <h1 className="mb-4 text-2xl font-bold text-foreground">Inventaire</h1>
+      <AdminShell>
+        <BackButton fallbackHref="/admin/centre-de-commandement" />
+        <AdminTitleBand eyebrow="CCIGA — Gestion des ressources" title="Inventaire" />
         <div className="empty-state">
           L&apos;inventaire est propre à chaque institution — choisissez École Classique, École Professionnelle ou
           Université pour y accéder.
         </div>
-      </div>
+      </AdminShell>
     );
   }
 
@@ -29,11 +32,13 @@ export default async function AdminInventairePage() {
   });
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold text-foreground">
-        Inventaire <span className="text-base font-normal text-muted">— {schoolLabels[activeSchool]}</span>
-      </h1>
+    <AdminShell>
+      <BackButton fallbackHref="/admin/centre-de-commandement" />
+      <AdminTitleBand
+        eyebrow="CCIGA — Gestion des ressources"
+        title={`Inventaire — ${schoolLabels[activeSchool]}`}
+      />
       <InventoryManager items={items} />
-    </div>
+    </AdminShell>
   );
 }

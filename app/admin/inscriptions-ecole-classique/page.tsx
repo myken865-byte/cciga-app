@@ -8,6 +8,10 @@ import {
   isEnrollmentFormStatus,
 } from "@/lib/enrollmentFormStatus";
 import { niveauLabels, type Niveau } from "@/lib/niveaux";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { ClipboardIcon } from "@/components/icons";
+import BackButton from "@/components/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +24,27 @@ export default async function InscriptionsEcoleClassiquePage({
 }: {
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
+  // Mandat "Mise en état opérationnel" (2026-09-06) : ClassicEnrollmentForm
+  // n'a pas de champ school — c'est un modèle exclusivement École Classique
+  // par construction du schéma. Le risque n'est donc pas un mélange entre
+  // écoles (impossible ici) mais une fuite de contexte : cette liste ne doit
+  // apparaître que lorsque l'École Classique (ou la vue globale "toutes",
+  // réservée SUPER_ADMIN) est le contexte actif — comme partout ailleurs.
+  const activeSchool = await getActiveSchoolOrAll();
+  if (activeSchool !== "ecole-classique" && activeSchool !== "toutes") {
+    return (
+      <AdminShell>
+        <BackButton fallbackHref="/admin/centre-de-commandement" />
+        <AdminTitleBand eyebrow="CCIGA — École Classique" title="Fiches d'inscription — École Classique" />
+        <AdminCard>
+          <p className="text-sm text-muted">
+            Sélectionnez l&apos;institution École Classique pour accéder à ces fiches.
+          </p>
+        </AdminCard>
+      </AdminShell>
+    );
+  }
+
   const { status, q } = await searchParams;
   const statusFilter = status && isEnrollmentFormStatus(status) ? status : null;
   const qTrim = q?.trim() ?? "";
@@ -48,18 +73,22 @@ export default async function InscriptionsEcoleClassiquePage({
   });
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-foreground">Fiches d&apos;inscription — École Classique</h1>
-        <div className="flex gap-2">
-          <Link href="/admin/inscriptions-ecole-classique/eleves" className="btn-secondary text-sm">
-            Élèves inscrits
-          </Link>
-          <Link href="/admin/inscriptions-ecole-classique/nouvelle" className="btn-primary text-sm">
-            + Nouvelle fiche
-          </Link>
-        </div>
-      </div>
+    <AdminShell>
+      <BackButton fallbackHref="/admin/centre-de-commandement" />
+      <AdminTitleBand
+        eyebrow="CCIGA — École Classique"
+        title="Fiches d'inscription — École Classique"
+        trailing={
+          <div className="flex gap-2">
+            <Link href="/admin/inscriptions-ecole-classique/eleves" className="btn-secondary text-sm">
+              Élèves inscrits
+            </Link>
+            <Link href="/admin/inscriptions-ecole-classique/nouvelle" className="btn-primary text-sm">
+              + Nouvelle fiche
+            </Link>
+          </div>
+        }
+      />
 
       <form method="get" className="mb-6 flex flex-wrap gap-2">
         <input
@@ -82,7 +111,8 @@ export default async function InscriptionsEcoleClassiquePage({
         </button>
       </form>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <AdminCard icon={ClipboardIcon} title="Fiches enregistrées">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm">
           <thead className="bg-background text-muted">
             <tr>
@@ -101,7 +131,7 @@ export default async function InscriptionsEcoleClassiquePage({
               const classLabel =
                 f.program?.name ?? (f.schoolLevel ? (niveauLabels[f.schoolLevel as Niveau] ?? f.schoolLevel) : "—");
               return (
-                <tr key={f.id} className="border-t border-border">
+                <tr key={f.id} className="border-t border-row-divider">
                   <td className="px-4 py-3 font-mono text-xs text-muted">{formatClassicEnrollmentFormReference(f.id)}</td>
                   <td className="px-4 py-3 text-foreground">{f.lastName || "—"}</td>
                   <td className="px-4 py-3 text-foreground">{f.firstName || "—"}</td>
@@ -130,6 +160,7 @@ export default async function InscriptionsEcoleClassiquePage({
           </tbody>
         </table>
       </div>
-    </div>
+      </AdminCard>
+    </AdminShell>
   );
 }

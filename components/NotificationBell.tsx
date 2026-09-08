@@ -80,7 +80,7 @@ export default function NotificationBell({
                 <button
                   key={n.id}
                   onClick={() => !n.read && markRead(n.id)}
-                  className={`block w-full border-b border-border px-4 py-3 text-left last:border-0 ${
+                  className={`block w-full border-b border-row-divider px-4 py-3 text-left last:border-0 ${
                     n.read ? "bg-surface" : "bg-primary/5"
                   } hover:bg-background`}
                 >

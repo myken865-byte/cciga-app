@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import SectorLogo from "@/components/SectorLogo";
 import BackButton from "@/components/BackButton";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { CalendarIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -25,12 +27,13 @@ export default async function AdminEcoleClassiqueBulletinsPage() {
   ]);
 
   return (
-    <div>
+    <AdminShell>
       <BackButton fallbackHref="/admin/ecole-classique" label="Retour à l'École Classique" />
-      <div className="mb-2 flex items-center gap-3">
-        <SectorLogo sector="CLASSIQUE" className="h-10 w-10 object-contain" />
-        <h1 className="text-2xl font-bold text-foreground">Centre des Bulletins — École Classique</h1>
-      </div>
+      <AdminTitleBand
+        eyebrow="CCIGA — École Classique"
+        title="Centre des Bulletins — École Classique"
+        trailing={<SectorLogo sector="CLASSIQUE" className="h-10 w-10 object-contain" />}
+      />
       <p className="mb-6 text-sm text-muted">
         Choisissez une année académique, un programme et une période pour accéder à la génération des bulletins
         et relevés correspondants.
@@ -45,11 +48,12 @@ export default async function AdminEcoleClassiqueBulletinsPage() {
 
       <div className="space-y-6">
         {academicYears.map((year) => (
-          <div key={year.id} className="rounded-lg border border-border bg-surface p-4">
-            <p className="mb-3 font-semibold text-foreground">
-              {year.label} {year.isActive && <span className="text-xs text-emerald-600">(active)</span>}
-            </p>
-
+          <AdminCard
+            key={year.id}
+            title={year.label}
+            icon={CalendarIcon}
+            action={year.isActive ? <span className="text-xs font-semibold text-success">Active</span> : undefined}
+          >
             {year.semesters.length === 0 ? (
               <p className="text-sm text-muted">Aucune période pour cette année.</p>
             ) : programs.length === 0 ? (
@@ -74,9 +78,9 @@ export default async function AdminEcoleClassiqueBulletinsPage() {
                 ))}
               </div>
             )}
-          </div>
+          </AdminCard>
         ))}
       </div>
-    </div>
+    </AdminShell>
   );
 }

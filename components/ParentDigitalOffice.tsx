@@ -185,7 +185,7 @@ export default function ParentDigitalOffice() {
           </div>
         </div>
         <p className="section-label mb-2">Historique récent</p>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {parentDemoAttendance.historique.map((h) => (
             <li key={h.date} className="flex items-center justify-between bg-surface px-3.5 py-2.5 text-sm">
               <span className="text-foreground">{h.date}</span>
@@ -237,7 +237,7 @@ export default function ParentDigitalOffice() {
                         </thead>
                         <tbody>
                           {p.matieres.map((m) => (
-                            <tr key={m.matiere} className="border-t border-border">
+                            <tr key={m.matiere} className="border-t border-row-divider">
                               <td className="px-3 py-2 text-foreground">{m.matiere}</td>
                               <td className="px-3 py-2 font-semibold text-primary">{m.note}/{m.max}</td>
                               <td className="px-3 py-2 text-muted">{m.moyenneClasse}/{m.max}</td>
@@ -320,7 +320,7 @@ export default function ParentDigitalOffice() {
             <p className="text-sm font-semibold text-danger">{formatHTG(parentDemoPayments.solde)}</p>
           </div>
         </div>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {parentDemoPayments.versements.map((v) => (
             <li key={v.label} className="flex items-center justify-between gap-3 bg-surface px-3.5 py-2.5 text-sm">
               <div className="min-w-0">
@@ -376,7 +376,7 @@ export default function ParentDigitalOffice() {
         <h2 className="section-label mb-3 flex items-center gap-1.5">
           <CalendarIcon className="h-4 w-4" /> Calendrier scolaire <DemoTag />
         </h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-row-divider overflow-hidden rounded-lg border border-border">
           {parentDemoCalendar.map((c) => (
             <li key={c.titre} className="flex items-center justify-between gap-3 bg-surface px-3.5 py-2.5 text-sm">
               <div>
