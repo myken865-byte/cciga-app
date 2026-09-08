@@ -3,9 +3,13 @@ import BackButton from "@/components/BackButton";
 import { prisma } from "@/lib/db";
 import { getSchoolBySlug, getProgramBySlug } from "@/lib/content";
 import { admissionStatusLabels, admissionStatusStyles, isAdmissionStatus } from "@/lib/admission-status";
+import { normalizeAdmissionDocumentLabels } from "@/lib/admission-documents";
 import { formatCcigaId } from "@/lib/cciga-id";
 import StatusUpdateForm from "./StatusUpdateForm";
 import CreateStudentAccountButton from "./CreateStudentAccountButton";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import { ClipboardIcon, DocumentIcon, ChatIcon } from "@/components/icons";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
 
 export const dynamic = "force-dynamic";
 
@@ -25,34 +29,35 @@ export default async function AdmissionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const activeSchool = await getActiveSchoolOrAll();
   const submission = await prisma.admissionSubmission.findUnique({ where: { id } });
-  if (!submission) notFound();
+  // Non-croisement (Phase C3) : accès direct par ID à une candidature d'une
+  // autre institution refusé — sauf vue globale ("toutes", réservée SUPER_ADMIN).
+  if (!submission || !activeSchool) notFound();
+  if (activeSchool !== "toutes" && submission.school !== activeSchool) notFound();
 
   const school = getSchoolBySlug(submission.school);
   const program = await getProgramBySlug(submission.programSlug);
-  const documents: string[] = JSON.parse(submission.documents || "[]");
+  const documents = normalizeAdmissionDocumentLabels(submission.documents);
   const statusKey = isAdmissionStatus(submission.status) ? submission.status : "nouveau";
 
   return (
-    <div>
+    <AdminShell>
       <BackButton fallbackHref="/admin/admissions" label="Toutes les candidatures" />
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="font-mono text-sm text-muted">{submission.reference}</p>
-          <h1 className="text-2xl font-bold text-foreground">
-            {submission.firstName} {submission.lastName}
-          </h1>
-        </div>
-        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${admissionStatusStyles[statusKey]}`}>
-          {admissionStatusLabels[statusKey]}
-        </span>
-      </div>
+      <AdminTitleBand
+        eyebrow={`CCIGA — Candidature ${submission.reference}`}
+        title={`${submission.firstName} ${submission.lastName}`}
+        trailing={
+          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${admissionStatusStyles[statusKey]}`}>
+            {admissionStatusLabels[statusKey]}
+          </span>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-lg border border-border bg-surface p-6">
-            <h2 className="mb-4 font-semibold text-foreground">Informations du candidat</h2>
+          <AdminCard title="Informations du candidat" icon={ClipboardIcon}>
             <dl className="grid gap-4 sm:grid-cols-2 text-sm">
               <Field label="Email" value={submission.email} />
               <Field label="Téléphone" value={submission.phone} />
@@ -63,10 +68,9 @@ export default async function AdmissionDetailPage({
               <Field label="Soumis le" value={formatDate(submission.submittedAt)} />
               <Field label="Mis à jour le" value={formatDate(submission.updatedAt)} />
             </dl>
-          </div>
+          </AdminCard>
 
-          <div className="rounded-lg border border-border bg-surface p-6">
-            <h2 className="mb-4 font-semibold text-foreground">Documents fournis</h2>
+          <AdminCard title="Documents fournis" icon={DocumentIcon}>
             {documents.length === 0 ? (
               <p className="text-sm text-muted">Aucun document coché par le candidat.</p>
             ) : (
@@ -79,13 +83,12 @@ export default async function AdmissionDetailPage({
                 ))}
               </ul>
             )}
-          </div>
+          </AdminCard>
 
           {submission.adminNote && (
-            <div className="rounded-lg border border-border bg-surface p-6">
-              <h2 className="mb-2 font-semibold text-foreground">Note interne actuelle</h2>
+            <AdminCard title="Note interne actuelle" icon={ChatIcon}>
               <p className="text-sm text-muted">{submission.adminNote}</p>
-            </div>
+            </AdminCard>
           )}
         </div>
 
@@ -98,19 +101,18 @@ export default async function AdmissionDetailPage({
 
           {statusKey === "admis" && (
             submission.studentUserId ? (
-              <div className="rounded-lg border border-border bg-surface p-6">
-                <h2 className="mb-2 font-semibold text-foreground">Compte étudiant</h2>
+              <AdminCard title="Compte étudiant">
                 <p className="font-mono text-sm text-primary">
                   {formatCcigaId(submission.studentUserId)}
                 </p>
-              </div>
+              </AdminCard>
             ) : (
               <CreateStudentAccountButton id={submission.id} />
             )
           )}
         </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }
 

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 /**
  * POST — prêter un exemplaire : [id] est l'id du livre (bookId).
@@ -14,9 +15,14 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant de prêter un ouvrage." }, { status: 400 });
   }
 
   const { id: bookId } = await params;
@@ -41,6 +47,11 @@ export async function POST(
   if (!book) {
     return NextResponse.json({ error: "Ouvrage introuvable." }, { status: 404 });
   }
+  // Non-croisement (Phase C3) : un ouvrage non attribué (AMBIGU) ou d'une
+  // autre institution ne peut pas être prêté depuis ce contexte.
+  if (book.school !== school) {
+    return NextResponse.json({ error: "Cet ouvrage appartient à une autre institution." }, { status: 403 });
+  }
   if (book.loans.length >= book.totalCopies) {
     return NextResponse.json({ error: "Aucun exemplaire disponible." }, { status: 400 });
   }
@@ -50,12 +61,15 @@ export async function POST(
     return NextResponse.json({ error: "Emprunteur introuvable." }, { status: 404 });
   }
 
+  // BookLoan.school est une copie dénormalisée de Book.school (voir
+  // prisma/schema.prisma) — jamais déduite de l'emprunteur.
   const loan = await prisma.bookLoan.create({
     data: {
       bookId,
       borrowerId: parsedBorrowerId,
       dueDate: parsedDueDate,
-      recordedById: session.userId,
+      recordedById: resolveActorId(session.userId),
+      school: book.school,
     },
   });
 
@@ -74,9 +88,14 @@ export async function PATCH(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant de marquer un retour." }, { status: 400 });
   }
 
   const { id: loanId } = await params;
@@ -84,6 +103,9 @@ export async function PATCH(
   const loan = await prisma.bookLoan.findUnique({ where: { id: loanId } });
   if (!loan) {
     return NextResponse.json({ error: "Prêt introuvable." }, { status: 404 });
+  }
+  if (loan.school !== school) {
+    return NextResponse.json({ error: "Ce prêt appartient à une autre institution." }, { status: 403 });
   }
   if (loan.returnedAt) {
     return NextResponse.json({ ok: true });

@@ -7,6 +7,9 @@ import { formatCcigaId } from "@/lib/cciga-id";
 import { getPrograms } from "@/lib/content";
 import EditUserForm from "@/components/EditUserForm";
 import GenerateBadgeButton from "@/components/GenerateBadgeButton";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
+import { isUserInSchoolScope } from "@/lib/institutionScope";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +22,27 @@ export default async function AdminUserDetailPage({
   const userId = Number(id);
   if (!Number.isInteger(userId)) notFound();
 
+  const activeSchool = await getActiveSchoolOrAll();
+  if (!activeSchool) notFound();
+
   const [user, programs, session, allUsers] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        program: { select: { school: true } },
+        coursesTaught: { include: { program: { select: { school: true } } } },
+        titulaireOf: { select: { school: true } },
+        coordinatedPrograms: { select: { school: true } },
+      },
+    }),
     getPrograms(),
     getSession(),
     prisma.user.findMany(),
   ]);
   if (!user) notFound();
+  // Non-croisement (Phase C3) : accès direct par ID à un compte d'une autre
+  // institution refusé — sauf vue globale ("toutes", réservée SUPER_ADMIN).
+  if (activeSchool !== "toutes" && !isUserInSchoolScope(user, activeSchool)) notFound();
 
   const parents = allUsers
     .filter((u) => hasRole(parseRoles(u.roles), "PARENT"))
@@ -33,7 +50,8 @@ export default async function AdminUserDetailPage({
   const isSuperAdmin = hasRole(session?.roles ?? [], "SUPER_ADMIN");
 
   return (
-    <div>
+    <AdminShell>
+      <AdminTitleBand eyebrow="CCIGA — Comptes utilisateurs" title={user.name} />
       <div className="mx-auto max-w-xl">
         <p className="mb-4 font-mono text-sm text-muted">
           {formatCcigaId(user.id)} · {user.email}
@@ -76,6 +94,6 @@ export default async function AdminUserDetailPage({
           isSelf={session?.userId === user.id}
         />
       </div>
-    </div>
+    </AdminShell>
   );
 }

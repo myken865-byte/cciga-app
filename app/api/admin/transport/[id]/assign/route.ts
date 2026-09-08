@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant d'affecter un élève." }, { status: 400 });
   }
 
   const { id: vehicleId } = await params;
@@ -28,6 +34,11 @@ export async function POST(
   if (!vehicle) {
     return NextResponse.json({ error: "Véhicule introuvable." }, { status: 404 });
   }
+  // Non-croisement (Phase C3) : un véhicule non attribué (AMBIGU) ou d'une
+  // autre institution ne peut pas recevoir d'affectation depuis ce contexte.
+  if (vehicle.school !== school) {
+    return NextResponse.json({ error: "Ce véhicule appartient à une autre institution." }, { status: 403 });
+  }
   if (vehicle.capacity && vehicle.assignments.length >= vehicle.capacity) {
     return NextResponse.json({ error: "Capacité maximale atteinte." }, { status: 400 });
   }
@@ -44,8 +55,9 @@ export async function POST(
     return NextResponse.json({ error: "Cet élève est déjà affecté à ce véhicule." }, { status: 400 });
   }
 
+  // TransportAssignment.school est une copie dénormalisée de Vehicle.school.
   const assignment = await prisma.transportAssignment.create({
-    data: { vehicleId, studentId: parsedStudentId },
+    data: { vehicleId, studentId: parsedStudentId, school: vehicle.school },
   });
 
   await writeAuditLog({

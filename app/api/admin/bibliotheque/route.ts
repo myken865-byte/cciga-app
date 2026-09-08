@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 export async function POST(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant d'ajouter un ouvrage." }, { status: 400 });
   }
 
   const { title, author, category, totalCopies } = (await request.json()) ?? {};
@@ -28,6 +34,7 @@ export async function POST(request: Request) {
       author: author.trim(),
       category: category.trim(),
       totalCopies: copies,
+      school,
     },
   });
 

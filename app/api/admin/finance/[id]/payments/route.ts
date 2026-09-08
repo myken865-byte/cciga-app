@@ -1,17 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { formatHTG } from "@/lib/currency";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const activeSchool = await getActiveSchoolOrAll();
+  if (!activeSchool) {
+    return NextResponse.json({ error: "Choisissez une institution avant d'enregistrer un paiement." }, { status: 400 });
   }
 
   const { id } = await params;
@@ -23,9 +29,12 @@ export async function POST(
     return NextResponse.json({ error: "Montant invalide." }, { status: 400 });
   }
 
-  const student = await prisma.user.findUnique({ where: { id: studentId } });
+  const student = await prisma.user.findUnique({ where: { id: studentId }, include: { program: true } });
   if (!student) {
     return NextResponse.json({ error: "Étudiant introuvable." }, { status: 404 });
+  }
+  if (activeSchool !== "toutes" && student.program?.school !== activeSchool) {
+    return NextResponse.json({ error: "Cet étudiant appartient à une autre institution." }, { status: 403 });
   }
 
   const payment = await prisma.payment.create({

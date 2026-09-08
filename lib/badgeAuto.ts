@@ -41,12 +41,20 @@ function computeStatus(programId: string | null): string {
  * classe est assignée), sans jamais changer son numéro ni son ID.
  */
 export async function ensureBadgeForUser(userId: number, actorId: number | null) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { program: true } });
   if (!user) return null;
   const roles = parseRoles(user.roles);
   // Portée de cette mission : élèves/apprenants/étudiants inscrits — pas le
   // personnel, dont le badge reste une action manuelle distincte (BadgeManager).
   if (!hasRole(roles, "STUDENT")) return null;
+
+  // Phase C3 (2026-09-08) : l'institution du badge est celle du programme de
+  // l'élève (source directe et non ambiguë) — pas celle de l'admin qui
+  // déclenche la génération automatique (ex. après approbation d'une
+  // candidature), qui peut être sans rapport. Reste NULL si le programme
+  // n'est pas encore rattaché à une école, ou si l'élève n'a pas encore de
+  // programme — jamais de valeur devinée (même principe que Phase C2).
+  const school = user.program?.school ?? null;
 
   const targetStatus = computeStatus(user.programId);
   const existing = await prisma.badge.findUnique({ where: { userId } });
@@ -54,7 +62,9 @@ export async function ensureBadgeForUser(userId: number, actorId: number | null)
   if (existing) {
     // Ne jamais rétrograder un badge déjà "perdu"/"remplacé"/"inactif" décidé
     // manuellement par l'administration — seule la bascule automatique
-    // actif <-> a_finaliser est reconciliée ici.
+    // actif <-> a_finaliser est reconciliée ici. L'institution, une fois
+    // connue, n'est jamais réécrite silencieusement par cette réconciliation
+    // (seul un arbitrage explicite — hors périmètre C3 — la changerait).
     if (
       (existing.status === "actif" || existing.status === BADGE_STATUS_A_FINALISER) &&
       existing.status !== targetStatus
@@ -75,7 +85,7 @@ export async function ensureBadgeForUser(userId: number, actorId: number | null)
 
   const badgeNumber = computeAutoBadgeNumber(userId);
   const badge = await prisma.badge.create({
-    data: { userId, badgeNumber, status: targetStatus, issuedById: actorId ?? undefined },
+    data: { userId, badgeNumber, status: targetStatus, issuedById: actorId ?? undefined, school },
   });
   await writeAuditLog({
     entityType: "Badge",

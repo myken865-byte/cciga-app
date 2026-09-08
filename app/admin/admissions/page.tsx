@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import BackToPortalsButton from "@/components/BackToPortalsButton";
@@ -8,6 +9,10 @@ import {
   admissionStatusStyles,
   isAdmissionStatus,
 } from "@/lib/admission-status";
+import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
+import BackButton from "@/components/BackButton";
+import { ClipboardIcon } from "@/components/icons";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +31,24 @@ export default async function AdmissionsListPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  // Phase C3 (2026-09-08) : "SUPERVISION INSTITUTIONNELLE" reste un module de
+  // supervision — la vue globale ("toutes") reste disponible (réservée
+  // SUPER_ADMIN, école déjà affichée par ligne, cf. colonne "École /
+  // Programme"), mais une institution spécifique ne voit plus que ses
+  // propres candidatures (même principe que Finance).
+  const activeSchool = await getActiveSchoolOrAll();
+  if (activeSchool === null) redirect("/admin/institution");
+  const scopeSchool = activeSchool !== "toutes" ? activeSchool : null;
+
   const { status } = await searchParams;
   const filter = status && isAdmissionStatus(status) ? status : undefined;
 
   const [submissions, programs] = await Promise.all([
     prisma.admissionSubmission.findMany({
-      where: filter ? { status: filter } : undefined,
+      where: {
+        ...(filter ? { status: filter } : {}),
+        ...(scopeSchool ? { school: scopeSchool } : {}),
+      },
       orderBy: { submittedAt: "desc" },
     }),
     getPrograms(),
@@ -39,14 +56,14 @@ export default async function AdmissionsListPage({
   const programsBySlug = new Map(programs.map((p) => [p.slug, p]));
 
   return (
-    <div>
+    <AdminShell>
+      <BackButton fallbackHref="/admin/centre-de-commandement" />
       <BackToPortalsButton className="mb-4" />
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Candidatures</h1>
-          <p className="text-sm text-muted">{submissions.length} dossier(s)</p>
-        </div>
-      </div>
+      <AdminTitleBand
+        eyebrow="CCIGA — Supervision institutionnelle"
+        title="Candidatures"
+        trailing={<span className="text-sm text-white/80">{submissions.length} dossier(s)</span>}
+      />
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Link
@@ -70,7 +87,8 @@ export default async function AdmissionsListPage({
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <AdminCard icon={ClipboardIcon} title="Dossiers de candidature">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm">
           <thead className="bg-background text-muted">
             <tr>
@@ -87,7 +105,7 @@ export default async function AdmissionsListPage({
               const program = programsBySlug.get(s.programSlug);
               const statusKey = isAdmissionStatus(s.status) ? s.status : "nouveau";
               return (
-                <tr key={s.id} className="border-t border-border">
+                <tr key={s.id} className="border-t border-row-divider">
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/admissions/${s.id}`}
@@ -123,6 +141,7 @@ export default async function AdmissionsListPage({
           </tbody>
         </table>
       </div>
-    </div>
+      </AdminCard>
+    </AdminShell>
   );
 }

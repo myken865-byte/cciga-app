@@ -7,6 +7,7 @@ import { schoolToSector, sectorLabel } from "@/lib/branding";
 import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
 import { BADGE_STATUS_A_FINALISER } from "@/lib/badgeAuto";
 import BadgeDocument from "@/lib/pdf/BadgeDocument";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 export const runtime = "nodejs";
 
@@ -41,12 +42,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
+  const activeSchool = await getActiveSchool();
   const badge = await prisma.badge.findUnique({
     where: { id },
     include: { user: { include: { program: true } } },
   });
   if (!badge) {
     return new Response("Badge introuvable.", { status: 404 });
+  }
+  // Non-croisement (Phase C3) : ce PDF est accessible par URL directe
+  // (iframe), donc vérifié ici indépendamment de la page qui l'affiche.
+  if (!activeSchool || badge.school !== activeSchool) {
+    return new Response("Ce badge appartient à une autre institution.", { status: 403 });
   }
 
   const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true }, select: { label: true } });

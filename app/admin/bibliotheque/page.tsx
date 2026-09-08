@@ -1,11 +1,34 @@
 import { prisma } from "@/lib/db";
 import LibraryManager from "@/components/LibraryManager";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
+import BackButton from "@/components/BackButton";
+import { getActiveSchool, schoolLabels } from "@/lib/institutionContext";
 
 export const dynamic = "force-dynamic";
 
+// Phase C3 (2026-09-08) : cloisonnement réel — Book.school (Phase C1/C2). Les
+// 3 ouvrages restés AMBIGU (catalogue sans propriétaire institutionnel
+// déterminable) n'apparaissent dans aucune bibliothèque : invisibles ici,
+// non perdus, à arbitrer séparément.
 export default async function AdminBibliothequePage() {
+  const activeSchool = await getActiveSchool();
+
+  if (!activeSchool) {
+    return (
+      <AdminShell>
+        <BackButton fallbackHref="/admin/centre-de-commandement" />
+        <AdminTitleBand eyebrow="CCIGA — Ressources pédagogiques" title="Bibliothèque" />
+        <div className="empty-state">
+          La bibliothèque est propre à chaque institution — choisissez École Classique, École Professionnelle ou
+          Université pour y accéder.
+        </div>
+      </AdminShell>
+    );
+  }
+
   const [rawBooks, allUsers] = await Promise.all([
     prisma.book.findMany({
+      where: { school: activeSchool },
       include: {
         loans: {
           include: { borrower: { select: { name: true } } },
@@ -32,9 +55,10 @@ export default async function AdminBibliothequePage() {
   }));
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold text-foreground">Bibliothèque</h1>
+    <AdminShell>
+      <BackButton fallbackHref="/admin/centre-de-commandement" />
+      <AdminTitleBand eyebrow="CCIGA — Ressources pédagogiques" title={`Bibliothèque — ${schoolLabels[activeSchool]}`} />
       <LibraryManager books={books} users={allUsers} />
-    </div>
+    </AdminShell>
   );
 }

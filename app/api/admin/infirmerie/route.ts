@@ -3,11 +3,17 @@ import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 export async function POST(request: Request) {
   const session = await requireAdminSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant d'enregistrer un passage." }, { status: 400 });
   }
 
   const { studentId, category, observations, contactedGuardian } = (await request.json()) ?? {};
@@ -16,9 +22,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Élève et catégorie sont requis." }, { status: 400 });
   }
 
-  const student = await prisma.user.findUnique({ where: { id: studentIdNum } });
+  const student = await prisma.user.findUnique({ where: { id: studentIdNum }, include: { program: true } });
   if (!student) {
     return NextResponse.json({ error: "Élève introuvable." }, { status: 400 });
+  }
+  if (student.program && student.program.school !== school) {
+    return NextResponse.json({ error: "Cet élève appartient à une autre institution." }, { status: 403 });
   }
 
   const visit = await prisma.infirmaryVisit.create({
@@ -28,6 +37,7 @@ export async function POST(request: Request) {
       observations: typeof observations === "string" && observations.trim() ? observations.trim() : null,
       contactedGuardian: Boolean(contactedGuardian),
       recordedById: session.userId,
+      school,
     },
   });
 

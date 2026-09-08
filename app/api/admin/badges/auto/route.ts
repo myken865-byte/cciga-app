@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/auth";
 import { ensureBadgeForUser } from "@/lib/badgeAuto";
+import { resolveActorId } from "@/lib/devBypass";
 
 // Appelé par components/GenerateBadgeButton.tsx — même logique que la
 // génération automatique après inscription (lib/badgeAuto.ts), réutilisée
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Compte invalide." }, { status: 400 });
   }
 
-  const badge = await ensureBadgeForUser(uid, session.userId);
+  const badge = await ensureBadgeForUser(uid, resolveActorId(session.userId));
   if (!badge) {
     return NextResponse.json(
       { error: "Impossible de générer un badge pour ce compte (rôle non éligible ou compte introuvable)." },

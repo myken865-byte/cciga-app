@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 const typeContratValues = ["cdi", "cdd", "vacataire", "autre"];
 
@@ -10,6 +11,11 @@ export async function POST(request: Request) {
   const session = await requireAdminSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant de créer un profil employé." }, { status: 400 });
   }
 
   const { userId, fonction, departement, typeContrat, dateEntree, horaire } = (await request.json()) ?? {};
@@ -56,6 +62,7 @@ export async function POST(request: Request) {
       typeContrat: typeContrat && typeContratValues.includes(typeContrat) ? typeContrat : "cdi",
       dateEntree: entree,
       horaire: typeof horaire === "string" && horaire.trim() ? horaire.trim() : null,
+      school,
     },
   });
 

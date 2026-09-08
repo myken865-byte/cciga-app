@@ -1,12 +1,13 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { formatPaymentReceiptReference } from "@/lib/paymentReceiptReference";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { formatHTGForPdf } from "@/lib/currency";
 import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
 import { schoolToSector } from "@/lib/branding";
 import ReceiptDocument from "@/lib/pdf/ReceiptDocument";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
 
 export const runtime = "nodejs";
 
@@ -20,7 +21,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string; paymentId: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return new Response("Non autorisé.", { status: 401 });
   }
@@ -31,6 +32,8 @@ export async function GET(
     return new Response("Étudiant invalide.", { status: 400 });
   }
 
+  const activeSchool = await getActiveSchoolOrAll();
+
   const [student, payment, allPayments] = await Promise.all([
     prisma.user.findUnique({ where: { id: studentId }, include: { program: true } }),
     prisma.payment.findUnique({ where: { id: paymentId }, include: { recordedBy: true } }),
@@ -38,6 +41,11 @@ export async function GET(
   ]);
   if (!student || !payment || payment.studentId !== studentId) {
     return new Response("Reçu introuvable.", { status: 404 });
+  }
+  // Non-croisement (Phase C3) : reçu accessible par URL directe, vérifié
+  // indépendamment de la page qui l'affiche.
+  if (!activeSchool || (activeSchool !== "toutes" && student.program?.school !== activeSchool)) {
+    return new Response("Ce reçu appartient à une autre institution.", { status: 403 });
   }
 
   const reference = formatPaymentReceiptReference(payment.id);

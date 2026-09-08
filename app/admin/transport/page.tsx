@@ -1,12 +1,34 @@
 import { prisma } from "@/lib/db";
 import { parseRoles, hasRole } from "@/lib/roles";
 import TransportManager from "@/components/TransportManager";
+import { AdminShell, AdminTitleBand } from "@/components/AdminPremium";
+import BackButton from "@/components/BackButton";
+import { getActiveSchool, schoolLabels } from "@/lib/institutionContext";
 
 export const dynamic = "force-dynamic";
 
+// Phase C3 (2026-09-08) : cloisonnement réel — Vehicle.school (Phase C1/C2).
+// Le véhicule resté AMBIGU n'apparaît dans aucune vue institutionnelle :
+// invisible ici, non perdu, à arbitrer séparément.
 export default async function AdminTransportPage() {
+  const activeSchool = await getActiveSchool();
+
+  if (!activeSchool) {
+    return (
+      <AdminShell>
+        <BackButton fallbackHref="/admin/centre-de-commandement" />
+        <AdminTitleBand eyebrow="CCIGA — Vie scolaire" title="Transport" />
+        <div className="empty-state">
+          Le transport est propre à chaque institution — choisissez École Classique, École Professionnelle ou
+          Université pour y accéder.
+        </div>
+      </AdminShell>
+    );
+  }
+
   const [vehicles, allUsers] = await Promise.all([
     prisma.vehicle.findMany({
+      where: { school: activeSchool },
       include: {
         assignments: { include: { student: { select: { name: true } } } },
       },
@@ -29,9 +51,10 @@ export default async function AdminTransportPage() {
   }));
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold text-foreground">Transport</h1>
+    <AdminShell>
+      <BackButton fallbackHref="/admin/centre-de-commandement" />
+      <AdminTitleBand eyebrow="CCIGA — Vie scolaire" title={`Transport — ${schoolLabels[activeSchool]}`} />
       <TransportManager vehicles={vehicleRows} students={students} />
-    </div>
+    </AdminShell>
   );
 }

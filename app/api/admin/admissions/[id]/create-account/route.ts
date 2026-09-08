@@ -2,23 +2,32 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { formatCcigaId } from "@/lib/cciga-id";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const activeSchool = await getActiveSchoolOrAll();
+  if (!activeSchool) {
+    return NextResponse.json({ error: "Choisissez une institution avant de créer un compte." }, { status: 400 });
   }
 
   const { id } = await params;
   const submission = await prisma.admissionSubmission.findUnique({ where: { id } });
   if (!submission) {
     return NextResponse.json({ error: "Candidature introuvable." }, { status: 404 });
+  }
+  if (activeSchool !== "toutes" && submission.school !== activeSchool) {
+    return NextResponse.json({ error: "Cette candidature appartient à une autre institution." }, { status: 403 });
   }
   if (submission.status !== "admis") {
     return NextResponse.json(

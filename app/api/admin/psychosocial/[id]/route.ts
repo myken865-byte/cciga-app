@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requirePsychosocialSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 const VALID_STATUSES = ["ouvert", "suivi", "cloture"];
 
@@ -12,10 +13,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant de modifier un dossier." }, { status: 400 });
+  }
+
   const { id } = await params;
   const existing = await prisma.psychosocialCase.findUnique({ where: { id } });
   if (!existing) {
     return NextResponse.json({ error: "Dossier introuvable." }, { status: 404 });
+  }
+  if (existing.school !== school) {
+    return NextResponse.json({ error: "Ce dossier appartient à une autre institution." }, { status: 403 });
   }
 
   const { body, status } = (await request.json()) ?? {};

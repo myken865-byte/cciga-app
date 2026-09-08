@@ -4,6 +4,7 @@ import { requireAdminSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
 import { BADGE_STATUS_A_FINALISER } from "@/lib/badgeAuto";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 const VALID_STATUSES = ["actif", "perdu", "remplace", "inactif", BADGE_STATUS_A_FINALISER];
 
@@ -16,6 +17,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
+  // Phase C3 : l'institution vient toujours du cookie serveur, jamais du
+  // corps de la requête — un appel API direct ne peut pas déclarer une autre
+  // école pour contourner le cloisonnement.
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant de créer un badge." }, { status: 400 });
+  }
+
   const { userId, badgeNumber } = (await request.json().catch(() => ({}))) as {
     userId?: unknown;
     badgeNumber?: unknown;
@@ -25,9 +34,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Compte et numéro de badge requis." }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: uid } });
+  const user = await prisma.user.findUnique({ where: { id: uid }, include: { program: true } });
   if (!user) {
     return NextResponse.json({ error: "Compte introuvable." }, { status: 404 });
+  }
+  // L'élève doit appartenir à l'institution active — sinon un badge pourrait
+  // être émis pour une autre école depuis ce contexte (non-croisement).
+  if (user.program && user.program.school !== school) {
+    return NextResponse.json({ error: "Ce compte appartient à une autre institution." }, { status: 403 });
   }
 
   const existing = await prisma.badge.findUnique({ where: { userId: uid } });
@@ -47,7 +61,8 @@ export async function POST(request: Request) {
       userId: uid,
       badgeNumber: badgeNumber.trim(),
       status: user.programId ? "actif" : BADGE_STATUS_A_FINALISER,
-      issuedById: session.userId,
+      issuedById: resolveActorId(session.userId),
+      school,
     },
   });
 
@@ -68,6 +83,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant de modifier un badge." }, { status: 400 });
+  }
+
   const { badgeId, status } = (await request.json().catch(() => ({}))) as {
     badgeId?: unknown;
     status?: unknown;
@@ -79,6 +99,9 @@ export async function PATCH(request: Request) {
   const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
   if (!badge) {
     return NextResponse.json({ error: "Badge introuvable." }, { status: 404 });
+  }
+  if (badge.school !== school) {
+    return NextResponse.json({ error: "Ce badge appartient à une autre institution." }, { status: 403 });
   }
 
   const updated = await prisma.badge.update({ where: { id: badgeId }, data: { status } });

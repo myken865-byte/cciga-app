@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireSecretariatSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
+import { getActiveSchool } from "@/lib/institutionContext";
 
 export async function POST(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireSecretariatSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+
+  const school = await getActiveSchool();
+  if (!school) {
+    return NextResponse.json({ error: "Choisissez une institution avant d'ajouter un véhicule." }, { status: 400 });
   }
 
   const { label, plate, capacity, driverName } = (await request.json()) ?? {};
@@ -22,6 +28,7 @@ export async function POST(request: Request) {
       plate: typeof plate === "string" && plate.trim() ? plate.trim() : null,
       capacity: Number.isInteger(parsedCapacity) && parsedCapacity > 0 ? parsedCapacity : null,
       driverName: typeof driverName === "string" && driverName.trim() ? driverName.trim() : null,
+      school,
     },
   });
 

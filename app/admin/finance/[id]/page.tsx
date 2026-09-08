@@ -4,6 +4,14 @@ import { prisma } from "@/lib/db";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { formatHTG } from "@/lib/currency";
 import RecordPaymentForm from "@/components/RecordPaymentForm";
+import VoidPaymentButton from "@/components/VoidPaymentButton";
+import { AdminShell, AdminTitleBand, AdminCard, AdminStatTile } from "@/components/AdminPremium";
+import { ClipboardIcon, WalletIcon, AlertIcon, ClockIcon } from "@/components/icons";
+import { getSession } from "@/lib/auth";
+import { hasAnyRole } from "@/lib/roles";
+import { getActiveSchoolOrAll } from "@/lib/institutionContext";
+
+const VOID_PREFIX = "VOID:";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +28,18 @@ export default async function StudentFinancePage({
   const studentId = Number(id);
   if (!Number.isInteger(studentId)) notFound();
 
+  const activeSchool = await getActiveSchoolOrAll();
+  if (!activeSchool) notFound();
+
   const student = await prisma.user.findUnique({
     where: { id: studentId },
     include: { program: true },
   });
   if (!student) notFound();
+  // Non-croisement (Phase C3) : même filtre que la liste (app/admin/finance/page.tsx)
+  // — un accès direct par ID à un autre dossier institutionnel, ou à un élève
+  // sans programme rattaché, est refusé hors vue globale.
+  if (activeSchool !== "toutes" && student.program?.school !== activeSchool) notFound();
 
   const payments = await prisma.payment.findMany({
     where: { studentId },
@@ -35,46 +50,57 @@ export default async function StudentFinancePage({
   const fee = student.program?.tuitionFee ?? 0;
   const balance = fee - paid;
 
+  const session = await getSession();
+  const canVoid = !!session && hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN"]);
+  const voidedOriginalIds = new Set(
+    payments
+      .map((p) => p.providerReference)
+      .filter((ref): ref is string => !!ref?.startsWith(VOID_PREFIX))
+      .map((ref) => ref.slice(VOID_PREFIX.length)),
+  );
+
   return (
-    <div>
+    <AdminShell>
       <BackButton fallbackHref="/admin/finance" label="Toutes les finances" />
 
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-mono text-sm text-muted">{formatCcigaId(student.id)}</p>
-          <h1 className="text-2xl font-bold text-foreground">{student.name}</h1>
-          <p className="text-sm text-muted">{student.program?.name ?? "Aucun programme associé"}</p>
-        </div>
-        <a
-          href={`/api/admin/carnet-paiement/${student.id}/pdf`}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-secondary text-xs"
-        >
-          Carnet de paiement — Voir / PDF
-        </a>
-      </div>
+      <AdminTitleBand
+        eyebrow="CCIGA — Finances étudiantes"
+        title={student.name}
+        trailing={
+          <a
+            href={`/api/admin/carnet-paiement/${student.id}/pdf`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary text-xs"
+          >
+            Carnet de paiement — Voir / PDF
+          </a>
+        }
+      />
+      <p className="mb-6 -mt-4 text-sm text-muted">
+        <span className="font-mono">{formatCcigaId(student.id)}</span> · {student.program?.name ?? "Aucun programme associé"}
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Frais" value={formatHTG(fee)} />
-            <StatCard label="Payé" value={formatHTG(paid)} />
-            <StatCard
+          <div className="grid gap-3 sm:grid-cols-3">
+            <AdminStatTile icon={ClipboardIcon} label="Frais" value={formatHTG(fee)} />
+            <AdminStatTile icon={WalletIcon} label="Payé" value={formatHTG(paid)} tone="success" />
+            <AdminStatTile
+              icon={AlertIcon}
               label="Solde"
               value={formatHTG(balance)}
-              tone={balance > 0 ? "text-red-600" : "text-emerald-600"}
+              tone={balance > 0 ? "danger" : "success"}
             />
           </div>
 
-          <div className="rounded-lg border border-border bg-surface p-6">
-            <h2 className="mb-4 font-semibold text-foreground">Historique des paiements</h2>
+          <AdminCard title="Historique des paiements" icon={ClockIcon}>
             {payments.length === 0 ? (
               <p className="text-sm text-muted">Aucun paiement enregistré.</p>
             ) : (
               <ul className="space-y-3 text-sm">
                 {payments.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+                  <li key={p.id} className="flex items-center justify-between border-b border-row-divider pb-2 last:border-0">
                     <div>
                       <p className="font-medium text-foreground">{formatHTG(p.amount)}</p>
                       {p.note && <p className="text-muted">{p.note}</p>}
@@ -96,25 +122,22 @@ export default async function StudentFinancePage({
                       >
                         Imprimer
                       </a>
+                      {canVoid &&
+                        p.amount > 0 &&
+                        !p.providerReference?.startsWith(VOID_PREFIX) &&
+                        !voidedOriginalIds.has(p.id) && (
+                          <VoidPaymentButton studentId={student.id} paymentId={p.id} />
+                        )}
                     </div>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </AdminCard>
         </div>
 
         <RecordPaymentForm studentId={student.id} />
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${tone ?? "text-foreground"}`}>{value}</p>
-    </div>
+    </AdminShell>
   );
 }
