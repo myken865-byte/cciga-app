@@ -59,3 +59,7 @@ next-env.d.ts
 # committed; kept locally outside the repo, see "CCIGA App - Sauvegardes
 # securisees" on the Desktop
 /backups
+
+# Phase C2 backfill audit-trail reports (real user ids/names) - same
+# sensitivity class as /backups, never committed
+/reports
