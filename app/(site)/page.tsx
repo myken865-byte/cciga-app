@@ -131,10 +131,22 @@ export default async function HomePage() {
 
             <div className="relative min-h-[280px] lg:min-h-0">
               <img
-                src="/campus/campus-hero.jpg"
-                alt="Campus du CCIGA"
+                src="/campus/campus-hero-universite.jpg"
+                alt="Bâtiment de l'Université CCIGA de Petit-Goâve"
                 className="absolute inset-0 h-full w-full object-cover"
               />
+              {/* Bandeau "WELCOME TO CCIGA" — mandat "Image d'accueil bâtiment
+              Université CCIGA" (2026-09-09) : dégradé bas uniquement (~38% de
+              la hauteur), jamais assez haut pour couvrir l'enseigne du
+              bâtiment ni son entrée, quel que soit le recadrage object-cover
+              (mobile étroit ou desktop large). */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] bg-gradient-to-t from-primary-dark/95 via-primary-dark/50 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
+                <p className="text-2xl font-extrabold uppercase leading-tight tracking-wide text-white [text-shadow:0_2px_10px_rgba(15,45,82,0.85)] sm:text-3xl lg:text-4xl">
+                  Welcome <span className="text-accent">to</span> CCIGA
+                </p>
+                <div className="mt-2.5 h-1 w-16 rounded-full bg-accent sm:w-20" />
+              </div>
             </div>
           </div>
         </div>
