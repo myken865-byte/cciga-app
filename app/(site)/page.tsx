@@ -42,6 +42,19 @@ const gridItems = [
 
 const unitIcons = { "ecole-classique": GraduationCapIcon, "ecole-professionnelle": GearIcon, universite: ColumnsIcon } as const;
 
+// Photos institutionnelles — mandat "Photos institutionnelles section Nos
+// trois unités" (2026-09-09) : une photo par institution, fournie par
+// l'utilisateur, pré-recadrée côté serveur (scripts/_tmp-process-unit-photos.mjs,
+// crop 4:3 ancré en haut) plutôt que confiée à object-cover en direct — les
+// trois images sources sont des compositions denses (texte, plusieurs
+// scènes) où un recadrage automatique risquerait de couper un mot ou un
+// visage au mauvais endroit.
+const unitPhotos = {
+  "ecole-classique": "/unites/ecole-classique-card.jpg",
+  "ecole-professionnelle": "/unites/ecole-professionnelle-card.jpg",
+  universite: "/unites/universite-card.jpg",
+} as const;
+
 const newsBuckets = [
   { key: "admission", label: "Admission", keyword: "admission" },
   { key: "programmes", label: "Programmes", keyword: "programme" },
@@ -172,16 +185,25 @@ export default async function HomePage() {
                   <Link
                     key={school.slug}
                     href={`/${school.slug}`}
-                    className="group flex flex-col rounded-xl border-[5px] border-accent bg-white p-6 shadow-sm transition hover:shadow-md"
+                    className="group flex flex-col overflow-hidden rounded-xl border-[5px] border-accent bg-white shadow-sm transition hover:shadow-md"
                   >
-                    <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition group-hover:bg-primary-light">
-                      <Icon className="h-6 w-6" />
-                    </span>
-                    <h3 className="mb-1.5 text-lg font-bold text-foreground">{school.name}</h3>
-                    <p className="mb-4 text-sm text-muted">{school.tagline}</p>
-                    <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary">
-                      En savoir plus <span aria-hidden>→</span>
-                    </span>
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-primary-dark">
+                      <img
+                        src={unitPhotos[school.slug]}
+                        alt={`CCIGA ${school.name}`}
+                        className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      />
+                      <span className="absolute -bottom-5 left-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg ring-4 ring-white transition group-hover:bg-primary-light">
+                        <Icon className="h-6 w-6" />
+                      </span>
+                    </div>
+                    <div className="flex flex-1 flex-col p-6 pt-8">
+                      <h3 className="mb-1.5 text-lg font-bold text-foreground">{school.name}</h3>
+                      <p className="mb-4 text-sm text-muted">{school.tagline}</p>
+                      <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary">
+                        En savoir plus <span aria-hidden>→</span>
+                      </span>
+                    </div>
                   </Link>
                 );
               })}
