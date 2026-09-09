@@ -4,6 +4,7 @@ import CreateNewsForm from "@/components/CreateNewsForm";
 import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 import BackButton from "@/components/BackButton";
 import { DocumentIcon } from "@/components/icons";
+import NewsTable from "@/components/admin/NewsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -27,33 +28,14 @@ export default async function AdminNewsPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <AdminCard title="Actualités" icon={DocumentIcon} className="overflow-hidden lg:col-span-2">
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-background text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Titre</th>
-                  <th className="px-4 py-3 font-semibold">Catégorie</th>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {news.map((item) => (
-                  <tr key={item.id} className="border-t border-row-divider">
-                    <td className="px-4 py-3 text-foreground">{item.title}</td>
-                    <td className="px-4 py-3 text-muted">{item.category}</td>
-                    <td className="px-4 py-3 text-muted">{formatDate(item.date)}</td>
-                  </tr>
-                ))}
-                {news.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-muted">
-                      Aucune actualité pour le moment.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <NewsTable
+            news={news.map((item) => ({
+              id: item.id,
+              title: item.title,
+              category: item.category,
+              dateLabel: formatDate(item.date),
+            }))}
+          />
         </AdminCard>
 
         <CreateNewsForm />

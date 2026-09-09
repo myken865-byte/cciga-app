@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { upload } from "@vercel/blob/client";
+import ListSearchBar from "@/components/admin/ListSearchBar";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 interface BadgeRow {
   id: string;
@@ -36,6 +38,11 @@ export default function BadgeManager({ badges, candidates }: { badges: BadgeRow[
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [photoBusyId, setPhotoBusyId] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const filteredBadges = useMemo(
+    () => (query.trim() ? badges.filter((b) => matchesSearch(query, b.user.name, b.badgeNumber, b.status)) : badges),
+    [badges, query],
+  );
 
   async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>, targetUserId: number) {
     const file = e.target.files?.[0];
@@ -135,8 +142,25 @@ export default function BadgeManager({ badges, candidates }: { badges: BadgeRow[
       {badges.length === 0 ? (
         <div className="empty-state">Aucun badge généré pour le moment.</div>
       ) : (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <ListSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Rechercher par nom, numéro ou statut…"
+              className="max-w-xs flex-1"
+            />
+            {query && (
+              <span className="text-xs text-muted">
+                {filteredBadges.length} / {badges.length} résultat{badges.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          {filteredBadges.length === 0 ? (
+            <p className="empty-state">Aucun résultat pour cette recherche.</p>
+          ) : (
         <ul className="space-y-2">
-          {badges.map((b) => (
+          {filteredBadges.map((b) => (
             <li key={b.id} className="card flex flex-wrap items-center justify-between gap-3 p-3.5 text-sm">
               <div className="flex items-center gap-3">
                 {b.user.photoUrl ? (
@@ -191,6 +215,8 @@ export default function BadgeManager({ badges, candidates }: { badges: BadgeRow[
             </li>
           ))}
         </ul>
+          )}
+        </>
       )}
     </div>
   );

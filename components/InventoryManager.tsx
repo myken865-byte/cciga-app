@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ListSearchBar from "@/components/admin/ListSearchBar";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 interface ItemRow {
   id: string;
@@ -38,6 +40,16 @@ export default function InventoryManager({ items }: { items: ItemRow[] }) {
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState("");
+  const filteredItems = useMemo(
+    () =>
+      query.trim()
+        ? items.filter((it) =>
+            matchesSearch(query, it.name, categoryLabels[it.category] ?? it.category, it.identifier, it.location, it.assignedTo?.name),
+          )
+        : items,
+    [items, query],
+  );
 
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
@@ -91,8 +103,25 @@ export default function InventoryManager({ items }: { items: ItemRow[] }) {
       {items.length === 0 ? (
         <div className="empty-state">Aucun article enregistré.</div>
       ) : (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <ListSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Rechercher par nom, catégorie, emplacement…"
+              className="max-w-xs flex-1"
+            />
+            {query && (
+              <span className="text-xs text-muted">
+                {filteredItems.length} / {items.length} résultat{items.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          {filteredItems.length === 0 ? (
+            <p className="empty-state">Aucun résultat pour cette recherche.</p>
+          ) : (
         <ul className="space-y-2">
-          {items.map((it) => (
+          {filteredItems.map((it) => (
             <li key={it.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">
                 <p className="font-semibold text-foreground">
@@ -118,6 +147,8 @@ export default function InventoryManager({ items }: { items: ItemRow[] }) {
             </li>
           ))}
         </ul>
+          )}
+        </>
       )}
     </div>
   );

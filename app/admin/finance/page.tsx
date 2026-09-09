@@ -2,12 +2,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { parseRoles, hasRole } from "@/lib/roles";
-import { formatCcigaId } from "@/lib/cciga-id";
-import { formatHTG } from "@/lib/currency";
 import { getActiveSchoolOrAll, schoolLabels, type SchoolKey } from "@/lib/institutionContext";
 import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 import { WalletIcon } from "@/components/icons";
 import BackButton from "@/components/BackButton";
+import FinanceTable from "@/components/admin/FinanceTable";
 
 export const dynamic = "force-dynamic";
 
@@ -76,64 +75,17 @@ export default async function AdminFinancePage({
       />
 
       <AdminCard title="Étudiants" icon={WalletIcon}>
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-background text-muted">
-            <tr>
-              <th className="px-4 py-3 font-semibold">CCIGA ID</th>
-              <th className="px-4 py-3 font-semibold">Étudiant</th>
-              <th className="px-4 py-3 font-semibold">École</th>
-              <th className="px-4 py-3 font-semibold">Programme</th>
-              <th className="px-4 py-3 font-semibold">Frais</th>
-              <th className="px-4 py-3 font-semibold">Payé</th>
-              <th className="px-4 py-3 font-semibold">Solde</th>
-              <th className="px-4 py-3 font-semibold">Carnet</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((s) => (
-              <tr key={s.id} className="border-t border-row-divider">
-                <td className="px-4 py-3 font-mono text-primary">
-                  <Link href={`/admin/finance/${s.id}`} className="hover:underline">
-                    {formatCcigaId(s.id)}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-foreground">{s.name}</td>
-                <td className="px-4 py-3 text-muted">
-                  {s.program ? schoolLabels[s.program.school as SchoolKey] ?? s.program.school : "—"}
-                </td>
-                <td className="px-4 py-3 text-muted">{s.program?.name ?? "—"}</td>
-                <td className="px-4 py-3 text-muted">{formatHTG(s.fee)}</td>
-                <td className="px-4 py-3 text-muted">{formatHTG(s.paid)}</td>
-                <td
-                  className={`px-4 py-3 font-semibold ${
-                    s.balance > 0 ? "text-red-600" : "text-emerald-600"
-                  }`}
-                >
-                  {formatHTG(s.balance)}
-                </td>
-                <td className="px-4 py-3">
-                  <a
-                    href={`/api/admin/carnet-paiement/${s.id}/pdf`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-secondary text-xs"
-                  >
-                    Voir / PDF
-                  </a>
-                </td>
-              </tr>
-            ))}
-            {students.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-muted">
-                  Aucun étudiant pour ce filtre.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+        <FinanceTable
+          students={students.map((s) => ({
+            id: s.id,
+            name: s.name,
+            paid: s.paid,
+            fee: s.fee,
+            balance: s.balance,
+            program: s.program ? { name: s.program.name, school: s.program.school } : null,
+            schoolLabel: s.program ? schoolLabels[s.program.school as SchoolKey] ?? s.program.school : null,
+          }))}
+        />
       </AdminCard>
     </AdminShell>
   );

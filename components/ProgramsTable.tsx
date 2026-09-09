@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { Program, School } from "@/lib/content";
 import { teacherModelLabels } from "@/lib/teacherModel";
 import { programTypeLabels, programStatusList, programStatusLabels, type ProgramStatus } from "@/lib/universite";
+import ListSearchBar from "@/components/admin/ListSearchBar";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 export default function ProgramsTable({
   programs,
@@ -21,6 +23,7 @@ export default function ProgramsTable({
   const [typeFilter, setTypeFilter] = useState("");
   const [facultyFilter, setFacultyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProgramStatus | "">("");
+  const [query, setQuery] = useState("");
 
   const schoolsBySlug = new Map(schools.map((s) => [s.slug, s]));
   const universiteFaculties = [...facultiesById.entries()];
@@ -30,11 +33,25 @@ export default function ProgramsTable({
     if (typeFilter && p.programType !== typeFilter) return false;
     if (facultyFilter && p.academicFacultyId !== facultyFilter) return false;
     if (statusFilter && p.programStatus !== statusFilter) return false;
+    if (query.trim()) {
+      const titulaireOrFaculty = p.titulaireId
+        ? teachersById.get(p.titulaireId)
+        : p.academicFacultyId
+          ? facultiesById.get(p.academicFacultyId)
+          : p.faculty;
+      if (!matchesSearch(query, p.name, p.level, schoolsBySlug.get(p.school)?.name, titulaireOrFaculty)) return false;
+    }
     return true;
   });
 
   return (
     <div>
+      <ListSearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Rechercher par nom, niveau, titulaire, faculté…"
+        className="mb-3 max-w-md"
+      />
       <div className="mb-3 grid gap-2 sm:grid-cols-4">
         <select className="input" value={schoolFilter} onChange={(e) => setSchoolFilter(e.target.value)}>
           <option value="">Toutes les écoles</option>

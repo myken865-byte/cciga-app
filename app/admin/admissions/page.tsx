@@ -3,16 +3,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import BackToPortalsButton from "@/components/BackToPortalsButton";
 import { getSchoolBySlug, getPrograms } from "@/lib/content";
-import {
-  admissionStatuses,
-  admissionStatusLabels,
-  admissionStatusStyles,
-  isAdmissionStatus,
-} from "@/lib/admission-status";
+import { admissionStatuses, admissionStatusLabels, isAdmissionStatus } from "@/lib/admission-status";
 import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 import BackButton from "@/components/BackButton";
 import { ClipboardIcon } from "@/components/icons";
 import { getActiveSchoolOrAll } from "@/lib/institutionContext";
+import AdmissionsTable from "@/components/admin/AdmissionsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +50,12 @@ export default async function AdmissionsListPage({
     getPrograms(),
   ]);
   const programsBySlug = new Map(programs.map((p) => [p.slug, p]));
+  const rows = submissions.map((s) => {
+    const school = getSchoolBySlug(s.school);
+    const program = programsBySlug.get(s.programSlug);
+    const statusKey = isAdmissionStatus(s.status) ? s.status : ("nouveau" as const);
+    return { ...s, schoolName: school?.name ?? s.school, programName: program?.name ?? s.programSlug, statusKey };
+  });
 
   return (
     <AdminShell>
@@ -88,59 +90,18 @@ export default async function AdmissionsListPage({
       </div>
 
       <AdminCard icon={ClipboardIcon} title="Dossiers de candidature">
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-background text-muted">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Référence</th>
-              <th className="px-4 py-3 font-semibold">Candidat</th>
-              <th className="px-4 py-3 font-semibold">École / Programme</th>
-              <th className="px-4 py-3 font-semibold">Statut</th>
-              <th className="px-4 py-3 font-semibold">Soumis le</th>
-            </tr>
-          </thead>
-          <tbody>
-            {submissions.map((s) => {
-              const school = getSchoolBySlug(s.school);
-              const program = programsBySlug.get(s.programSlug);
-              const statusKey = isAdmissionStatus(s.status) ? s.status : "nouveau";
-              return (
-                <tr key={s.id} className="border-t border-row-divider">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/admissions/${s.id}`}
-                      className="font-mono font-medium text-primary hover:underline"
-                    >
-                      {s.reference}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-foreground">
-                    {s.firstName} {s.lastName}
-                  </td>
-                  <td className="px-4 py-3 text-muted">
-                    {school?.name ?? s.school} — {program?.name ?? s.programSlug}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${admissionStatusStyles[statusKey]}`}
-                    >
-                      {admissionStatusLabels[statusKey]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted">{formatDate(s.submittedAt)}</td>
-                </tr>
-              );
-            })}
-            {submissions.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted">
-                  Aucune candidature pour ce filtre.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+        <AdmissionsTable
+          rows={rows.map((s) => ({
+            id: s.id,
+            reference: s.reference,
+            firstName: s.firstName,
+            lastName: s.lastName,
+            schoolName: s.schoolName,
+            programName: s.programName,
+            statusKey: s.statusKey,
+            submittedAtLabel: formatDate(s.submittedAt),
+          }))}
+        />
       </AdminCard>
     </AdminShell>
   );

@@ -5,6 +5,7 @@ import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium
 import { AlertIcon } from "@/components/icons";
 import BackButton from "@/components/BackButton";
 import { getActiveSchool, schoolLabels } from "@/lib/institutionContext";
+import InfirmaryVisitList from "@/components/admin/InfirmaryVisitList";
 
 export const dynamic = "force-dynamic";
 
@@ -51,31 +52,17 @@ export default async function AdminInfirmeriePage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <AdminCard title="Passages enregistrés" icon={AlertIcon} className="lg:col-span-2">
-          <div className="space-y-3">
-            {visits.map((v) => (
-              <div key={v.id} className="cc-tile p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-foreground">{v.student.name}</p>
-                    <p className="text-sm text-muted">{v.category}</p>
-                  </div>
-                  <span className="shrink-0 text-xs text-muted">{formatDate(v.visitDate)}</span>
-                </div>
-                {v.observations && (
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{v.observations}</p>
-                )}
-                <div className="mt-2 flex items-center gap-3 text-xs text-muted">
-                  <span>{v.contactedGuardian ? "Responsable/parent contacté" : "Responsable/parent non contacté"}</span>
-                  <span>· Enregistré par {v.recordedBy.name}</span>
-                </div>
-              </div>
-            ))}
-            {visits.length === 0 && (
-              <p className="rounded-lg border border-border bg-surface p-8 text-center text-sm text-muted">
-                Aucun passage enregistré pour le moment.
-              </p>
-            )}
-          </div>
+          <InfirmaryVisitList
+            visits={visits.map((v) => ({
+              id: v.id,
+              category: v.category,
+              observations: v.observations,
+              contactedGuardian: v.contactedGuardian,
+              visitDateLabel: formatDate(v.visitDate),
+              student: { name: v.student.name },
+              recordedBy: { name: v.recordedBy.name },
+            }))}
+          />
         </AdminCard>
 
         <InfirmaryVisitForm students={students} />

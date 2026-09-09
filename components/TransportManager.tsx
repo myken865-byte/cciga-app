@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ListSearchBar from "@/components/admin/ListSearchBar";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 interface VehicleRow {
   id: string;
@@ -22,6 +24,14 @@ export default function TransportManager({ vehicles, students }: { vehicles: Veh
   const [busy, setBusy] = useState(false);
   const [assignFor, setAssignFor] = useState<string | null>(null);
   const [studentId, setStudentId] = useState(students[0]?.id ?? "");
+  const [query, setQuery] = useState("");
+  const filteredVehicles = useMemo(
+    () =>
+      query.trim()
+        ? vehicles.filter((v) => matchesSearch(query, v.label, v.plate, v.driverName, ...v.passengers.map((p) => p.student.name)))
+        : vehicles,
+    [vehicles, query],
+  );
 
   async function addVehicle(e: React.FormEvent) {
     e.preventDefault();
@@ -70,8 +80,25 @@ export default function TransportManager({ vehicles, students }: { vehicles: Veh
       {vehicles.length === 0 ? (
         <div className="empty-state">Aucun véhicule ou circuit enregistré.</div>
       ) : (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <ListSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Rechercher par véhicule, chauffeur, élève…"
+              className="max-w-xs flex-1"
+            />
+            {query && (
+              <span className="text-xs text-muted">
+                {filteredVehicles.length} / {vehicles.length} résultat{vehicles.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          {filteredVehicles.length === 0 ? (
+            <p className="empty-state">Aucun résultat pour cette recherche.</p>
+          ) : (
         <ul className="space-y-2">
-          {vehicles.map((v) => (
+          {filteredVehicles.map((v) => (
             <li key={v.id} className="card p-4">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -100,6 +127,8 @@ export default function TransportManager({ vehicles, students }: { vehicles: Veh
             </li>
           ))}
         </ul>
+          )}
+        </>
       )}
     </div>
   );

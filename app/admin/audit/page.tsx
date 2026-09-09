@@ -3,6 +3,7 @@ import { requireSuperAdminSession } from "@/lib/auth";
 import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 import { ClipboardIcon } from "@/components/icons";
 import BackButton from "@/components/BackButton";
+import AuditLogTable from "@/components/admin/AuditLogTable";
 
 export const dynamic = "force-dynamic";
 
@@ -46,37 +47,16 @@ export default async function AdminAuditPage() {
       <AdminTitleBand eyebrow="CCIGA — Administration" title="Journal d'audit" />
 
       <AdminCard title={`Dernières actions (${logs.length}${logs.length === MAX_ENTRIES ? "+" : ""})`} icon={ClipboardIcon}>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-background text-muted">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Date</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold">Identifiant</th>
-                <th className="px-4 py-3 font-semibold">Action</th>
-                <th className="px-4 py-3 font-semibold">Par</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log.id} className="border-t border-row-divider">
-                  <td className="px-4 py-3 whitespace-nowrap text-muted">{formatDateTime(log.createdAt)}</td>
-                  <td className="px-4 py-3 text-foreground">{log.entityType}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted">{log.entityId}</td>
-                  <td className="px-4 py-3 text-muted">{log.action}</td>
-                  <td className="px-4 py-3 text-muted">{log.actor?.name ?? "—"}</td>
-                </tr>
-              ))}
-              {logs.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
-                    Aucune action enregistrée pour le moment.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AuditLogTable
+          logs={logs.map((log) => ({
+            id: log.id,
+            createdAt: formatDateTime(log.createdAt),
+            entityType: log.entityType,
+            entityId: log.entityId,
+            action: log.action,
+            actorName: log.actor?.name ?? null,
+          }))}
+        />
       </AdminCard>
     </AdminShell>
   );

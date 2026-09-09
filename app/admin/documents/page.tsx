@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getPrograms } from "@/lib/content";
 import { computePeriodReadiness } from "@/lib/documents";
@@ -7,6 +6,7 @@ import PreviewDocumentButton from "@/components/PreviewDocumentButton";
 import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 import { ClipboardIcon, DocumentIcon } from "@/components/icons";
 import BackButton from "@/components/BackButton";
+import RecentDocumentsTable from "@/components/admin/RecentDocumentsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -125,49 +125,18 @@ export default async function AdminDocumentsPage({
       )}
 
       <AdminCard title="Documents générés récemment" icon={DocumentIcon}>
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-background text-muted">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Étudiant</th>
-              <th className="px-4 py-3 font-semibold">Programme</th>
-              <th className="px-4 py-3 font-semibold">Type</th>
-              <th className="px-4 py-3 font-semibold">Version</th>
-              <th className="px-4 py-3 font-semibold">Publié le</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentDocs.map((doc) => (
-              <tr key={doc.id} className="border-t border-row-divider">
-                <td className="px-4 py-3 text-foreground">{doc.student.name}</td>
-                <td className="px-4 py-3 text-muted">{doc.program.name}</td>
-                <td className="px-4 py-3 text-muted">
-                  {doc.type === "releve_semestre" ? "Relevé" : "Bulletin"}
-                </td>
-                <td className="px-4 py-3 text-muted">v{doc.version}</td>
-                <td className="px-4 py-3 text-muted">
-                  {doc.publishedAt
-                    ? doc.publishedAt.toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })
-                    : "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <Link href={`/admin/documents/${doc.id}`} className="text-primary hover:underline">
-                    Détail →
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {recentDocs.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-muted">
-                  Aucun document généré pour le moment.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+        <RecentDocumentsTable
+          docs={recentDocs.map((doc) => ({
+            id: doc.id,
+            version: doc.version,
+            typeLabel: doc.type === "releve_semestre" ? "Relevé" : "Bulletin",
+            publishedAtLabel: doc.publishedAt
+              ? doc.publishedAt.toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })
+              : "—",
+            student: { name: doc.student.name },
+            program: { name: doc.program.name },
+          }))}
+        />
       </AdminCard>
     </AdminShell>
   );

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ListSearchBar from "@/components/admin/ListSearchBar";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 interface LoanRow {
   id: string;
@@ -29,6 +31,11 @@ export default function LibraryManager({ books, users }: { books: BookRow[]; use
   const [loanFor, setLoanFor] = useState<string | null>(null);
   const [borrowerId, setBorrowerId] = useState(users[0]?.id ?? "");
   const [dueDate, setDueDate] = useState("");
+  const [query, setQuery] = useState("");
+  const filteredBooks = useMemo(
+    () => (query.trim() ? books.filter((b) => matchesSearch(query, b.title, b.author, b.category)) : books),
+    [books, query],
+  );
 
   async function addBook(e: React.FormEvent) {
     e.preventDefault();
@@ -97,8 +104,25 @@ export default function LibraryManager({ books, users }: { books: BookRow[]; use
       {books.length === 0 ? (
         <div className="empty-state">Aucun ouvrage dans le catalogue.</div>
       ) : (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <ListSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Rechercher par titre, auteur, catégorie…"
+              className="max-w-xs flex-1"
+            />
+            {query && (
+              <span className="text-xs text-muted">
+                {filteredBooks.length} / {books.length} résultat{books.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          {filteredBooks.length === 0 ? (
+            <p className="empty-state">Aucun résultat pour cette recherche.</p>
+          ) : (
         <ul className="space-y-2">
-          {books.map((b) => {
+          {filteredBooks.map((b) => {
             const activeLoans = b.loans.filter((l) => !l.returnedAt);
             const available = b.totalCopies - activeLoans.length;
             return (
@@ -141,6 +165,8 @@ export default function LibraryManager({ books, users }: { books: BookRow[]; use
             );
           })}
         </ul>
+          )}
+        </>
       )}
     </div>
   );

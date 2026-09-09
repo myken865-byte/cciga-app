@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ListSearchBar from "@/components/admin/ListSearchBar";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 interface MenuRow {
   id: string;
@@ -20,6 +22,14 @@ export default function CanteenManager({ menus, students }: { menus: MenuRow[]; 
   const [busy, setBusy] = useState(false);
   const [reserveFor, setReserveFor] = useState<string | null>(null);
   const [studentId, setStudentId] = useState(students[0]?.id ?? "");
+  const [query, setQuery] = useState("");
+  const filteredMenus = useMemo(
+    () =>
+      query.trim()
+        ? menus.filter((m) => matchesSearch(query, m.label, m.date, m.description, ...m.reservations.map((r) => r.student.name)))
+        : menus,
+    [menus, query],
+  );
 
   async function addMenu(e: React.FormEvent) {
     e.preventDefault();
@@ -67,8 +77,25 @@ export default function CanteenManager({ menus, students }: { menus: MenuRow[]; 
       {menus.length === 0 ? (
         <div className="empty-state">Aucun menu programmé.</div>
       ) : (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <ListSearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Rechercher par menu, date, élève…"
+              className="max-w-xs flex-1"
+            />
+            {query && (
+              <span className="text-xs text-muted">
+                {filteredMenus.length} / {menus.length} résultat{menus.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          {filteredMenus.length === 0 ? (
+            <p className="empty-state">Aucun résultat pour cette recherche.</p>
+          ) : (
         <ul className="space-y-2">
-          {menus.map((m) => (
+          {filteredMenus.map((m) => (
             <li key={m.id} className="card p-4">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -90,6 +117,8 @@ export default function CanteenManager({ menus, students }: { menus: MenuRow[]; 
             </li>
           ))}
         </ul>
+          )}
+        </>
       )}
     </div>
   );

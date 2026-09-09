@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 import { ChatIcon } from "@/components/icons";
 import BackButton from "@/components/BackButton";
+import MessagesTable from "@/components/admin/MessagesTable";
 
 export const dynamic = "force-dynamic";
 
@@ -66,47 +67,17 @@ export default async function AdminMessagesPage({
       />
 
       <AdminCard title="Boîte de réception" icon={ChatIcon}>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-background text-muted">
-              <tr>
-                <th className="px-4 py-3 font-semibold">De</th>
-                <th className="px-4 py-3 font-semibold">Sujet</th>
-                <th className="px-4 py-3 font-semibold">Statut</th>
-                <th className="px-4 py-3 font-semibold">Reçu le</th>
-              </tr>
-            </thead>
-            <tbody>
-              {messages.map((m) => (
-                <tr key={m.id} className="border-t border-row-divider">
-                  <td className="px-4 py-3 text-foreground">{m.name}</td>
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/messages/${m.id}`} className="text-primary hover:underline">
-                      {m.subject}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        m.status === "traite" ? "bg-emerald-100 text-emerald-700" : "bg-primary/10 text-primary"
-                      }`}
-                    >
-                      {m.status === "traite" ? "Traité" : "Nouveau"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted">{formatDate(m.createdAt)}</td>
-                </tr>
-              ))}
-              {messages.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted">
-                    Aucun message pour ce filtre.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <MessagesTable
+          messages={messages.map((m) => ({
+            id: m.id,
+            name: m.name,
+            subject: m.subject,
+            email: m.email,
+            body: m.body,
+            status: m.status,
+            createdAtLabel: formatDate(m.createdAt),
+          }))}
+        />
       </AdminCard>
     </AdminShell>
   );

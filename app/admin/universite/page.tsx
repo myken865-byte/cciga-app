@@ -8,6 +8,7 @@ import AssignDoyenForm from "@/components/AssignDoyenForm";
 import { AdminShell, AdminTitleBand, AdminCard } from "@/components/AdminPremium";
 import BackButton from "@/components/BackButton";
 import { BookIcon, CalendarIcon, ClipboardIcon } from "@/components/icons";
+import AuditLogTable from "@/components/admin/AuditLogTable";
 
 export const dynamic = "force-dynamic";
 
@@ -89,34 +90,18 @@ export default async function AdminUniversitePage() {
         </AdminCard>
 
         <AdminCard title="Journal d'audit (50 dernières entrées)" icon={ClipboardIcon}>
-          <div className="max-h-[600px] overflow-y-auto overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-background text-muted">
-                <tr>
-                  <th className="px-3 py-2 font-semibold">Date</th>
-                  <th className="px-3 py-2 font-semibold">Type</th>
-                  <th className="px-3 py-2 font-semibold">Action</th>
-                  <th className="px-3 py-2 font-semibold">Par</th>
-                </tr>
-              </thead>
-              <tbody>
-                {auditLogs.map((log) => (
-                  <tr key={log.id} className="border-t border-row-divider">
-                    <td className="px-3 py-2 text-muted">{formatDateTime(log.createdAt)}</td>
-                    <td className="px-3 py-2 text-foreground">{log.entityType}</td>
-                    <td className="px-3 py-2 text-muted">{log.action}</td>
-                    <td className="px-3 py-2 text-muted">{log.actor?.name ?? "—"}</td>
-                  </tr>
-                ))}
-                {auditLogs.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-muted">
-                      Aucune entrée pour le moment.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="max-h-[600px] overflow-y-auto">
+            <AuditLogTable
+              showEntityId={false}
+              logs={auditLogs.map((log) => ({
+                id: log.id,
+                createdAt: formatDateTime(log.createdAt),
+                entityType: log.entityType,
+                entityId: log.entityId,
+                action: log.action,
+                actorName: log.actor?.name ?? null,
+              }))}
+            />
           </div>
         </AdminCard>
       </div>
