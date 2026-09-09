@@ -7,7 +7,18 @@ import type { Program } from "@/lib/content";
  * kept separate from the shared ProgramCard so other pages that reuse
  * ProgramCard (ecole-classique/[niveau]) stay visually untouched.
  */
+
+// Mandat "Jasmin Kindergarten" (2026-09-09) : appellations florales
+// affichées en plus du nom de niveau, jamais à sa place — display-only,
+// aucune donnée en base modifiée.
+const jasminKindergartenNames: Record<string, string> = {
+  "prescolaire-petite-section": "Fleur de Choux",
+  "prescolaire-moyenne-section": "Fleur de Lys",
+  "prescolaire-grande-section": "Fleur Jasmin",
+};
+
 export default function ProgramInstitutionalCard({ program }: { program: Program }) {
+  const flowerName = jasminKindergartenNames[program.slug];
   return (
     <Link
       href={`/programmes/${program.slug}`}
@@ -18,6 +29,7 @@ export default function ProgramInstitutionalCard({ program }: { program: Program
           {program.level}
         </span>
         <h3 className="mb-1 font-semibold text-foreground">{program.name}</h3>
+        {flowerName && <p className="mb-1 text-sm font-medium text-accent">{flowerName}</p>}
         <p className="mb-1 text-sm text-muted">{program.faculty}</p>
         <p className="mb-3 text-sm text-muted">{program.description}</p>
         <span className="mt-auto text-xs font-medium text-primary">
