@@ -27,7 +27,7 @@ export const socialLinks: SocialLink[] = [
   { key: "tiktok", name: "TikTok", description: "Voir nos contenus", url: null },
   { key: "instagram", name: "Instagram", description: "Découvrir nos publications", url: null },
   { key: "youtube", name: "YouTube", description: "Regarder nos vidéos", url: null },
-  { key: "autres", name: "Autres liens officiels", description: "Accéder aux autres ressources", url: null },
+  { key: "autres", name: "Site Officiel", description: "Visiter universitecciga.com", url: "https://www.universitecciga.com" },
 ];
 
 /** Only ever open a link that is a real, well-formed https:// URL — never http, never a placeholder. */
