@@ -88,7 +88,7 @@ export default async function ProgrammesPage() {
                     </h3>
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {items.map((program) => (
-                        <ProgramInstitutionalCard key={program.slug} program={program} />
+                        <ProgramInstitutionalCard key={program.slug} program={program} showLevelBadge={false} />
                       ))}
                     </div>
                   </div>
