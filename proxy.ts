@@ -45,6 +45,11 @@ const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
   { prefix: "/admin/fiches-inscription", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/inscriptions-ecole-classique", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/finance", roles: SECRETARIAT_LEVEL },
+  // Dossier élève/étudiant consolidé (mandat "Dossier élève / étudiant
+  // consolidé", 2026-09-10) — même niveau d'accès que les fiches
+  // d'inscription et la finance qu'il agrège, pour que le secrétariat qui
+  // valide une inscription puisse ouvrir le dossier qui en découle.
+  { prefix: "/admin/dossier", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/audit", roles: SUPER_ADMIN_ONLY },
   // Every service-routed role must reach the guichet list — the page itself
   // narrows further to just the services each role actually handles.

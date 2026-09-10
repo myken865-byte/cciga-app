@@ -75,6 +75,9 @@ export default async function AdminUserDetailPage({
             >
               Carnet de paiement — Voir / PDF
             </a>
+            <Link href={`/admin/dossier/${user.id}`} className="btn-primary mb-4 ml-2 inline-block text-sm">
+              Voir le dossier
+            </Link>
           </>
         )}
         <EditUserForm

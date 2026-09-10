@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { hasAnyRole, parseRoles, roleLabels } from "@/lib/roles";
+import { hasAnyRole, hasRole, parseRoles, roleLabels } from "@/lib/roles";
 import { formatCcigaId } from "@/lib/cciga-id";
 import { getActiveSchoolOrAll, schoolLabels, type SchoolKey } from "@/lib/institutionContext";
 import { isUserInSchoolScope } from "@/lib/institutionScope";
@@ -118,6 +118,7 @@ export default async function AdminRecherchePage({
                       <th className="px-4 py-3 font-semibold">Rôles</th>
                       <th className="px-4 py-3 font-semibold">École</th>
                       <th className="px-4 py-3 font-semibold">Programme</th>
+                      <th className="px-4 py-3 font-semibold">Dossier</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -146,6 +147,15 @@ export default async function AdminRecherchePage({
                           {user.program ? schoolLabels[user.program.school as SchoolKey] ?? user.program.school : "—"}
                         </td>
                         <td className="px-4 py-3 text-muted">{user.program?.name ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          {hasRole(parseRoles(user.roles), "STUDENT") ? (
+                            <Link href={`/admin/dossier/${user.id}`} className="text-primary hover:underline">
+                              Voir le dossier
+                            </Link>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

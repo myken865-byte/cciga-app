@@ -597,6 +597,11 @@ export default function EnrollmentFormEditor({
           Badge à finaliser — information manquante : liez cette fiche à un dossier élève (ci-dessus) pour générer le badge automatiquement.
         </p>
       )}
+      {statusKey === "validee" && f.studentUserId && (
+        <a href={`/admin/dossier/${f.studentUserId}`} className="btn-primary mt-3 inline-block text-sm">
+          Voir le dossier
+        </a>
+      )}
     </div>
   );
 }
