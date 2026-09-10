@@ -1,0 +1,123 @@
+{
+  "programId": "jasmin-kindergarten-english-demo",
+  "niveau": "prescolaire",
+  "unitId": "colors-around-me",
+  "unitTitle": "Colors Around Me",
+  "version": "1.0.0-incomplete-demo",
+  "langue": "en",
+  "publishedAt": "2026-09-09T00:00:00.000Z",
+  "minCompatibility": "1.0.0",
+  "status": "demo",
+  "totalSizeBytes": 49550,
+  "vocabulary": [
+    {
+      "id": "red",
+      "word": "Red",
+      "image": "images/red.svg",
+      "audio": "audio/red.wav"
+    },
+    {
+      "id": "blue",
+      "word": "Blue",
+      "image": "images/blue.svg",
+      "audio": "audio/blue.wav"
+    },
+    {
+      "id": "yellow",
+      "word": "Yellow",
+      "image": "images/yellow.svg",
+      "audio": "audio/yellow.wav"
+    },
+    {
+      "id": "green",
+      "word": "Green",
+      "image": "images/green.svg",
+      "audio": "audio/green.wav"
+    },
+    {
+      "id": "white",
+      "word": "White",
+      "image": "images/white.svg",
+      "audio": "audio/white.wav"
+    },
+    {
+      "id": "black",
+      "word": "Black",
+      "image": "images/black.svg",
+      "audio": "audio/black.wav"
+    }
+  ],
+  "resources": [
+    {
+      "path": "images/red.svg",
+      "type": "image/svg+xml",
+      "sizeBytes": 207,
+      "checksum": "sha256:1b5b333e47a720869de8dfbc7c65750554f8a85f81150d7143b36bc586df68e9"
+    },
+    {
+      "path": "images/blue.svg",
+      "type": "image/svg+xml",
+      "sizeBytes": 208,
+      "checksum": "sha256:e2a3d53ae19025d408172af91539f3d163e3f0c0bbaaa9ccb9b1b7e5ce4899f7"
+    },
+    {
+      "path": "audio/blue.wav",
+      "type": "audio/wav",
+      "sizeBytes": 8044,
+      "checksum": "sha256:469b279ce2723d05a5be07e30f7df25333d4d70b25ad88a20e5ca25e0510e5f1"
+    },
+    {
+      "path": "images/yellow.svg",
+      "type": "image/svg+xml",
+      "sizeBytes": 210,
+      "checksum": "sha256:8f0fc4c59aaf968a9f4f92da2a29f621e693c687840592664bb218a4ed21b737"
+    },
+    {
+      "path": "audio/yellow.wav",
+      "type": "audio/wav",
+      "sizeBytes": 8044,
+      "checksum": "sha256:a5cd01c8f0425a561a0815d647bd3751a2dd367de1f2745241bac30052a01c96"
+    },
+    {
+      "path": "images/green.svg",
+      "type": "image/svg+xml",
+      "sizeBytes": 209,
+      "checksum": "sha256:f26cf43cd49d35581128727c5b37a6326c168a148ef44d56c9c2358a47d5d6db"
+    },
+    {
+      "path": "audio/green.wav",
+      "type": "audio/wav",
+      "sizeBytes": 8044,
+      "checksum": "sha256:10e8c291bd43e80516ff3645c0de47f812378425ece2b2ba05f987ae31aeddcb"
+    },
+    {
+      "path": "images/white.svg",
+      "type": "image/svg+xml",
+      "sizeBytes": 243,
+      "checksum": "sha256:c10c001ad580925c079bbde7dd9efc79742a498aeb56986ebc0f7ccb6b12ec9d"
+    },
+    {
+      "path": "audio/white.wav",
+      "type": "audio/wav",
+      "sizeBytes": 8044,
+      "checksum": "sha256:5defd77a059b794ce57538ee6891205094418dcae6d85e6154eb87a615349024"
+    },
+    {
+      "path": "images/black.svg",
+      "type": "image/svg+xml",
+      "sizeBytes": 209,
+      "checksum": "sha256:92f7ed23ee0233dcab5d2cd44ec1e65e081ef5f5a0f994607fd59a7f4ed80074"
+    },
+    {
+      "path": "audio/black.wav",
+      "type": "audio/wav",
+      "sizeBytes": 8044,
+      "checksum": "sha256:e313308fae9ddee2386528926c7124bbfb5aa2798ed0bb08fad7830cfc46f07b"
+    }
+  ],
+  "activities": [
+    "recognition",
+    "matching",
+    "mini-assessment"
+  ]
+}

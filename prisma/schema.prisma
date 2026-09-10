@@ -421,6 +421,7 @@ model Program {
   enrollmentSnapshots EnrollmentSnapshot[]
   enrollmentForms     EnrollmentForm[]
   classicEnrollmentForms ClassicEnrollmentForm[]
+  jasminLearningUnits    LearningUnit[]
 }
 
 model Payment {
@@ -1084,4 +1085,119 @@ model InventoryItem {
   updatedAt    DateTime @updatedAt
 
   @@index([school])
+}
+
+// ---------------------------------------------------------------------------
+// Jasmine Kindergarten English Program — Phase 2 (2026-09-09), socle PREPROD.
+// Module pédagogique isolé, feature-flaggé (voir lib/labFeatureFlags.ts),
+// jamais activé publiquement. Réutilise Program pour les niveaux Petite /
+// Moyenne / Grande Section (niveau="prescolaire", school="ecole-classique")
+// — aucun nouveau champ school/institution ici, Program porte déjà cette
+// information. studentId reste un entier simple, SANS relation Prisma vers
+// User : ce module ne doit jamais faire apparaître un compte fictif/démo
+// dans les listes d'élèves de l'administration (Finance, Personnel, etc.),
+// contrairement à un précédent incident de données de test non nettoyées
+// sur ce projet. La validation de l'élève se fait au niveau applicatif
+// (app/api/lab/jasmin-sync/route.ts), pas au niveau de la base.
+// ---------------------------------------------------------------------------
+
+model LearningUnit {
+  id        String   @id @default(cuid())
+  programId String
+  program   Program  @relation(fields: [programId], references: [id])
+  slug      String   @unique
+  title     String
+  order     Int      @default(1)
+  status    String   @default("brouillon") // brouillon | publie | archive
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activities       Activity[]
+  mediaAssets      MediaAsset[]
+  manifests        OfflinePackageManifest[]
+  activityAttempts ActivityAttempt[]
+  childProgress    ChildProgress[]
+
+  @@index([programId])
+  @@index([programId, status])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  unitId    String
+  unit      LearningUnit @relation(fields: [unitId], references: [id])
+  slug      String
+  type      String // recognition | matching | mini_assessment (ensemble restreint Phase 2)
+  title     String
+  order     Int      @default(1)
+  config    String   @default("{}") // JSON opaque — mêmes conventions que QuizQuestion.options
+  createdAt DateTime @default(now())
+
+  attempts      ActivityAttempt[]
+  childProgress ChildProgress[]
+
+  @@unique([unitId, slug])
+  @@index([unitId])
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  unitId    String
+  unit      LearningUnit @relation(fields: [unitId], references: [id])
+  path      String // chemin relatif dans le paquet, ex. "images/red.svg"
+  type      String // type MIME
+  sizeBytes Int
+  checksum  String // "sha256:<64 hex>"
+  createdAt DateTime @default(now())
+
+  @@unique([unitId, path])
+  @@index([unitId])
+}
+
+model OfflinePackageManifest {
+  id               String    @id @default(cuid())
+  unitId           String
+  unit             LearningUnit @relation(fields: [unitId], references: [id])
+  version          String
+  status           String    @default("brouillon") // brouillon | publie | archive
+  minCompatibility String
+  totalSizeBytes   Int
+  publishedAt      DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@unique([unitId, version])
+  @@index([unitId])
+}
+
+/** File de synchronisation persistante — remplace le Map en mémoire du prototype Phase 1. */
+model ActivityAttempt {
+  id              String   @id @default(cuid())
+  idempotencyKey  String   @unique
+  studentId       Int // pas de relation Prisma vers User — voir note de module ci-dessus
+  unitId          String
+  unit            LearningUnit @relation(fields: [unitId], references: [id])
+  activityId      String
+  activity        Activity @relation(fields: [activityId], references: [id])
+  contentVersion  String
+  outcome         String // completed | to_review
+  clientLocalDate DateTime
+  receivedAt      DateTime @default(now())
+
+  @@index([studentId, unitId])
+  @@index([activityId])
+}
+
+/** Vue agrégée courante (dernier état connu) — recalculable à partir d'ActivityAttempt. */
+model ChildProgress {
+  id         String   @id @default(cuid())
+  studentId  Int
+  unitId     String
+  unit       LearningUnit @relation(fields: [unitId], references: [id])
+  activityId String
+  activity   Activity @relation(fields: [activityId], references: [id])
+  outcome    String
+  updatedAt  DateTime @updatedAt
+
+  @@unique([studentId, activityId])
+  @@index([studentId, unitId])
 }

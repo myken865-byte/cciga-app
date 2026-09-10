@@ -1,5 +1,7 @@
 import Link from "next/link";
 import SocialLinksSection from "@/components/SocialLinksSection";
+import { isJasminKindergartenModuleEnabled } from "@/lib/labFeatureFlags";
+import JasminLabFooterLink from "@/components/lab/JasminLabFooterLink";
 
 const footerColumns = [
   {
@@ -80,6 +82,20 @@ export default function Footer() {
           Politique de confidentialité
         </Link>
       </div>
+
+      {/* Point d'entrée TEMPORAIRE — mandat "Phase 3.1 — validation matérielle
+      assistée" (2026-09-09). Uniquement visible quand le feature flag Jasmine
+      Kindergarten est actif (jamais en Production, jamais avec le flag
+      désactivé) — permet d'atteindre /laboratoire-jasmin depuis la WebView
+      de l'app native installée, qui n'a pas de barre d'adresse. À supprimer
+      après la validation matérielle Android/Electron.
+      Correction (2026-09-10) : le bouton flottant "Ask CCIGA AI" (fixed
+      bottom-5 right-5, voir AIAssistantWidget.tsx) chevauchait ce lien une
+      fois la page défilée tout en bas — appuis interceptés par le bouton IA
+      au lieu du lien. `pb-24` (au lieu de `py-2`) + un espaceur dédié
+      garantissent que ce lien reste au-dessus de la zone du bouton flottant,
+      quelle que soit la taille d'écran. */}
+      {isJasminKindergartenModuleEnabled() && <JasminLabFooterLink />}
     </footer>
   );
 }

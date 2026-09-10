@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CCIGA App</title>
+<!--
+  Shell local embarqué — mandat "shell local / cold start offline"
+  (2026-09-10). Chargé nativement en premier par Capacitor (voir
+  capacitor.config.ts : plus de server.url, webDir sert ce fichier
+  directement depuis l'APK, sans réseau). 100% statique, aucune donnée
+  sensible, aucun appel API — se contente de détecter la connexion puis de
+  naviguer vers REMOTE_ORIGIN quand elle est disponible. Reste affiché,
+  fonctionnel, hors-ligne sinon.
+-->
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0f2d52;
+    color: #ffffff;
+    font-family: -apple-system, Roboto, "Segoe UI", Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card {
+    max-width: 380px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 20px auto;
+  }
+  h1 {
+    font-size: 19px;
+    margin: 0 0 8px 0;
+  }
+  p {
+    font-size: 14px;
+    color: #c7d0de;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+  }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 20px auto;
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #c99a2e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  button, a.button {
+    display: inline-block;
+    background: #c99a2e;
+    color: #0f2d52;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    margin: 6px;
+  }
+  a.link-secondary {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #c7d0de;
+    text-decoration: underline;
+  }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img class="logo" src="branding/Logo_CCIGA_General.png" alt="Logo CCIGA" />
+
+    <div id="checking">
+      <div class="spinner"></div>
+      <p>Connexion à CCIGA App…</p>
+    </div>
+
+    <div id="offline" hidden>
+      <h1>Pas de connexion Internet</h1>
+      <p>
+        CCIGA App a besoin d'une connexion Internet pour afficher la plupart
+        des contenus. Vérifiez votre connexion Wi-Fi ou mobile, puis
+        réessayez.
+      </p>
+      <button id="retry" type="button">Réessayer</button>
+      <br />
+      <a id="jasmin-link" class="link-secondary" href="#">
+        Ouvrir Jasmine Lab (si déjà téléchargé)
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // TEMPORAIRE (comme capacitor.config.ts) : cette valeur pointe vers
+    // DEVTEST/PREPROD. À revenir à 'https://cciga-app.vercel.app' dès que
+    // Production est remise à jour — voir docs/ANDROID_RELEASE_CONFIG.md.
+    var REMOTE_ORIGIN = "https://cciga-app-devtest.vercel.app";
+    var PROBE_TIMEOUT_MS = 3000;
+    var navigatedAway = false;
+
+    function goRemote() {
+      if (navigatedAway) return;
+      navigatedAway = true;
+      window.location.replace(REMOTE_ORIGIN + "/");
+    }
+
+    function showOffline() {
+      document.getElementById("checking").hidden = true;
+      document.getElementById("offline").hidden = false;
+    }
+
+    function showChecking() {
+      document.getElementById("offline").hidden = true;
+      document.getElementById("checking").hidden = false;
+    }
+
+    function probeAndNavigate() {
+      if (!navigator.onLine) {
+        showOffline();
+        return;
+      }
+      showChecking();
+      var controller = new AbortController();
+      var timeout = setTimeout(function () {
+        controller.abort();
+      }, PROBE_TIMEOUT_MS);
+
+      fetch(REMOTE_ORIGIN + "/", {
+        mode: "no-cors",
+        cache: "no-store",
+        signal: controller.signal,
+      })
+        .then(function () {
+          clearTimeout(timeout);
+          goRemote();
+        })
+        .catch(function () {
+          clearTimeout(timeout);
+          showOffline();
+        });
+    }
+
+    document.getElementById("retry").addEventListener("click", probeAndNavigate);
+    document.getElementById("jasmin-link").addEventListener("click", function (event) {
+      event.preventDefault();
+      if (navigatedAway) return;
+      navigatedAway = true;
+      window.location.href = REMOTE_ORIGIN + "/laboratoire-jasmin";
+    });
+
+    probeAndNavigate();
+  </script>
+</body>
+</html>
