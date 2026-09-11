@@ -1,30 +1,36 @@
-import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/db";
 import { requireSecretariatSession } from "@/lib/auth";
-import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
-import { schoolToSector } from "@/lib/branding";
 import { formatClassicEnrollmentFormReference } from "@/lib/classicEnrollmentFormReference";
 import { parseClassicEnrollmentSiblings } from "@/lib/classicEnrollmentSiblings";
-import { parseClassicEnrollmentDocuments } from "@/lib/classicEnrollmentDocuments";
 import { niveauLabels, type Niveau } from "@/lib/niveaux";
-import ClassicEnrollmentFormDocument from "@/lib/pdf/ClassicEnrollmentFormDocument";
+import { fillOfficialFiche } from "@/lib/pdf/officialFicheTemplate";
+import {
+  classicFicheFieldPositions as pos,
+  classicFicheSexMarks,
+  classicFicheLivesWithMarks,
+  classicFicheFamilyStatusMarks,
+  classicFicheVaccinesMarks,
+  classicFicheMedicationMarks,
+  classicFicheSiblingRows,
+  classicFichePhotoBox,
+} from "@/lib/pdf/templates/classicEnrollmentFormTemplate";
+import { familyStatusToCheckboxKey } from "@/lib/pdf/familyStatusKey";
 
 export const runtime = "nodejs";
 
-async function photoToDataUri(url: string | null): Promise<string | null> {
+async function fetchPhoto(url: string | null): Promise<{ bytes: Buffer; contentType: string } | null> {
   if (!url) return null;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
-    const buffer = Buffer.from(await res.arrayBuffer());
     const contentType = res.headers.get("content-type") ?? "image/jpeg";
-    return `data:${contentType};base64,${buffer.toString("base64")}`;
+    return { bytes: Buffer.from(await res.arrayBuffer()), contentType };
   } catch {
     return null;
   }
 }
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await requireSecretariatSession();
   if (!session) {
     return new Response("Non autorisé.", { status: 401 });
@@ -37,82 +43,87 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const reference = formatClassicEnrollmentFormReference(fiche.id);
-  const logoBase64 = getDocumentLogoDataUri(schoolToSector("ecole-classique"));
-  const photoBase64 = await photoToDataUri(fiche.photoUrl);
-
-  const addressLine = [fiche.addressNumber, fiche.addressStreet, fiche.addressCity, fiche.addressPostalCode, fiche.addressZone]
-    .filter((part) => part && part.trim().length > 0)
-    .join(", ");
-
+  const photo = await fetchPhoto(fiche.photoUrl);
   const schoolLevelLabel = fiche.schoolLevel ? (niveauLabels[fiche.schoolLevel as Niveau] ?? fiche.schoolLevel) : "";
-  const boolLabel = (v: boolean | null) => (v === null ? "— À COMPLÉTER —" : v ? "Oui" : "Non");
+  const registrationDateLabel = fiche.registrationDate ?? "";
+  const siblings = parseClassicEnrollmentSiblings(fiche.siblings).slice(0, 6);
 
-  const buffer = await renderToBuffer(
-    ClassicEnrollmentFormDocument({
-      logoBase64,
-      ficheNumber: reference,
-      classLabel: fiche.program?.name ?? schoolLevelLabel,
-      photoBase64,
+  const checkboxes: Array<{ checked: boolean; mark: (typeof classicFicheSexMarks)[string] }> = [];
+  if (fiche.sex === "Masculin") checkboxes.push({ checked: true, mark: classicFicheSexMarks.masculin });
+  else if (fiche.sex === "Féminin") checkboxes.push({ checked: true, mark: classicFicheSexMarks.feminin });
+  else if (fiche.sex) checkboxes.push({ checked: true, mark: classicFicheSexMarks.autre });
 
-      registrationDateLabel: fiche.registrationDate ?? "",
-      schoolLevel: schoolLevelLabel,
-      previousSchool: fiche.previousSchool ?? "",
-      adminCode: fiche.adminCode ?? "",
+  if (fiche.livesWith && classicFicheLivesWithMarks[fiche.livesWith]) {
+    checkboxes.push({ checked: true, mark: classicFicheLivesWithMarks[fiche.livesWith] });
+  }
 
-      lastName: fiche.lastName,
-      firstName: fiche.firstName,
-      birthPlaceCity: fiche.birthPlaceCity ?? "",
-      birthPlaceDept: fiche.birthPlaceDept ?? "",
-      birthDate: fiche.birthDate ?? "",
-      sex: fiche.sex ?? "",
-      bloodType: fiche.bloodType ?? "",
-      livesWith: fiche.livesWith ?? "",
-      religion: fiche.religion ?? "",
-      addressLine,
+  const familyStatusKey = familyStatusToCheckboxKey(fiche.familyStatus);
+  if (familyStatusKey) checkboxes.push({ checked: true, mark: classicFicheFamilyStatusMarks[familyStatusKey] });
 
-      familyStatus: fiche.familyStatus ?? "",
-      fatherName: fiche.fatherName ?? "",
-      fatherProfession: fiche.fatherProfession ?? "",
-      fatherOccupation: fiche.fatherOccupation ?? "",
-      fatherEmail: fiche.fatherEmail ?? "",
-      fatherPhone: fiche.fatherPhone ?? "",
-      fatherNif: fiche.fatherNif ?? "",
-      fatherCin: fiche.fatherCin ?? "",
+  if (fiche.vaccinesUpToDate !== null) {
+    checkboxes.push({ checked: true, mark: fiche.vaccinesUpToDate ? classicFicheVaccinesMarks.oui : classicFicheVaccinesMarks.non });
+  }
+  if (fiche.longTermMedication !== null) {
+    checkboxes.push({
+      checked: true,
+      mark: fiche.longTermMedication ? classicFicheMedicationMarks.oui : classicFicheMedicationMarks.non,
+    });
+  }
 
-      motherName: fiche.motherName ?? "",
-      motherProfession: fiche.motherProfession ?? "",
-      motherOccupation: fiche.motherOccupation ?? "",
-      motherEmail: fiche.motherEmail ?? "",
-      motherPhone: fiche.motherPhone ?? "",
-      motherNif: fiche.motherNif ?? "",
-      motherCin: fiche.motherCin ?? "",
+  const bytes = await fillOfficialFiche({
+    templateFilename: "ecole-classique.pdf",
+    fields: [
+      { value: reference, field: pos.ficheNumber },
+      { value: registrationDateLabel, field: pos.registrationDateTop },
+      { value: registrationDateLabel, field: pos.registrationDate },
+      { value: schoolLevelLabel, field: pos.schoolLevel },
+      { value: fiche.program?.name, field: pos.className },
+      { value: fiche.previousSchool, field: pos.previousSchool },
+      { value: fiche.adminCode, field: pos.adminCode },
 
-      guardianName: fiche.guardianName ?? "",
-      guardianProfession: fiche.guardianProfession ?? "",
-      guardianOccupation: fiche.guardianOccupation ?? "",
-      guardianEmail: fiche.guardianEmail ?? "",
-      guardianPhone: fiche.guardianPhone ?? "",
-      guardianNif: fiche.guardianNif ?? "",
-      guardianCin: fiche.guardianCin ?? "",
+      { value: fiche.lastName, field: pos.lastName },
+      { value: fiche.firstName, field: pos.firstName },
+      { value: fiche.birthPlaceCity, field: pos.birthPlaceCity },
+      { value: fiche.birthDate, field: pos.birthDate },
+      { value: fiche.birthPlaceDept, field: pos.birthPlaceDept },
+      { value: fiche.bloodType, field: pos.bloodType },
+      { value: fiche.religion, field: pos.religion },
+      { value: fiche.addressNumber, field: pos.addressNumber },
+      { value: fiche.addressStreet, field: pos.addressStreet },
+      { value: fiche.addressCity, field: pos.addressCity },
+      { value: fiche.addressPostalCode, field: pos.addressPostalCode },
+      { value: fiche.addressZone, field: pos.addressZone },
 
-      vaccinesUpToDateLabel: boolLabel(fiche.vaccinesUpToDate),
-      longTermMedicationLabel: boolLabel(fiche.longTermMedication),
-      medicationDetails: fiche.medicationDetails ?? "",
+      { value: fiche.fatherName, field: pos.fatherName },
+      { value: fiche.fatherProfession, field: pos.fatherProfession },
+      { value: fiche.fatherOccupation, field: pos.fatherOccupation },
+      { value: fiche.fatherEmail, field: pos.fatherEmail },
+      { value: fiche.fatherPhone, field: pos.fatherPhone },
+      { value: fiche.fatherNif, field: pos.fatherNif },
+      { value: fiche.fatherCin, field: pos.fatherCin },
 
-      siblings: parseClassicEnrollmentSiblings(fiche.siblings),
-      documents: parseClassicEnrollmentDocuments(fiche.documents),
+      { value: fiche.motherName, field: pos.motherName },
+      { value: fiche.motherProfession, field: pos.motherProfession },
+      { value: fiche.motherOccupation, field: pos.motherOccupation },
+      { value: fiche.motherEmail, field: pos.motherEmail },
+      { value: fiche.motherPhone, field: pos.motherPhone },
+      { value: fiche.motherNif, field: pos.motherNif },
+      { value: fiche.motherCin, field: pos.motherCin },
 
-      fullName: `${fiche.firstName} ${fiche.lastName}`.trim(),
-      declarationAccepted: fiche.declarationAccepted,
-      declarationDateLabel: fiche.declarationDate
-        ? fiche.declarationDate.toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })
-        : "",
+      { value: fiche.medicationDetails, field: pos.medicationDetails },
+      { value: fiche.declarationAccepted ? registrationDateLabel : null, field: pos.engagementDate },
 
-      generatedLabel: `Généré le ${new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}`,
-    }),
-  );
+      ...siblings.map((s, i) => [
+        { value: s.firstName || null, field: classicFicheSiblingRows[i].prenom },
+        { value: s.birthDate || null, field: classicFicheSiblingRows[i].annee },
+        { value: s.school || null, field: classicFicheSiblingRows[i].ecole },
+      ]).flat(),
+    ],
+    checkboxes,
+    photo: photo ? { bytes: photo.bytes, contentType: photo.contentType, box: classicFichePhotoBox } : null,
+  });
 
-  return new Response(new Uint8Array(buffer), {
+  return new Response(new Uint8Array(bytes), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `inline; filename="${reference}.pdf"`,

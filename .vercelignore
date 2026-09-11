@@ -14,6 +14,10 @@ tests
 .git-broken-backup-*
 *.docx
 *.pdf
+# Gabarits officiels des fiches d'inscription (mandat "fiches d'inscription
+# fidèles au modèle papier", 2026-09-11) — nécessaires au runtime (fond des
+# PDF générés), contrairement aux autres *.pdf volontairement exclus ci-dessus.
+!assets/fiches/*.pdf
 *.dll
 *.pak
 *.dat

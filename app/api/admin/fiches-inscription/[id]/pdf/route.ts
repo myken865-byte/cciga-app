@@ -1,21 +1,28 @@
-import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/db";
 import { requireSecretariatSession } from "@/lib/auth";
 import { formatEnrollmentFormReference } from "@/lib/enrollmentFormReference";
-import { parseEnrollmentFormDocuments } from "@/lib/enrollmentFormDocuments";
-import { getDocumentLogoDataUri } from "@/lib/pdf/logo";
-import { schoolToSector } from "@/lib/branding";
-import FicheInscriptionDocument from "@/lib/pdf/FicheInscriptionDocument";
+import { fillOfficialFiche } from "@/lib/pdf/officialFicheTemplate";
+import {
+  enrollmentFormFieldPositions as universitePos,
+  enrollmentFormFamilyStatusMarks as universiteFamilyStatusMarks,
+  enrollmentFormPhotoBox as universitePhotoBox,
+} from "@/lib/pdf/templates/enrollmentFormTemplate";
+import {
+  enrollmentFormProFieldPositions as proPos,
+  enrollmentFormProFamilyStatusMarks as proFamilyStatusMarks,
+  enrollmentFormProPhotoBox as proPhotoBox,
+} from "@/lib/pdf/templates/enrollmentFormTemplateProfessionnelle";
+import { familyStatusToCheckboxKey } from "@/lib/pdf/familyStatusKey";
 
 export const runtime = "nodejs";
 
-async function toDataUri(url: string): Promise<string | null> {
+async function fetchPhoto(url: string | null): Promise<{ bytes: Buffer; contentType: string } | null> {
+  if (!url) return null;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const contentType = res.headers.get("content-type") ?? "image/jpeg";
-    const buffer = Buffer.from(await res.arrayBuffer());
-    return `data:${contentType};base64,${buffer.toString("base64")}`;
+    return { bytes: Buffer.from(await res.arrayBuffer()), contentType };
   } catch {
     return null;
   }
@@ -37,61 +44,61 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const reference = formatEnrollmentFormReference(form.id);
-  const documents = parseEnrollmentFormDocuments(form.documents);
-  const photoBase64 = form.photoUrl ? await toDataUri(form.photoUrl) : null;
   const isUniversite = form.school === "universite";
-  // Logo/couleur du secteur réellement enregistré sur la fiche — jamais
-  // celui d'une autre institution (voir schoolToSector, lib/branding.ts).
-  // Pas de second logo EPS/Université distinct sous public/branding/, donc
-  // epsLogoBase64 reste null plutôt qu'inventé.
-  const logoBase64 = getDocumentLogoDataUri(schoolToSector(form.school));
-  const generatedLabel = `Généré le ${new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}`;
-  const declarationDateLabel = form.declarationDate
-    ? form.declarationDate.toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })
-    : "";
+  const templateFilename = isUniversite ? "universite.pdf" : "ecole-professionnelle.pdf";
+  // Deux gabarits visuellement proches mais avec des coordonnées internes
+  // distinctes (voir enrollmentFormTemplateProfessionnelle.ts) — jamais les
+  // mêmes positions pour les deux.
+  const pos = isUniversite ? universitePos : proPos;
+  const familyStatusMarks = isUniversite ? universiteFamilyStatusMarks : proFamilyStatusMarks;
+  const photoBox = isUniversite ? universitePhotoBox : proPhotoBox;
+  const photo = await fetchPhoto(form.photoUrl);
+  const registrationDateLabel = form.createdAt.toLocaleDateString("fr-FR");
 
-  const buffer = await renderToBuffer(
-    FicheInscriptionDocument({
-      logoBase64,
-      epsLogoBase64: null,
-      institutionLabel: isUniversite ? "CCIGA — Université" : "CCIGA — École Professionnelle",
-      formationFieldLabel: isUniversite ? "Au programme :" : "À la formation :",
-      facultyLabel: form.program?.academicFaculty?.name ?? "",
-      ficheNumber: reference,
-      formationLabel: form.program?.name ?? "",
-      photoBase64,
-      lastName: form.lastName,
-      firstName: form.firstName,
-      birthDateAndPlace: form.birthDateAndPlace ?? "",
-      sex: form.sex ?? "",
-      fatherName: form.fatherName ?? "",
-      motherName: form.motherName ?? "",
-      familyStatus: form.familyStatus ?? "",
-      cin: form.cin ?? "",
-      cinIssuedDate: form.cinIssuedDate ?? "",
-      cinIssuedPlace: form.cinIssuedPlace ?? "",
-      address: form.address ?? "",
-      phone: form.phone ?? "",
-      email: form.email ?? "",
-      emergencyContactName: form.emergencyContactName ?? "",
-      emergencyContactEmail: form.emergencyContactEmail ?? "",
-      emergencyContactPhone: form.emergencyContactPhone ?? "",
-      documents: documents.map((d) => ({ label: d.label, status: d.status })),
-      fullName: `${form.firstName} ${form.lastName}`.trim(),
-      declarationAccepted: form.declarationAccepted,
-      declarationDateLabel,
-      option: form.program?.name ?? "",
-      inscriptionInfo: form.inscriptionInfo ?? "",
-      duration: form.program?.duration ?? "",
-      uniformInfo: form.uniformInfo ?? "",
-      versement1: form.versement1 ?? "",
-      versement2: form.versement2 ?? "",
-      versement3: form.versement3 ?? "",
-      generatedLabel,
-    }),
-  );
+  const bytes = await fillOfficialFiche({
+    templateFilename,
+    fields: [
+      { value: reference, field: pos.ficheNumber },
+      { value: registrationDateLabel, field: pos.registrationDate },
+      { value: form.program?.name, field: pos.formation },
+      { value: form.lastName, field: pos.lastName },
+      { value: form.firstName, field: pos.firstName },
+      { value: form.birthDateAndPlace, field: pos.birthDateAndPlace },
+      { value: form.sex, field: pos.sex },
+      { value: form.fatherName, field: pos.fatherName },
+      { value: form.cin, field: pos.cin },
+      { value: form.cinIssuedDate, field: pos.cinIssuedDate },
+      { value: form.address, field: pos.address },
+      { value: form.phone, field: pos.phone },
+      { value: form.email, field: pos.email },
+      { value: form.emergencyContactName, field: pos.emergencyContactName },
+      { value: form.emergencyContactPhone, field: pos.emergencyContactPhone },
+      { value: form.emergencyContactEmail, field: pos.emergencyContactEmail },
+      { value: form.motherName, field: pos.motherName },
+      { value: form.program?.name, field: pos.option },
+      { value: form.inscriptionInfo, field: pos.inscriptionInfo },
+      { value: form.program?.duration, field: pos.duration },
+      { value: form.uniformInfo, field: pos.uniformInfo },
+      { value: form.versement1, field: pos.versement1 },
+      { value: form.versement2, field: pos.versement2 },
+      { value: form.versement3, field: pos.versement3 },
+      { value: form.program?.academicFaculty?.name, field: pos.niveauEtude },
+      { value: form.declarationAccepted ? `${form.firstName} ${form.lastName}`.trim() : null, field: pos.engagementName },
+    ],
+    checkboxes: (() => {
+      const key = familyStatusToCheckboxKey(form.familyStatus);
+      return key ? [{ checked: true, mark: familyStatusMarks[key] }] : [];
+    })(),
+    photo: photo ? { bytes: photo.bytes, contentType: photo.contentType, box: photoBox } : null,
+  });
 
-  return new Response(new Uint8Array(buffer), {
+  // Père/mère "Tél." sont deux champs séparés dans le modèle (fatherPhone
+  // n'existe pas sur EnrollmentForm — le PDF officiel réutilise le même
+  // "Téléphone" que le candidat pour ce parcours ; voir emergencyContactPhone
+  // pour la personne à contacter). Laissé volontairement vide plutôt que d'y
+  // dupliquer une donnée qui n'a pas d'équivalent réel dans ce modèle.
+
+  return new Response(new Uint8Array(bytes), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `inline; filename="${reference}.pdf"`,
