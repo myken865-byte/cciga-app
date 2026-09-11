@@ -1,6 +1,17 @@
 import { readFileSync } from "fs";
 import path from "path";
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import {
+  PDFDocument,
+  StandardFonts,
+  rgb,
+  pushGraphicsState,
+  popGraphicsState,
+  rectangle,
+  clip,
+  endPath,
+  type PDFFont,
+  type PDFPage,
+} from "pdf-lib";
 
 /**
  * Remplissage de fiches officielles CCIGA — mandat "fiches d'inscription
@@ -92,14 +103,27 @@ export async function fillOfficialFiche(options: {
     if (page) {
       // "Conserver les proportions, ne pas déformer le visage" — cadrage
       // "contain" (jamais de recadrage/déformation) plutôt qu'un remplissage
-      // total de l'encadré qui exigerait de rogner l'image.
+      // total de l'encadré qui exigerait de rogner l'image. Le contain-fit
+      // seul dépend de coordonnées de cadre exactes ; comme filet de
+      // sécurité absolu (mandat "aucune image, même large ou atypique, ne
+      // doit pouvoir dépasser de la zone photo", 2026-09-11), un clip-path
+      // PDF réel borne physiquement tout dessin à la zone rectangulaire —
+      // même une coordonnée de cadre légèrement fausse ne peut plus produire
+      // un débordement visible.
       const image = contentType.includes("png") ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
       const scale = Math.min(box.width / image.width, box.height / image.height);
       const w = image.width * scale;
       const h = image.height * scale;
       const x = box.x + (box.width - w) / 2;
       const y = box.y + (box.height - h) / 2;
+      page.pushOperators(
+        pushGraphicsState(),
+        rectangle(box.x, box.y, box.width, box.height),
+        clip(),
+        endPath(),
+      );
       page.drawImage(image, { x, y, width: w, height: h });
+      page.pushOperators(popGraphicsState());
     }
   }
 
