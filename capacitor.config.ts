@@ -6,21 +6,33 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     // Shell local-first (mandat "OPTION shell local / cold start offline",
-    // 2026-09-10) : plus de `url` ici. Sans elle, Capacitor charge nativement
-    // https://localhost/ en servant webDir (public/) directement depuis
-    // l'APK — donc public/index.html — au lieu de dépendre d'une requête
-    // réseau vers le serveur distant comme toute première condition
-    // d'affichage. Ce fichier détecte ensuite la connexion et navigue lui-même
-    // vers REMOTE_ORIGIN (voir public/index.html) quand elle est disponible.
-    // Remplace l'ancien `url: 'https://cciga-app-devtest.vercel.app'` — ce
-    // changement a été rendu nécessaire par l'échec confirmé du cold start
-    // hors-ligne sur Android physique (service worker distant jamais prêt à
-    // temps pour la toute première navigation d'un processus WebView frais).
-    // allowNavigation est OBLIGATOIRE avec cette architecture : sans lui,
-    // Capacitor traite la navigation JS du shell vers cciga-app-devtest
-    // comme un lien externe et ouvre le navigateur système au lieu de rester
-    // dans l'app (voir Bridge.java::launchIntent).
-    allowNavigation: ['cciga-app-devtest.vercel.app'],
+    // 2026-09-10) : aucun server.url ici. Sans lui, Capacitor charge
+    // nativement https localhost slash en servant webDir (public/)
+    // directement depuis l'APK — donc public/index.html — au lieu de
+    // dépendre d'une requête réseau comme toute première condition
+    // d'affichage. Ce fichier détecte ensuite la connexion et navigue
+    // lui-même vers la constante REMOTE_ORIGIN qu'il définit en JS, une fois
+    // celle-ci joignable.
+    //
+    // Séparation DEVTEST / Production (mandat "Correction des 3 blocages
+    // Play Store", 2026-09-12) : REMOTE_ORIGIN, dans public/index.html,
+    // pointe par défaut vers l'environnement DEVTEST partagé de cette
+    // session — c'est la valeur utilisée par tout build de développement
+    // (android-debug-apk.yml, web) et jamais modifiée ici. Seul le workflow
+    // de build Release destiné au Play Store
+    // (.github/workflows/android-release-aab.yml et
+    // google-play-internal-test-upload.yml) réécrit cette constante vers la
+    // Production officielle (docs/GOOGLE_PLAY.md) dans sa propre copie
+    // buildée des assets, juste avant l'empaquetage Gradle — jamais dans ce
+    // fichier source, jamais dans public/index.html lui-même.
+    //
+    // allowNavigation doit lister les DEUX hôtes (DEVTEST et Production) :
+    // sans un hôte dans cette liste, Capacitor traite la navigation JS du
+    // shell vers cet hôte comme un lien externe et ouvre le navigateur
+    // système au lieu de rester dans l'app (voir Bridge.java::launchIntent).
+    // Lister les deux ici ne change le comportement d'aucun build : seule la
+    // valeur de REMOTE_ORIGIN réellement embarquée décide où l'app navigue.
+    allowNavigation: ['cciga-app-devtest.vercel.app', 'cciga-app.vercel.app'],
     androidScheme: 'https',
     errorPath: 'offline.html',
   },

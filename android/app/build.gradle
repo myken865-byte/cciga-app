@@ -47,7 +47,16 @@ android {
         // capacitor.config.ts change (→ DEVTEST temporaire, voir
         // docs/ANDROID_RELEASE_CONFIG.md §9) — nouveau versionCode requis
         // uniquement parce que Google Play l'exige pour tout nouvel AAB.
-        versionCode 4
+        // versionCode 4 a été réellement uploadé et confirmé live sur
+        // Internal Test le 2026-09-08 (voir docs/ANDROID_VERSION_HISTORY.md)
+        // — dernier versionCode consommé. Mandat "Correction des 3 blocages
+        // Play Store" (2026-09-12) : versionCode 5 couvre le retrait du
+        // module Jasmine Kindergarten, le nouveau moteur PDF des fiches
+        // d'inscription, et la correction de la destination Release
+        // (Production au lieu de DEVTEST, voir capacitor.config.ts et
+        // .github/workflows/android-release-aab.yml). versionName inchangé
+        // ("1.1") — aucune raison technique de le faire évoluer ici.
+        versionCode 5
         versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

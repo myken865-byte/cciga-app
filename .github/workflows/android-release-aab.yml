@@ -37,6 +37,27 @@ jobs:
       - name: Sync Capacitor Android project
         run: npx cap sync android
 
+      # Mandat "Correction des 3 blocages Play Store" (2026-09-12) —
+      # architecture local-first (voir capacitor.config.ts) : le shell
+      # embarqué (public/index.html) définit REMOTE_ORIGIN en JS, pas dans
+      # capacitor.config.ts. Il pointe par défaut vers DEVTEST (valeur
+      # utilisée par tout build de développement, jamais modifiée ici).
+      # Seule LA COPIE BUILDÉE des assets (android/app/src/main/assets/public,
+      # produite par `cap sync` ci-dessus) est réécrite vers la Production
+      # officielle (docs/GOOGLE_PLAY.md) — jamais le fichier source
+      # public/index.html, jamais un build de développement/debug.
+      - name: Point Release shell at Production (Play Store build only)
+        run: |
+          SHELL_FILE=android/app/src/main/assets/public/index.html
+          DEVTEST_ORIGIN="https://cciga-app-devtest.vercel.app"
+          PRODUCTION_ORIGIN="https://cciga-app.vercel.app"
+          if ! grep -qF "REMOTE_ORIGIN = \"$DEVTEST_ORIGIN\"" "$SHELL_FILE"; then
+            echo "::error::Constante REMOTE_ORIGIN introuvable ou déjà différente de la valeur DEVTEST attendue dans $SHELL_FILE — refus de patcher à l'aveugle."
+            exit 1
+          fi
+          sed -i "s#REMOTE_ORIGIN = \"$DEVTEST_ORIGIN\"#REMOTE_ORIGIN = \"$PRODUCTION_ORIGIN\"#" "$SHELL_FILE"
+          grep -F "REMOTE_ORIGIN = " "$SHELL_FILE"
+
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
@@ -106,33 +127,40 @@ jobs:
           fi
           echo "--- Détail du certificat (information publique uniquement) ---"
           jarsigner -verify -verbose -certs "$AAB" | grep -E "^(sm|s|m| |jar verified|CN=)" | head -30
-          # Mandat "Option 2 confirmée : DEVTEST/PREPROD" (2026-09-08) : ce
-          # contrôle vérifiait auparavant l'ABSENCE d'une URL devtest —
-          # protection contre un oubli accidentel uniquement. capacitor.config.ts
-          # peut désormais pointer délibérément vers DEVTEST le temps que
-          # Production soit redéployée (voir docs/ANDROID_RELEASE_CONFIG.md
-          # §9) : le contrôle confirme maintenant que l'URL réellement
-          # embarquée dans l'AAB correspond EXACTEMENT à celle committée dans
-          # capacitor.config.ts, quelle que soit sa valeur — protège contre
-          # une dérive silencieuse dans les deux sens (Production ou DEVTEST).
-          echo "--- Confirm bundled server URL matches capacitor.config.ts exactly ---"
-          EXPECTED_URL=$(grep -oP "url:\s*'\K[^']+" capacitor.config.ts)
-          if [ -z "$EXPECTED_URL" ]; then
-            echo "::error::Impossible d'extraire server.url depuis capacitor.config.ts — build refusé."
+          # Mandat "Correction des 3 blocages Play Store" (2026-09-12) :
+          # l'architecture local-first (capacitor.config.ts) n'a plus de
+          # server.url — la destination réelle du build est REMOTE_ORIGIN,
+          # défini en JS dans le shell embarqué (public/index.html), réécrit
+          # vers Production par l'étape "Point Release shell at Production"
+          # ci-dessus juste avant l'empaquetage Gradle. Ce contrôle lit la
+          # valeur RÉELLEMENT embarquée dans l'AAB produit (jamais le fichier
+          # source) et la compare à la Production officielle attendue —
+          # refuse explicitement une destination vide, DEVTEST, ou toute
+          # autre valeur inattendue.
+          echo "--- Confirm bundled REMOTE_ORIGIN is the official Production URL ---"
+          EXPECTED_ORIGIN="https://cciga-app.vercel.app"
+          DEVTEST_ORIGIN="https://cciga-app-devtest.vercel.app"
+          ACTUAL_ORIGIN=$(python3 -c "
+import re, zipfile
+z = zipfile.ZipFile('$AAB')
+html = z.read('base/assets/public/index.html').decode('utf-8')
+m = re.search(r'REMOTE_ORIGIN\s*=\s*\"([^\"]*)\"', html)
+print(m.group(1) if m else '')
+" 2>/dev/null || true)
+          echo "REMOTE_ORIGIN embarqué (AAB, base/assets/public/index.html) : '$ACTUAL_ORIGIN'"
+          if [ -z "$ACTUAL_ORIGIN" ]; then
+            echo "::error::Impossible de lire REMOTE_ORIGIN depuis le shell local embarqué dans l'AAB (base/assets/public/index.html introuvable, illisible, ou constante absente) — destination vide, build refusé."
             exit 1
           fi
-          echo "URL attendue (capacitor.config.ts) : $EXPECTED_URL"
-          ACTUAL_URL=$(python3 -c "import json,zipfile; z=zipfile.ZipFile('$AAB'); print(json.loads(z.read('base/assets/capacitor.config.json'))['server']['url'])" 2>/dev/null || true)
-          if [ -z "$ACTUAL_URL" ]; then
-            echo "::error::Impossible de lire server.url depuis capacitor.config.json embarqué dans l'AAB — build refusé."
+          if [ "$ACTUAL_ORIGIN" = "$DEVTEST_ORIGIN" ]; then
+            echo "::error::L'AAB embarque encore DEVTEST ($DEVTEST_ORIGIN) comme destination runtime — un build Play Store ne doit jamais pointer vers DEVTEST/PREPROD. Build refusé."
             exit 1
           fi
-          echo "URL embarquée (AAB, base/assets/capacitor.config.json) : $ACTUAL_URL"
-          if [ "$EXPECTED_URL" != "$ACTUAL_URL" ]; then
-            echo "::error::L'AAB embarque '$ACTUAL_URL' mais capacitor.config.ts déclare '$EXPECTED_URL' — build refusé (source et artifact incohérents)."
+          if [ "$ACTUAL_ORIGIN" != "$EXPECTED_ORIGIN" ]; then
+            echo "::error::L'AAB embarque '$ACTUAL_ORIGIN', différent de la Production officielle attendue '$EXPECTED_ORIGIN' — destination inattendue, build refusé."
             exit 1
           fi
-          echo "OK — l'AAB pointe exactement vers l'URL committée ($EXPECTED_URL)."
+          echo "OK — l'AAB pointe exactement vers la Production officielle ($EXPECTED_ORIGIN)."
 
       # Mandat "Automatisation Google Play" (2026-09-07), §6.7-9, §7, §20 :
       # ne pas se contenter d'afficher package/versionCode, les valider
