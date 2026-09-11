@@ -23,8 +23,20 @@ export interface SocialLink {
 
 export const socialLinks: SocialLink[] = [
   { key: "whatsapp", name: "WhatsApp", description: "Contacter CCIGA", url: null },
-  { key: "facebook", name: "Facebook", description: "Suivre notre page officielle", url: null },
-  { key: "tiktok", name: "TikTok", description: "Voir nos contenus", url: null },
+  {
+    key: "facebook",
+    name: "Facebook",
+    description: "Suivre notre page officielle",
+    // Lien officiel fourni directement par l'utilisateur (2026-09-11) — jamais deviné.
+    url: "https://www.facebook.com/share/19epdBKtVY/",
+  },
+  {
+    key: "tiktok",
+    name: "TikTok",
+    description: "Voir nos contenus",
+    // Lien officiel fourni directement par l'utilisateur (2026-09-11) — jamais deviné.
+    url: "https://www.tiktok.com/@universite.cciga?_r=1&_t=ZN-99ccmTqFY1e",
+  },
   { key: "instagram", name: "Instagram", description: "Découvrir nos publications", url: null },
   { key: "youtube", name: "YouTube", description: "Regarder nos vidéos", url: null },
   { key: "autres", name: "Site Officiel", description: "Visiter universitecciga.com", url: "https://www.universitecciga.com" },
