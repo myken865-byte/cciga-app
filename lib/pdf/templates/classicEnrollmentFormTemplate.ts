@@ -52,35 +52,35 @@ export const classicFicheFieldPositions = {
 };
 
 export const classicFicheSexMarks: Record<string, CheckboxMark> = {
-  masculin: { page: 0, x: 95, y: 246 },
-  feminin: { page: 0, x: 169, y: 246 },
-  autre: { page: 0, x: 248, y: 246 },
+  masculin: { page: 0, x: 93, y: 249 },
+  feminin: { page: 0, x: 167, y: 249 },
+  autre: { page: 0, x: 246, y: 249 },
 };
 
 export const classicFicheLivesWithMarks: Record<string, CheckboxMark> = {
-  parents: { page: 0, x: 143, y: 203 },
-  pere: { page: 0, x: 269, y: 203 },
-  mere: { page: 0, x: 349, y: 203 },
-  tuteurs: { page: 0, x: 143, y: 179 },
+  parents: { page: 0, x: 141, y: 206 },
+  pere: { page: 0, x: 267, y: 206 },
+  mere: { page: 0, x: 347, y: 206 },
+  tuteurs: { page: 0, x: 141, y: 182 },
 };
 
 export const classicFicheFamilyStatusMarks: Record<string, CheckboxMark> = {
-  maries: { page: 1, x: 147, y: 579 },
-  vie_maritale: { page: 1, x: 214, y: 579 },
-  veuf_veuve: { page: 1, x: 305, y: 579 },
-  divorces: { page: 1, x: 377, y: 579 },
-  separes: { page: 1, x: 454, y: 579 },
-  celibataire: { page: 1, x: 531, y: 579 },
+  maries: { page: 1, x: 146, y: 582 },
+  vie_maritale: { page: 1, x: 213, y: 582 },
+  veuf_veuve: { page: 1, x: 304, y: 582 },
+  divorces: { page: 1, x: 376, y: 582 },
+  separes: { page: 1, x: 453, y: 582 },
+  celibataire: { page: 1, x: 530, y: 582 },
 };
 
 export const classicFicheVaccinesMarks = {
-  oui: { page: 1, x: 142, y: 422 } satisfies CheckboxMark,
-  non: { page: 1, x: 195, y: 422 } satisfies CheckboxMark,
+  oui: { page: 1, x: 108, y: 423 } satisfies CheckboxMark,
+  non: { page: 1, x: 161, y: 423 } satisfies CheckboxMark,
 };
 
 export const classicFicheMedicationMarks = {
-  oui: { page: 1, x: 339, y: 402 } satisfies CheckboxMark,
-  non: { page: 1, x: 387, y: 402 } satisfies CheckboxMark,
+  oui: { page: 1, x: 308, y: 405 } satisfies CheckboxMark,
+  non: { page: 1, x: 356, y: 405 } satisfies CheckboxMark,
 };
 
 // Table "FRATRIE" (page 2) — 6 lignes numérotées déjà imprimées, seules les

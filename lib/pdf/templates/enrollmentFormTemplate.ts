@@ -44,12 +44,12 @@ export const enrollmentFormFieldPositions = {
 // Cases à cocher "Situation de famille" (page 1) — position estimée à
 // gauche du libellé correspondant, sur la même ligne.
 export const enrollmentFormFamilyStatusMarks: Record<string, CheckboxMark> = {
-  maries: { page: 0, x: 164, y: 347 },
-  vie_maritale: { page: 0, x: 226, y: 347 },
-  veuf_veuve: { page: 0, x: 311, y: 347 },
-  divorces: { page: 0, x: 398, y: 347 },
-  separes: { page: 0, x: 468, y: 347 },
-  celibataire: { page: 0, x: 536, y: 347 },
+  maries: { page: 0, x: 164, y: 353 },
+  vie_maritale: { page: 0, x: 226, y: 353 },
+  veuf_veuve: { page: 0, x: 311, y: 353 },
+  divorces: { page: 0, x: 398, y: 353 },
+  separes: { page: 0, x: 468, y: 353 },
+  celibataire: { page: 0, x: 536, y: 353 },
 };
 
 // Encadré "PHOTO" (page 1) — position estimée depuis le rendu visuel du

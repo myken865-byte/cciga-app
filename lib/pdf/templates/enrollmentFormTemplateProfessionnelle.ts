@@ -43,12 +43,12 @@ export const enrollmentFormProFieldPositions = {
 };
 
 export const enrollmentFormProFamilyStatusMarks: Record<string, CheckboxMark> = {
-  maries: { page: 0, x: 182, y: 396 },
-  vie_maritale: { page: 0, x: 235, y: 396 },
-  veuf_veuve: { page: 0, x: 314, y: 396 },
-  divorces: { page: 0, x: 408, y: 396 },
-  separes: { page: 0, x: 480, y: 396 },
-  celibataire: { page: 0, x: 550, y: 396 },
+  maries: { page: 0, x: 160, y: 400 },
+  vie_maritale: { page: 0, x: 213, y: 400 },
+  veuf_veuve: { page: 0, x: 292, y: 400 },
+  divorces: { page: 0, x: 386, y: 400 },
+  separes: { page: 0, x: 458, y: 400 },
+  celibataire: { page: 0, x: 528, y: 400 },
 };
 
 export const enrollmentFormProPhotoBox: PhotoBox = { page: 0, x: 480, y: 461, width: 85, height: 90 };
