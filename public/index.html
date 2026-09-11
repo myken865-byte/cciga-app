@@ -99,10 +99,6 @@
         réessayez.
       </p>
       <button id="retry" type="button">Réessayer</button>
-      <br />
-      <a id="jasmin-link" class="link-secondary" href="#">
-        Ouvrir Jasmine Lab (si déjà téléchargé)
-      </a>
     </div>
   </div>
 
@@ -157,12 +153,6 @@
     }
 
     document.getElementById("retry").addEventListener("click", probeAndNavigate);
-    document.getElementById("jasmin-link").addEventListener("click", function (event) {
-      event.preventDefault();
-      if (navigatedAway) return;
-      navigatedAway = true;
-      window.location.href = REMOTE_ORIGIN + "/laboratoire-jasmin";
-    });
 
     probeAndNavigate();
   </script>

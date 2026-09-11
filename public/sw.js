@@ -34,7 +34,7 @@
  * l'app) sert la page depuis le cache.
  */
 
-const CACHE_VERSION = "shell-v2";
+const CACHE_VERSION = "shell-v3";
 const PAGE_CACHE = `cciga-pages-${CACHE_VERSION}`;
 const STATIC_CACHE = `cciga-static-${CACHE_VERSION}`;
 const CURRENT_CACHES = new Set([PAGE_CACHE, STATIC_CACHE]);
@@ -59,12 +59,6 @@ const SAFE_PUBLIC_PATHS = [
   "/ecole-professionnelle",
   "/universite",
   "/login",
-  // Laboratoire Jasmine (mandat Phase 3) : page publique (gardée par un
-  // feature flag lu côté serveur, pas par une session), aucune donnée
-  // personnelle dans le document HTML lui-même — la progression réelle
-  // reste dans IndexedDB/Cache API, gérée par components/lab/JasminOfflineLab.tsx,
-  // totalement intacte et non affectée par ce service worker.
-  "/laboratoire-jasmin",
 ];
 
 function isSafePublicPath(pathname) {

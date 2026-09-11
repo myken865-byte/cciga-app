@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -16,17 +15,10 @@ const quickQuestions = [
 ];
 
 export default function AIAssistantWidget() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Mandat "Phase 3.1 — correction UI mobile du laboratoire" (2026-09-09) :
-  // le bouton flottant masquait les boutons/journal du prototype offline sur
-  // petit écran. Masqué uniquement sur cette page de test, inchangé partout
-  // ailleurs dans l'application.
-  if (pathname === "/laboratoire-jasmin") return null;
 
   async function send(text: string) {
     const question = text.trim();
