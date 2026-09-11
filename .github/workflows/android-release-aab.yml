@@ -140,13 +140,7 @@ jobs:
           echo "--- Confirm bundled REMOTE_ORIGIN is the official Production URL ---"
           EXPECTED_ORIGIN="https://cciga-app.vercel.app"
           DEVTEST_ORIGIN="https://cciga-app-devtest.vercel.app"
-          ACTUAL_ORIGIN=$(python3 -c "
-import re, zipfile
-z = zipfile.ZipFile('$AAB')
-html = z.read('base/assets/public/index.html').decode('utf-8')
-m = re.search(r'REMOTE_ORIGIN\s*=\s*\"([^\"]*)\"', html)
-print(m.group(1) if m else '')
-" 2>/dev/null || true)
+          ACTUAL_ORIGIN=$(python3 -c "import re, zipfile; html = zipfile.ZipFile('$AAB').read('base/assets/public/index.html').decode('utf-8'); m = re.search(r'REMOTE_ORIGIN\s*=\s*\"([^\"]*)\"', html); print(m.group(1) if m else '')" 2>/dev/null || true)
           echo "REMOTE_ORIGIN embarqué (AAB, base/assets/public/index.html) : '$ACTUAL_ORIGIN'"
           if [ -z "$ACTUAL_ORIGIN" ]; then
             echo "::error::Impossible de lire REMOTE_ORIGIN depuis le shell local embarqué dans l'AAB (base/assets/public/index.html introuvable, illisible, ou constante absente) — destination vide, build refusé."
