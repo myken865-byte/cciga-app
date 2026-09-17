@@ -24,7 +24,7 @@ export default async function AdminDemandeParentDetailPage({
   const request = await prisma.parentRequest.findUnique({
     where: { id },
     include: {
-      student: true,
+      student: { include: { program: true } },
       parent: true,
       messages: { include: { author: true }, orderBy: { createdAt: "asc" } },
     },
