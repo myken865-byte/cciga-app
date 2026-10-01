@@ -305,6 +305,22 @@ model User {
   canteenReservations     CanteenReservation[]    @relation("CanteenReservationStudent")
   inventoryItemsAssigned  InventoryItem[]         @relation("InventoryAssignedTo")
   enrollmentSnapshotsCaptured EnrollmentSnapshot[] @relation("EnrollmentSnapshotCapturedBy")
+  maintenanceRequestsReported  MaintenanceRequest[] @relation("MaintenanceRequestReportedBy")
+  maintenanceRequestsAssigned  MaintenanceRequest[] @relation("MaintenanceRequestAssignedTo")
+  logisticsRequestsMade        LogisticsRequest[]   @relation("LogisticsRequestRequestedBy")
+
+  studentConversationsAsStudent StudentConversation[]        @relation("StudentConversationStudent")
+  studentConversationsAsStaff   StudentConversation[]        @relation("StudentConversationStaff")
+  studentConversationMessages   StudentConversationMessage[]
+  studentRequests                StudentRequest[]             @relation("StudentRequestStudent")
+  studentRequestMessages         StudentRequestMessage[]
+
+  internshipsAsStudent    Internship[] @relation("InternshipStudent")
+  internshipsSupervised   Internship[] @relation("InternshipInternalSupervisor")
+  internshipsEvaluated    Internship[] @relation("InternshipEvaluatedBy")
+  internshipsCreated      Internship[] @relation("InternshipCreatedBy")
+  seminarsCreated         Seminar[]             @relation("SeminarCreatedBy")
+  seminarRegistrations    SeminarRegistration[] @relation("SeminarRegistrationStudent")
 }
 
 model Faculty {
@@ -336,6 +352,8 @@ model AcademicYear {
   academicDocuments   AcademicDocument[]
   enrollmentSnapshots EnrollmentSnapshot[]
   classicEnrollmentForms ClassicEnrollmentForm[]
+  internships            Internship[]
+  seminars               Seminar[]
 }
 
 /**
@@ -422,6 +440,7 @@ model Program {
   enrollmentForms     EnrollmentForm[]
   classicEnrollmentForms ClassicEnrollmentForm[]
   jasminLearningUnits    LearningUnit[]
+  internships            Internship[]
 }
 
 model Payment {
@@ -475,6 +494,7 @@ model Course {
   lessonModules LessonModule[]
   quizzes       Quiz[]
   announcements CourseAnnouncement[]
+  studentConversations StudentConversation[]
 }
 
 model EvaluationCategory {
@@ -1087,6 +1107,81 @@ model InventoryItem {
   @@index([school])
 }
 
+/**
+ * Salle physique (portail Logistique, mandat "Migration additive minimale —
+ * 3 tables", 2026-09-12). Sans rapport avec la salle de classe NUMÉRIQUE
+ * pédagogique (components/TeacherDigitalClassroom.tsx / StudentDigitalClassroom.tsx)
+ * — deux concepts distincts, jamais fusionnés.
+ */
+model Room {
+  id        String   @id @default(cuid())
+  name      String
+  building  String?
+  capacity  Int?
+  condition String   @default("bon") // bon | moyen | mauvais | hors_service
+  // Cloisonnement strict par institution — même pattern nullable que
+  // InventoryItem.school/Vehicle.school (Phase C1) : jamais de backfill
+  // automatique, une salle non attribuée reste invisible partout tant que
+  // son institution n'est pas explicitement renseignée.
+  school    String? // ecole-classique | ecole-professionnelle | universite
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([school])
+}
+
+/**
+ * Demande de maintenance générique (mandat "Migration additive minimale —
+ * 3 tables", 2026-09-12) — peut concerner un InventoryItem, une Room, un
+ * Vehicle ou "autre" ressource. `resourceType` + `resourceId` forment une
+ * référence applicative strictement libre (aucune FK Prisma typée par
+ * ressource — le mandat l'exige explicitement) : jamais fait confiance sans
+ * validation serveur de son existence, de son `resourceType` et de son
+ * institution avant toute lecture/action (voir lib/maintenanceAccess.ts).
+ */
+model MaintenanceRequest {
+  id             String    @id @default(cuid())
+  resourceType   String // equipement | salle | vehicule | autre
+  resourceId     String
+  description    String
+  status         String    @default("signalee") // signalee | assignee | en_cours | terminee | cloturee
+  reportedById   Int
+  reportedBy     User      @relation("MaintenanceRequestReportedBy", fields: [reportedById], references: [id])
+  assignedToId   Int?
+  assignedTo     User?     @relation("MaintenanceRequestAssignedTo", fields: [assignedToId], references: [id])
+  school         String? // ecole-classique | ecole-professionnelle | universite
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([resourceType, resourceId])
+  @@index([school])
+}
+
+/**
+ * Demande logistique (mandat "Migration additive minimale — 3 tables",
+ * 2026-09-12) — volontairement indépendante de StudentRequest/ParentRequest
+ * (leur sémantique élève/parent n'a ni quantité ni ressource ni urgence ;
+ * les détourner casserait leur contrat existant). Aucun fil de messages
+ * dans cette phase (mandat explicite) — un suivi minimal par statut/dates
+ * suffit.
+ */
+model LogisticsRequest {
+  id             String   @id @default(cuid())
+  requestedById  Int
+  requestedBy    User     @relation("LogisticsRequestRequestedBy", fields: [requestedById], references: [id])
+  resourceLabel  String
+  quantity       Int?
+  urgency        String   @default("normale") // normale | urgente
+  status         String   @default("soumise") // soumise | en_traitement | approuvee | rejetee | livree | cloturee
+  school         String? // ecole-classique | ecole-professionnelle | universite
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([school])
+}
+
 // ---------------------------------------------------------------------------
 // Jasmine Kindergarten English Program — Phase 2 (2026-09-09), socle PREPROD.
 // Module pédagogique isolé, feature-flaggé (voir lib/labFeatureFlags.ts),
@@ -1200,4 +1295,215 @@ model ChildProgress {
 
   @@unique([studentId, activityId])
   @@index([studentId, unitId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Mandat "Messagerie étudiant + Demandes administratives" (2026-09-12) —
+// migration additive, 4 nouveaux modèles, aucune table existante modifiée.
+// Institution dérivée via student.program.school (jamais une colonne school
+// dupliquée ici) — même principe que ParentRequest, jamais détourné.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Une conversation 1-à-1 entre un élève/étudiant et un membre du personnel autorisé. */
+model StudentConversation {
+  id        String   @id @default(cuid())
+  studentId Int
+  student   User     @relation("StudentConversationStudent", fields: [studentId], references: [id])
+  staffId   Int
+  staff     User     @relation("StudentConversationStaff", fields: [staffId], references: [id])
+  subject   String
+  // Service ciblé — mêmes valeurs que lib/parentRequests.ts (secretariat |
+  // administration | comptabilite | ...) plus "enseignant", routées vers les
+  // rôles existants (aucun rôle FINANCE/SUPPORT inventé).
+  service   String
+  // Renseigné uniquement quand service = "enseignant" — rattache la
+  // conversation à un cours précis de l'élève/étudiant.
+  courseId  String?
+  course    Course?  @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages StudentConversationMessage[]
+
+  @@index([studentId])
+  @@index([staffId])
+}
+
+model StudentConversationMessage {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   StudentConversation @relation(fields: [conversationId], references: [id])
+  authorId       Int
+  author         User                @relation(fields: [authorId], references: [id])
+  body           String
+  readByStudent  Boolean             @default(false)
+  readByStaff    Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId])
+}
+
+/** Demande administrative initiée par l'élève/étudiant lui-même (distincte de ParentRequest). */
+model StudentRequest {
+  id             String   @id @default(cuid())
+  studentId      Int
+  student        User     @relation("StudentRequestStudent", fields: [studentId], references: [id])
+  // attestation | releve | certificat | duplicata_badge | correction_info |
+  // document_administratif | reclamation_academique | autre
+  category       String
+  subject        String
+  description    String?
+  status         String   @default("soumise") // soumise | en_traitement | validee | rejetee | disponible
+  attachmentUrl  String?
+  attachmentName String?
+  // Document final joint par le personnel une fois le statut "disponible".
+  documentUrl    String?
+  documentName   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  messages StudentRequestMessage[]
+
+  @@index([studentId])
+  @@index([status])
+}
+
+model StudentRequestMessage {
+  id        String         @id @default(cuid())
+  requestId String
+  request   StudentRequest @relation(fields: [requestId], references: [id])
+  authorId  Int
+  author    User           @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime       @default(now())
+
+  @@index([requestId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Mandat "Stages & Séminaires" (2026-09-12) — migration additive, 4 nouveaux
+// modèles, aucune table existante modifiée. Institution dérivée via
+// program.school pour Internship (comme StudentRequest) ; Seminar porte son
+// propre "school" NOT NULL — un séminaire n'est pas rattaché à un seul
+// Program, exception délibérée déjà justifiée pour Book/BookLoan.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Stage d'un élève/étudiant — École Professionnelle et Université principalement. */
+model Internship {
+  id        String  @id @default(cuid())
+  studentId Int
+  student   User    @relation("InternshipStudent", fields: [studentId], references: [id])
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
+
+  title            String
+  hostOrganization String
+  hostAddress      String?
+
+  // Superviseur externe (organisme d'accueil) — jamais un compte User,
+  // l'encadrant terrain n'a par nature aucun accès CCIGA App.
+  hostSupervisorName    String?
+  hostSupervisorContact String?
+
+  // Superviseur interne — TEACHER (parfois ACADEMIC_OFFICER/COORDONNATEUR),
+  // même principe que Program.titulaireId/coordinatorId.
+  internalSupervisorId Int?
+  internalSupervisor   User? @relation("InternshipInternalSupervisor", fields: [internalSupervisorId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime?
+
+  status String @default("planifie") // planifie | en_cours | termine | valide | rejete
+
+  // Convention et rapport directement ici (fichier unique chacun) — pas de
+  // table Document séparée, cf. §15 du mandat.
+  conventionUrl  String?
+  conventionName String?
+  reportUrl      String?
+  reportName     String?
+
+  evaluationScore   Float?
+  evaluationComment String?
+  evaluatedById     Int?
+  evaluatedBy       User? @relation("InternshipEvaluatedBy", fields: [evaluatedById], references: [id])
+
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
+
+  createdById Int?
+  createdBy   User? @relation("InternshipCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attendances InternshipAttendance[]
+
+  @@index([studentId])
+  @@index([programId])
+  @@index([status])
+}
+
+model InternshipAttendance {
+  id           String     @id @default(cuid())
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id])
+  date         DateTime
+  status       String // present | absent | retard
+  createdAt    DateTime   @default(now())
+
+  @@unique([internshipId, date])
+  @@index([internshipId])
+}
+
+/** Séminaire institutionnel — inscriptions ouvertes aux élèves/étudiants d'une même institution. */
+model Seminar {
+  id      String  @id @default(cuid())
+  title   String
+  theme   String?
+  speaker String?
+  location String?
+
+  startAt DateTime
+  endAt   DateTime?
+
+  // Obligatoire (§6 du mandat) — un séminaire n'a pas de Program unique
+  // auquel se rattacher ; jamais dupliqué depuis un Program existant.
+  school String
+
+  registrationOpen Boolean @default(true)
+  status           String  @default("planifie") // planifie | ouvert | clos | termine
+
+  materialsUrl  String?
+  materialsName String?
+
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
+
+  createdById Int?
+  createdBy   User? @relation("SeminarCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registrations SeminarRegistration[]
+
+  @@index([school])
+  @@index([status])
+}
+
+model SeminarRegistration {
+  id        String  @id @default(cuid())
+  seminarId String
+  seminar   Seminar @relation(fields: [seminarId], references: [id])
+  studentId Int
+  student   User    @relation("SeminarRegistrationStudent", fields: [studentId], references: [id])
+
+  registeredAt DateTime @default(now())
+  attended     Boolean  @default(false)
+
+  certificateUrl  String?
+  certificateName String?
+
+  @@unique([seminarId, studentId])
+  @@index([studentId])
 }
