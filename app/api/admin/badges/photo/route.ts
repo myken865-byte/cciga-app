@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { del } from "@vercel/blob";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireBadgeManagerSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
 
@@ -11,7 +11,7 @@ import { resolveActorId } from "@/lib/devBypass";
 // action concurrente. Cible un compte (userId), pas un badge : la photo vit
 // sur User.photoUrl, réutilisée partout où le compte est affiché.
 export async function PATCH(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireBadgeManagerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
@@ -53,7 +53,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireBadgeManagerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }

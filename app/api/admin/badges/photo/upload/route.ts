@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { requireAdminSession } from "@/lib/auth";
+import { requireBadgeManagerSession } from "@/lib/auth";
 
 // Émet le jeton client Vercel Blob pour la photo de badge — même mécanisme
 // que app/api/admin/fiches-inscription/photo/upload/route.ts. Upload direct
@@ -8,7 +8,7 @@ import { requireAdminSession } from "@/lib/auth";
 // réelle en base (User.photoUrl) se fait ensuite via le PATCH explicite sur
 // /api/admin/badges/photo, jamais de son propre chef ici.
 export async function POST(request: Request): Promise<NextResponse> {
-  const session = await requireAdminSession();
+  const session = await requireBadgeManagerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }

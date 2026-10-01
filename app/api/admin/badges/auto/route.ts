@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminSession } from "@/lib/auth";
+import { requireBadgeManagerSession } from "@/lib/auth";
 import { ensureBadgeForUser } from "@/lib/badgeAuto";
 import { resolveActorId } from "@/lib/devBypass";
 
@@ -7,7 +7,7 @@ import { resolveActorId } from "@/lib/devBypass";
 // génération automatique après inscription (lib/badgeAuto.ts), réutilisée
 // telle quelle pour une génération manuelle depuis la fiche d'un compte.
 export async function POST(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireBadgeManagerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }

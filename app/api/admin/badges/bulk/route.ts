@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireBadgeManagerSession } from "@/lib/auth";
 import { parseRoles, hasRole } from "@/lib/roles";
 import { ensureBadgeForUser } from "@/lib/badgeAuto";
 import { getActiveSchool } from "@/lib/institutionContext";
@@ -10,7 +10,7 @@ import { resolveActorId } from "@/lib/devBypass";
 // ensureBadgeForUser (lib/badgeAuto.ts) à chaque élève/étudiant du programme,
 // sans jamais dupliquer sa logique de statut ni de numérotation.
 export async function POST(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireBadgeManagerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }

@@ -27,7 +27,15 @@ export default async function PrintBadgePage({
       <BackButton fallbackHref="/admin/badges" className="print:hidden" />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <h1 className="text-2xl font-bold text-foreground">Badge — {badge.user.name}</h1>
-        <PrintBadgeButton />
+        <div className="flex flex-wrap items-center gap-2">
+          <a href={`/api/badges/${badge.id}/png?side=recto`} download className="btn-secondary !min-h-0 !py-1.5 text-xs">
+            PNG recto
+          </a>
+          <a href={`/api/badges/${badge.id}/png?side=verso`} download className="btn-secondary !min-h-0 !py-1.5 text-xs">
+            PNG verso
+          </a>
+          <PrintBadgeButton />
+        </div>
       </div>
       <div className="mx-auto max-w-3xl">
         <iframe

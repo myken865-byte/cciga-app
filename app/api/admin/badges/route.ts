@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/auth";
+import { requireBadgeManagerSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auditLog";
 import { resolveActorId } from "@/lib/devBypass";
 import { BADGE_STATUS_A_FINALISER } from "@/lib/badgeAuto";
@@ -12,7 +12,7 @@ const VALID_STATUSES = ["actif", "perdu", "remplace", "inactif", BADGE_STATUS_A_
 // de la génération automatique de /api/admin/badges/auto, qui réutilise
 // lib/badgeAuto.ts. Voir components/BadgeManager.tsx pour le contrat exact.
 export async function POST(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireBadgeManagerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const session = await requireAdminSession();
+  const session = await requireBadgeManagerSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
