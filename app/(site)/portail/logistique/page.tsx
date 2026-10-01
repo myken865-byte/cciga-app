@@ -6,11 +6,20 @@ import { formatCcigaId } from "@/lib/cciga-id";
 import { prisma } from "@/lib/db";
 import { SCHOOL_COOKIE, isSchoolKey, schoolLabels } from "@/lib/institutions";
 import InventoryManager from "@/components/InventoryManager";
+import MaintenanceForm from "@/components/MaintenanceForm";
+import MaintenanceList, { type MaintenanceSummary } from "@/components/MaintenanceList";
+import LogisticsRequestForm from "@/components/LogisticsRequestForm";
+import LogisticsRequestList, { type LogisticsRequestSummary } from "@/components/LogisticsRequestList";
 
 export const metadata: Metadata = { title: "Portail Logistique" };
 
 export const dynamic = "force-dynamic";
 
+// Mission "Finaliser les modules manquants" (2026-10-01) : Maintenance et
+// Demandes logistiques passent à `ready: true`, connectées aux vraies tables
+// MaintenanceRequest/LogisticsRequest (migration additive du 2026-09-12).
+// Stocks/Fournitures/Mobilier/Salles/Véhicules restent hors périmètre de
+// cette mission — non touchés (NO REDO).
 const sections = [
   { key: "inventaire", label: "Inventaire", ready: true },
   { key: "stocks", label: "Stocks", ready: false },
@@ -18,9 +27,13 @@ const sections = [
   { key: "mobilier", label: "Mobilier", ready: false },
   { key: "salles", label: "Salles", ready: false },
   { key: "vehicules", label: "Véhicules", ready: false },
-  { key: "maintenance", label: "Maintenance", ready: false },
-  { key: "demandes", label: "Demandes logistiques", ready: false },
+  { key: "maintenance", label: "Maintenance", ready: true },
+  { key: "demandes", label: "Demandes logistiques", ready: true },
 ];
+
+function formatDate(iso: Date) {
+  return iso.toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" });
+}
 
 export default async function PortailLogistiquePage() {
   const session = await getSession();
@@ -32,14 +45,52 @@ export default async function PortailLogistiquePage() {
   // d'atteindre cette page pour toute institution réelle ; ce garde-fou ne
   // couvre que le cas "toutes" (vue globale Super Admin), non pertinent pour
   // un inventaire qui doit rester strictement cloisonné.
-  const items =
+  const [items, equipment, rooms, vehicles, maintenanceRequests, logisticsRequests] =
     session && activeSchool
-      ? await prisma.inventoryItem.findMany({
-          where: { school: activeSchool },
-          include: { assignedTo: { select: { name: true } } },
-          orderBy: { createdAt: "desc" },
-        })
-      : [];
+      ? await Promise.all([
+          prisma.inventoryItem.findMany({
+            where: { school: activeSchool },
+            include: { assignedTo: { select: { name: true } } },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.inventoryItem.findMany({ where: { school: activeSchool }, select: { id: true, name: true } }),
+          prisma.room.findMany({ where: { school: activeSchool }, select: { id: true, name: true } }),
+          prisma.vehicle.findMany({ where: { school: activeSchool }, select: { id: true, label: true } }),
+          prisma.maintenanceRequest.findMany({ where: { school: activeSchool }, orderBy: { createdAt: "desc" } }),
+          prisma.logisticsRequest.findMany({ where: { school: activeSchool }, orderBy: { createdAt: "desc" } }),
+        ])
+      : [[], [], [], [], [], []];
+
+  // Résolution du libellé d'affichage de la ressource référencée
+  // (equipement/salle/vehicule) — MaintenanceRequest ne stocke qu'un id
+  // libre (resourceType, resourceId), jamais un libellé dupliqué.
+  const equipmentById = new Map(equipment.map((e) => [e.id, e.name]));
+  const roomsById = new Map(rooms.map((r) => [r.id, r.name]));
+  const vehiclesById = new Map(vehicles.map((v) => [v.id, v.label]));
+  function resolveResourceLabel(resourceType: string, resourceId: string): string {
+    if (resourceType === "equipement") return equipmentById.get(resourceId) ?? resourceId;
+    if (resourceType === "salle") return roomsById.get(resourceId) ?? resourceId;
+    if (resourceType === "vehicule") return vehiclesById.get(resourceId) ?? resourceId;
+    return resourceId;
+  }
+
+  const maintenanceSummaries: MaintenanceSummary[] = maintenanceRequests.map((m) => ({
+    id: m.id,
+    resourceType: m.resourceType,
+    resourceLabel: resolveResourceLabel(m.resourceType, m.resourceId),
+    description: m.description,
+    status: m.status,
+    createdAt: formatDate(m.createdAt),
+  }));
+
+  const logisticsSummaries: LogisticsRequestSummary[] = logisticsRequests.map((l) => ({
+    id: l.id,
+    resourceLabel: l.resourceLabel,
+    quantity: l.quantity,
+    urgency: l.urgency,
+    status: l.status,
+    createdAt: formatDate(l.createdAt),
+  }));
 
   return (
     <div>
@@ -84,6 +135,22 @@ export default async function PortailLogistiquePage() {
               <section id="inventaire" className="card p-6">
                 <h2 className="section-label mb-3">Inventaire — {schoolLabels[activeSchool]}</h2>
                 <InventoryManager items={items} />
+              </section>
+
+              <section id="maintenance" className="card space-y-4 p-6">
+                <h2 className="section-label">Maintenance — {schoolLabels[activeSchool]}</h2>
+                <MaintenanceForm
+                  equipment={equipment.map((e) => ({ id: e.id, label: e.name }))}
+                  rooms={rooms.map((r) => ({ id: r.id, label: r.name }))}
+                  vehicles={vehicles.map((v) => ({ id: v.id, label: v.label }))}
+                />
+                <MaintenanceList items={maintenanceSummaries} />
+              </section>
+
+              <section id="demandes" className="card space-y-4 p-6">
+                <h2 className="section-label">Demandes logistiques — {schoolLabels[activeSchool]}</h2>
+                <LogisticsRequestForm />
+                <LogisticsRequestList items={logisticsSummaries} />
               </section>
 
               {sections

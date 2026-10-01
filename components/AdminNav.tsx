@@ -16,6 +16,16 @@ const ADMIN_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN"];
 const SECRETARIAT_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"];
 const SUPER_ADMIN_ONLY: Role[] = ["SUPER_ADMIN"];
 const DEMANDES_PARENTS_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "ACADEMIC_OFFICER"];
+// Mission "Finaliser les modules manquants" (2026-10-01) — mêmes rôles que
+// lib/studentRequestAccess.ts `STAFF_ROLES` / lib/studentConversationAccess.ts
+// `ANY_SERVICE_STAFF_ROLES` / lib/internshipAccess.ts + lib/seminarAccess.ts
+// `STAFF_ROLES`, jamais une liste de rôles inventée ici.
+// Alignés exactement sur les préfixes déjà déclarés dans proxy.ts (jamais
+// une liste de rôles divergente entre le menu et le garde-fou de route).
+const DEMANDES_ETUDIANTS_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "ACADEMIC_OFFICER"];
+const MESSAGERIE_ETUDIANTS_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "ACADEMIC_OFFICER", "TEACHER"];
+const STAGES_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "ACADEMIC_OFFICER", "COORDONNATEUR", "TEACHER"];
+const SEMINAIRES_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "ACADEMIC_OFFICER", "COORDONNATEUR"];
 // Doit rester identique à requireBadgeManagerSession (lib/auth.ts) — mandat
 // "Ajouter Badges au menu Secrétariat/Coordination" (2026-09-17) : l'entrée
 // de menu n'apparaissait que pour ADMIN_LEVEL alors que la page /admin/badges
@@ -60,9 +70,13 @@ const tabs: { href: string; label: string; roles: Role[]; icon: string; group: N
   { href: "/admin/documents", label: "Bulletins", roles: ADMIN_LEVEL, icon: "🗂️", group: "Académique" },
   { href: "/admin/finance", label: "Finances", roles: SECRETARIAT_LEVEL, icon: "💰", group: "Administration" },
   { href: "/admin/demandes-parents", label: "Demandes parents", roles: DEMANDES_PARENTS_LEVEL, icon: "💬", group: "Administration" },
+  { href: "/admin/demandes-etudiants", label: "Demandes étudiants", roles: DEMANDES_ETUDIANTS_LEVEL, icon: "📨", group: "Administration" },
+  { href: "/admin/messages-etudiants", label: "Messagerie étudiants", roles: MESSAGERIE_ETUDIANTS_LEVEL, icon: "💬", group: "Administration" },
   { href: "/admin/recherche", label: "Recherche", roles: DEMANDES_PARENTS_LEVEL, icon: "🔍", group: "Outils" },
   { href: "/admin/personnel", label: "Personnel", roles: ADMIN_LEVEL, icon: "👥", group: "Vie scolaire" },
   { href: "/admin/badges", label: "Badges", roles: BADGE_MANAGER_LEVEL, icon: "🪪", group: "Vie scolaire" },
+  { href: "/admin/stages", label: "Stages", roles: STAGES_LEVEL, icon: "💼", group: "Vie scolaire" },
+  { href: "/admin/seminaires", label: "Séminaires", roles: SEMINAIRES_LEVEL, icon: "🎤", group: "Vie scolaire" },
   { href: "/admin/infirmerie", label: "Infirmerie", roles: ADMIN_LEVEL, icon: "🩺", group: "Vie scolaire" },
   { href: "/admin/psychosocial", label: "Suivi psychosocial", roles: PSYCHOSOCIAL_ACCESS_ROLES, icon: "🧠", group: "Vie scolaire" },
   { href: "/admin/bibliotheque", label: "Bibliothèque", roles: SECRETARIAT_LEVEL, icon: "📕", group: "Vie scolaire" },

@@ -120,6 +120,36 @@ export default async function PortailEtudiantPage() {
               </ul>
             )}
           </div>
+
+          <div className="mt-4 rounded-lg border border-border bg-surface p-6">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">Services</h2>
+            <div className="grid gap-2 sm:grid-cols-4">
+              <Link
+                href="/portail/etudiant/messages"
+                className="rounded-md border border-border p-3 text-center text-sm font-medium text-foreground hover:border-primary"
+              >
+                Messages
+              </Link>
+              <Link
+                href="/portail/etudiant/demandes"
+                className="rounded-md border border-border p-3 text-center text-sm font-medium text-foreground hover:border-primary"
+              >
+                Demandes administratives
+              </Link>
+              <Link
+                href="/portail/etudiant/stages"
+                className="rounded-md border border-border p-3 text-center text-sm font-medium text-foreground hover:border-primary"
+              >
+                Stages
+              </Link>
+              <Link
+                href="/portail/etudiant/seminaires"
+                className="rounded-md border border-border p-3 text-center text-sm font-medium text-foreground hover:border-primary"
+              >
+                Séminaires
+              </Link>
+            </div>
+          </div>
         </div>
       )}
     </div>
