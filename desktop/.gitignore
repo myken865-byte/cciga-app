@@ -2,3 +2,9 @@ node_modules/
 dist/
 dist2/
 dist3/
+
+# per-target remote host, chosen by scripts/set-target.js before packaging -
+# never committed (same convention as .env), see main.js for why
+config.js
+config.devtest.js
+config.production.js
