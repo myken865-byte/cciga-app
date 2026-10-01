@@ -112,13 +112,33 @@ export async function requireSecretariatSession(): Promise<SessionPayload | null
 }
 
 /**
- * For the grade review step (soumis→en_verification→validé): ADMIN or the
- * dedicated ACADEMIC_OFFICER role. Publication stays ADMIN-only — see
- * requireAdminSession above, used by the publish route.
+ * Mandat "Générateur de badges multi-institutions" (2026-09-17) — les
+ * routes badge étaient toutes ADMIN-only (requireAdminSession) alors que le
+ * Secrétariat émet déjà les fiches/finance/documents avec ce niveau
+ * d'accès, et la Coordination doit pouvoir consulter/régénérer les badges
+ * des programmes qu'elle coordonne. N'élargit rien d'autre.
+ */
+export async function requireBadgeManagerSession(): Promise<SessionPayload | null> {
+  const session = await getSession();
+  if (!session || !hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "COORDONNATEUR"])) {
+    return null;
+  }
+  return session;
+}
+
+/**
+ * For the grade review step (soumis→en_verification→validé): ADMIN, the
+ * dedicated ACADEMIC_OFFICER role, or a governance role (DOYEN/COORDONNATEUR
+ * — mandat "Gouvernance académique", 2026-09-12). Role check only — DOYEN/
+ * COORDONNATEUR are further scoped to their own faculty/programme INSIDE
+ * each review/validate route (their course must belong to it), never here,
+ * since this guard has no course context to scope against. Publication
+ * stays ADMIN-only — see requireAdminSession above, used by the publish
+ * route.
  */
 export async function requireReviewerSession(): Promise<SessionPayload | null> {
   const session = await getSession();
-  if (!session || !hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN", "ACADEMIC_OFFICER"])) {
+  if (!session || !hasAnyRole(session.roles, ["ADMIN", "SUPER_ADMIN", "ACADEMIC_OFFICER", "DOYEN", "COORDONNATEUR"])) {
     return null;
   }
   return session;
