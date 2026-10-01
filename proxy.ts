@@ -44,6 +44,14 @@ const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
   { prefix: "/admin/admissions", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/fiches-inscription", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/inscriptions-ecole-classique", roles: SECRETARIAT_LEVEL },
+  // Mission "Correction des 5 blockers P0" (2026-09-13), §3 — vue unifiée
+  // (mandat "Inscription unifiée — Phase 1") jamais ajoutée ici : elle
+  // retombait sur le catch-all "/admin" (ADMIN_LEVEL) plus bas et
+  // redirigeait SECRETARIAT vers /login malgré le lien déjà présent dans sa
+  // propre navigation (AdminNav.tsx). Doit rester APRÈS
+  // "/admin/inscriptions-ecole-classique" (ce préfixe plus général la
+  // contiendrait sinon, premier match gagnant).
+  { prefix: "/admin/inscriptions", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/finance", roles: SECRETARIAT_LEVEL },
   // Dossier élève/étudiant consolidé (mandat "Dossier élève / étudiant
   // consolidé", 2026-09-10) — même niveau d'accès que les fiches
@@ -54,6 +62,18 @@ const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
   // Every service-routed role must reach the guichet list — the page itself
   // narrows further to just the services each role actually handles.
   { prefix: "/admin/demandes-parents", roles: [...SECRETARIAT_LEVEL, "ACADEMIC_OFFICER"] },
+  // Mandat "Messagerie étudiant + Demandes administratives" (2026-09-12) —
+  // demandes-etudiants suit exactement le même niveau d'accès que
+  // demandes-parents (guichet institutionnel) ; messages-etudiants ajoute
+  // TEACHER (un enseignant ne voit que ses propres conversations "enseignant",
+  // filtré côté page — voir lib/studentConversationAccess.ts).
+  { prefix: "/admin/demandes-etudiants", roles: [...SECRETARIAT_LEVEL, "ACADEMIC_OFFICER"] },
+  { prefix: "/admin/messages-etudiants", roles: [...SECRETARIAT_LEVEL, "ACADEMIC_OFFICER", "TEACHER"] },
+  // Mandat "Stages & Séminaires" (2026-09-12) — §12 : rôles existants
+  // uniquement, TEACHER inclus pour un superviseur interne consultant "son"
+  // stage (filtré côté page via canAccessInternship, jamais élargi ici).
+  { prefix: "/admin/stages", roles: [...SECRETARIAT_LEVEL, "ACADEMIC_OFFICER", "COORDONNATEUR", "TEACHER"] },
+  { prefix: "/admin/seminaires", roles: [...SECRETARIAT_LEVEL, "ACADEMIC_OFFICER", "COORDONNATEUR"] },
   // The search page itself re-derives per-category access from the session;
   // this only lets every staff role reach it, never widens what they see.
   { prefix: "/admin/recherche", roles: [...SECRETARIAT_LEVEL, "ACADEMIC_OFFICER"] },
@@ -61,9 +81,19 @@ const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
   // futur rôle CONSEILLER/PSYCHOLOGUE sans toucher ce fichier.
   { prefix: "/admin/psychosocial", roles: PSYCHOSOCIAL_ACCESS_ROLES },
   { prefix: "/admin/personnel", roles: ADMIN_LEVEL },
-  { prefix: "/admin/badges", roles: ADMIN_LEVEL },
+  // Mandat "Générateur de badges multi-institutions" (2026-09-17) — élargi
+  // de ADMIN_LEVEL à Secrétariat + Coordination (voir requireBadgeManagerSession
+  // dans lib/auth.ts, la même liste de rôles, jamais divergente).
+  { prefix: "/admin/badges", roles: [...SECRETARIAT_LEVEL, "COORDONNATEUR"] },
   { prefix: "/admin/infirmerie", roles: ADMIN_LEVEL },
-  { prefix: "/admin/inventaire", roles: ADMIN_LEVEL },
+  // Mandat "Portail Logistique — migration additive 3 tables" (2026-09-12) :
+  // incohérence corrigée — l'API (requireInventoryAccess dans
+  // app/api/admin/inventaire/route.ts) autorisait déjà LOGISTICIEN, mais ce
+  // garde-fou de page ne le laissait pas passer. LOGISTICIEN n'utilise pas
+  // cette page dans son flux réel (son portail dédié /portail/logistique
+  // embarque le même composant), mais rien ne justifiait qu'un accès direct
+  // à cette URL le redirige alors que l'API l'accepterait.
+  { prefix: "/admin/inventaire", roles: [...ADMIN_LEVEL, "LOGISTICIEN"] },
   { prefix: "/admin/bibliotheque", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/transport", roles: SECRETARIAT_LEVEL },
   { prefix: "/admin/cantine", roles: SECRETARIAT_LEVEL },
@@ -72,6 +102,13 @@ const protectedPrefixes: { prefix: string; roles: Role[] }[] = [
   { prefix: "/portail/etudiant", roles: ["STUDENT"] },
   { prefix: "/portail/parent", roles: ["PARENT"] },
   { prefix: "/portail/enseignant", roles: ["TEACHER"] },
+  // Mandat "Gouvernance académique" (2026-09-12) : DOYEN/COORDONNATEUR
+  // peuvent ouvrir la fiche de révision d'UN cours de leur propre faculté/
+  // programme (lien direct depuis leur propre tableau de bord) — mais pas
+  // la liste globale non scopée de /portail/responsable elle-même, d'où
+  // cette entrée plus spécifique déclarée AVANT la règle générale
+  // ci-dessous (proxy.ts prend le premier préfixe qui matche).
+  { prefix: "/portail/responsable/cours", roles: [...ADMIN_LEVEL, "ACADEMIC_OFFICER", "DOYEN", "COORDONNATEUR"] },
   // ADMIN/SUPER_ADMIN included: requireReviewerSession (the API-side guard
   // for the review action) and the course page's own check both already
   // admit ADMIN alongside ACADEMIC_OFFICER — this must match, or ADMIN gets
@@ -133,6 +170,29 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Mission "Audit final Portail Enseignant" (2026-09-13) — régression réelle
+  // trouvée en test utilisateur réel : un enseignant "pur" (aucun rôle
+  // d'établissement) n'a jamais besoin de choisir une institution pour
+  // atteindre /admin/messages-etudiants ou /admin/stages (les deux seuls
+  // préfixes /admin/* que TEACHER peut atteindre) — ces pages filtrent déjà
+  // par propriété réelle (canAccessStudentConversation / canAccessInternship,
+  // jamais par école), et /admin/institution lui-même n'offre aucun moyen
+  // à un enseignant de choisir une école. Avant ce correctif, cliquer sur
+  // "Messagerie" depuis le tableau de bord enseignant menait à une impasse
+  // (redirection vers /admin/institution, jamais utilisable par ce rôle).
+  const isPureTeacher =
+    hasAnyRole(session.roles, ["TEACHER"]) &&
+    !hasAnyRole(session.roles, [
+      "ADMIN",
+      "SUPER_ADMIN",
+      "SECRETARIAT",
+      "ACADEMIC_OFFICER",
+      "COORDONNATEUR",
+      "DOYEN",
+      "RECTEUR",
+      "LOGISTICIEN",
+    ]);
+
   // Institution-first entry (Prompt Maître "séparation stricte des trois
   // grands portails") : toute page /admin/* exige un contexte institutionnel
   // choisi explicitement avant d'afficher la moindre donnée, uniformément sur
@@ -140,8 +200,9 @@ export async function proxy(request: NextRequest) {
   // /portail/logistique y est inclus : la Logistique couvre les 3 institutions
   // sans jamais mélanger leurs données (isolation stricte, comme l'admin).
   const needsInstitutionGate =
-    (pathname.startsWith("/admin") && !INSTITUTION_GATE_EXEMPT.some((p) => pathname.startsWith(p))) ||
-    pathname.startsWith("/portail/logistique");
+    !isPureTeacher &&
+    ((pathname.startsWith("/admin") && !INSTITUTION_GATE_EXEMPT.some((p) => pathname.startsWith(p))) ||
+      pathname.startsWith("/portail/logistique"));
   if (request.method === "GET" && needsInstitutionGate) {
     const activeSchool = request.cookies.get(SCHOOL_COOKIE)?.value;
 

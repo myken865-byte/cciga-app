@@ -63,3 +63,32 @@ next-env.d.ts
 # Phase C2 backfill audit-trail reports (real user ids/names) - same
 # sensitivity class as /backups, never committed
 /reports
+
+# leaked Electron runtime (an unpacked install occasionally ends up extracted
+# at the repo root while testing the desktop app locally - never source,
+# always regenerable from desktop/dist*/ or a real installer)
+/ffmpeg.dll
+/icudtl.dat
+/libEGL.dll
+/libGLESv2.dll
+/LICENSE.electron.txt
+/LICENSES.chromium.html
+/locales/
+/resources.pak
+/resources/
+/snapshot_blob.bin
+/v8_context_snapshot.bin
+/vk_swiftshader.dll
+/vk_swiftshader_icd.json
+/vulkan-1.dll
+/Uninstall CCIGA App.exe
+
+# packaged installers / APKs produced locally, never committed
+/Distribution Windows/
+/test-builds/
+
+# test runner output
+/test-results/
+
+# IDE config that shouldn't be shared
+/.windsurf/
