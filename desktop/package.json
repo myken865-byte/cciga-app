@@ -1,13 +1,19 @@
 {
   "name": "cciga-app-desktop",
   "productName": "CCIGA App",
-  "version": "1.3.4",
+  "version": "1.3.7",
   "description": "CCIGA App pour Windows",
   "main": "main.js",
   "private": true,
   "author": "CCIGA",
   "scripts": {
-    "build": "electron-builder --win"
+    "build": "node scripts/set-target.js devtest && electron-builder --win",
+    "build:production": "node scripts/set-target.js production && electron-builder --win && node scripts/set-target.js devtest",
+    "target:devtest": "node scripts/set-target.js devtest",
+    "target:production:check": "node scripts/set-target.js production"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "electron": "^33.0.0",
@@ -21,12 +27,19 @@
     },
     "files": [
       "main.js",
+      "config.js",
       "preload.js",
       "home.html",
       "loading.html",
       "error.html",
-      "logo.png"
+      "logo.png",
+      "node_modules/**/*"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "myken865-byte",
+      "repo": "cciga-app"
+    },
     "win": {
       "target": "nsis",
       "icon": "icon.ico",

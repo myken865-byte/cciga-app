@@ -29,25 +29,73 @@
     overflow-x: hidden;
     overflow-y: auto;
   }
+  /* Barre supérieure (mandat "Correction visuelle de la barre supérieure",
+  2026-09-07, avec image de référence) : fond jaune or (au lieu de bleu
+  marine), double bordure (intérieure bleu marine, extérieure jaune or
+  foncé), angles arrondis aux deux extrémités, deux logos SIGA/CCIGA sur
+  fond clair (jamais directement sur le jaune or), identité centrée. */
   .hero {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 55%, var(--primary-light) 100%);
-    color: #fff;
-    padding: 32px 48px 26px;
+    position: relative;
+    margin: 18px 24px 0;
+    background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-light) 100%);
+    border: 3px solid var(--accent-dark);
+    border-radius: 24px;
+    padding: 22px 28px;
     display: flex;
     align-items: center;
-    gap: 18px;
-    position: relative;
+    justify-content: space-between;
+    gap: 20px;
+    box-shadow: 0 14px 30px -18px rgba(15,45,82,.45);
   }
-  .hero::after {
+  .hero::before {
     content: "";
     position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 50%, var(--accent) 100%);
+    inset: 6px;
+    border: 2px solid var(--primary);
+    border-radius: 18px;
+    opacity: .8;
+    pointer-events: none;
   }
-  .hero img { height: 56px; width: 56px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
-  .hero h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: .2px; }
-  .hero p { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,.8); }
+  .hero-logo-badge {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 92px;
+    height: 92px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(15,45,82,.18);
+  }
+  .hero-logo-badge img { height: 76px; width: 76px; object-fit: contain; }
+  .hero-identity {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    flex: 1;
+    min-width: 0;
+  }
+  .hero-identity .title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .hero h1 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: .2px; color: var(--primary-dark); }
+  .hero-tag {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: #fff;
+    background: var(--primary);
+    padding: 3px 12px;
+    border-radius: 9999px;
+    white-space: nowrap;
+  }
+  .hero p { margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--primary-dark); }
   main { padding: 32px 48px 90px; max-width: 1320px; margin: 0 auto; }
 
   .section-label {
@@ -98,7 +146,10 @@
   @media (max-width: 700px) {
     .grid { grid-template-columns: repeat(2, 1fr); }
     main { padding: 24px 20px 90px; }
-    .hero { padding: 26px 20px 22px; }
+    .hero { margin: 14px 14px 0; padding: 18px 16px; flex-wrap: wrap; border-radius: 18px; }
+    .hero-logo-badge { width: 60px; height: 60px; border-radius: 14px; }
+    .hero-logo-badge img { height: 46px; width: 46px; }
+    .hero h1 { font-size: 22px; }
     .portal-frame { padding: 20px; border-radius: 18px; }
     .watermark span { font-size: 48px; }
   }
@@ -154,14 +205,23 @@
 </head>
 <body>
   <div class="hero">
-    <img src="logo.png" alt="CCIGA" />
-    <div>
-      <h1>CCIGA App</h1>
-      <p>Centre Interdisciplinaire des Génies Agrégées — plateforme institutionnelle</p>
+    <div class="hero-logo-badge"><img src="logo.png" alt="CCIGA" /></div>
+    <div class="hero-identity">
+      <div class="title-row">
+        <h1>CCIGA App</h1>
+        <span class="hero-tag">Plateforme institutionnelle</span>
+      </div>
+      <p>Centre Interdisciplinaire des Génies Agrégées</p>
     </div>
+    <div class="hero-logo-badge"><img src="logo.png" alt="CCIGA" /></div>
   </div>
 
   <main>
+    <p class="section-label">Site public</p>
+    <div class="portal-frame" style="margin-bottom: 28px;">
+      <div class="grid" id="public-site" style="grid-template-columns: 1fr;"></div>
+    </div>
+
     <p class="section-label">Accès aux portails</p>
     <div class="portal-frame">
       <div class="watermark" aria-hidden="true"><span>CCIGA App</span></div>
@@ -197,7 +257,25 @@
       network: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle class="accent" cx="6" cy="18" r="2.2"/><circle class="accent" cx="18" cy="18" r="2.2"/><path d="M12 7.2V11M12 11 6 15.8M12 11l6 4.8"/></svg>',
       // Logistique — camion + cartons
       truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle class="accent" cx="7.5" cy="18" r="1.6"/><circle class="accent" cx="17.5" cy="18" r="1.6"/></svg>',
+      // Site public — globe
+      globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17" class="accent"/><path class="accent" d="M12 3.5c2.2 2.3 3.3 5.2 3.3 8.5s-1.1 6.2-3.3 8.5c-2.2-2.3-3.3-5.2-3.3-8.5S9.8 5.8 12 3.5Z"/></svg>',
     };
+
+    const publicSiteGrid = document.getElementById("public-site");
+    const publicBtn = document.createElement("button");
+    publicBtn.className = "card";
+    publicBtn.innerHTML = `
+      <div class="badge">${ICONS.globe}</div>
+      <div class="row">
+        <div>
+          <div class="name">CCIGA — Site public</div>
+          <div class="hint">Accueil, actualités, admission, programmes...</div>
+        </div>
+        <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </div>
+    `;
+    publicBtn.addEventListener("click", () => window.cciga.openPublicSite());
+    publicSiteGrid.appendChild(publicBtn);
 
     const portals = [
       { role: "STUDENT", label: "Étudiant", icon: "graduation" },
