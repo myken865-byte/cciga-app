@@ -36,4 +36,36 @@ describe("lib/parentRequestAccess", () => {
     expect(isAnyParentRequestStaff(session(1, ["STUDENT"]))).toBe(false);
     expect(isAnyParentRequestStaff(session(1, ["PARENT"]))).toBe(false);
   });
+
+  describe("staffScope (institution isolation, mandat 2026-09-12)", () => {
+    const scopedRequest = {
+      parentId: 8,
+      service: "secretariat",
+      student: { program: { school: "ecole-classique" } },
+    };
+
+    it("staff scoped to the same institution as the student can access it", () => {
+      expect(canAccessParentRequest(session(3, ["SECRETARIAT"]), scopedRequest, "ecole-classique")).toBe(true);
+    });
+
+    it("staff scoped to a different institution cannot access it, even by guessing the id", () => {
+      expect(canAccessParentRequest(session(3, ["SECRETARIAT"]), scopedRequest, "universite")).toBe(false);
+    });
+
+    it("SUPER_ADMIN in the explicit \"toutes\" scope can access any institution's request", () => {
+      expect(canAccessParentRequest(session(3, ["SECRETARIAT"]), scopedRequest, "toutes")).toBe(true);
+    });
+
+    it("the parent who owns the request is never blocked by staffScope", () => {
+      expect(canAccessParentRequest(session(8, ["PARENT"]), scopedRequest, "universite")).toBe(true);
+    });
+
+    it("no institution chosen yet (null) refuses staff access defensively", () => {
+      expect(canAccessParentRequest(session(3, ["SECRETARIAT"]), scopedRequest, null)).toBe(false);
+    });
+
+    it("omitting staffScope keeps the original unrestricted behavior", () => {
+      expect(canAccessParentRequest(session(3, ["SECRETARIAT"]), scopedRequest)).toBe(true);
+    });
+  });
 });
