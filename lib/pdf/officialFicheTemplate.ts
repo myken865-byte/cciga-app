@@ -9,6 +9,7 @@ import {
   rectangle,
   clip,
   endPath,
+  LineCapStyle,
   type PDFFont,
   type PDFPage,
   type RGB,
@@ -122,24 +123,33 @@ function drawTextOnLine(page: PDFPage, rawValue: string | null | undefined, fiel
 }
 
 /**
- * Centre une coche dans sa case — jamais à côté, jamais sur la bordure.
- * `mark.x`/`mark.y` sont le CENTRE géométrique de la case (voir
- * CheckboxMark) ; le glyphe "X" est mesuré (largeur réelle de la police) et
- * calé pour que son propre centre visuel coïncide avec celui de la case,
- * indépendamment de la police ou de la taille choisie.
+ * Centre une coche ✓ dans sa case — jamais une croix "X", jamais à côté,
+ * jamais sur la bordure (mandat "alignement définitif des fiches",
+ * 2026-09-16). `mark.x`/`mark.y` sont le CENTRE géométrique de la case (voir
+ * CheckboxMark). Dessinée comme deux segments vectoriels (jamais un glyphe
+ * de police) : le caractère ✓ (U+2713) n'existe pas dans l'encodage
+ * WinAnsi des polices standard PDF (StandardFonts), et une approximation
+ * de cap-height sur "X" s'est révélée peu fiable (coches mesurées
+ * visuellement hors-centre sur plusieurs cases). Un tracé vectoriel se
+ * centre par construction, exactement, quelle que soit la police.
  */
-function drawCheckboxCentered(page: PDFPage, mark: CheckboxMark, font: PDFFont, ink: RGB) {
+function drawCheckboxCentered(page: PDFPage, mark: CheckboxMark, ink: RGB) {
   const boxSize = mark.size ?? DEFAULT_CHECKBOX_SIZE;
-  const glyphSize = boxSize * 0.78;
-  const glyph = "X";
-  const glyphWidth = font.widthOfTextAtSize(glyph, glyphSize);
-  // Approximation standard : la hauteur visuelle d'une majuscule est proche
-  // de 0.7 * la taille de police (pdf-lib n'expose pas la cap-height réelle
-  // des polices standard) — suffisant pour un centrage optique correct.
-  const glyphCapHeight = glyphSize * 0.7;
-  const x = mark.x - glyphWidth / 2;
-  const y = mark.y - glyphCapHeight / 2;
-  page.drawText(glyph, { x, y, size: glyphSize, font, color: ink });
+  const checkWidth = boxSize * 0.62; // toujours plus petit que la case — ne touche jamais la bordure
+  const checkHeight = boxSize * 0.5;
+  const thickness = Math.max(1.1, boxSize * 0.12);
+  const cx = mark.x;
+  const cy = mark.y - boxSize * 0.03; // léger centrage optique (le trait long monte plus haut que le court ne descend)
+
+  // Petit trait court descendant (gauche → creux), puis trait long montant (creux → droite).
+  const leftX = cx - checkWidth * 0.5;
+  const troughX = cx - checkWidth * 0.08;
+  const troughY = cy - checkHeight * 0.5;
+  const rightX = cx + checkWidth * 0.5;
+  const rightY = cy + checkHeight * 0.42;
+
+  page.drawLine({ start: { x: leftX, y: cy }, end: { x: troughX, y: troughY }, thickness, color: ink, lineCap: LineCapStyle.Round });
+  page.drawLine({ start: { x: troughX, y: troughY }, end: { x: rightX, y: rightY }, thickness, color: ink, lineCap: LineCapStyle.Round });
 }
 
 /**
@@ -190,7 +200,7 @@ export async function fillOfficialFiche(options: {
     if (!checked) continue;
     const page = pages[mark.page];
     if (!page) continue;
-    drawCheckboxCentered(page, mark, boldFont, ink);
+    drawCheckboxCentered(page, mark, ink);
   }
 
   if (options.photo) {
