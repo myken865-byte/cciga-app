@@ -16,6 +16,13 @@ const ADMIN_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN"];
 const SECRETARIAT_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT"];
 const SUPER_ADMIN_ONLY: Role[] = ["SUPER_ADMIN"];
 const DEMANDES_PARENTS_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "ACADEMIC_OFFICER"];
+// Doit rester identique à requireBadgeManagerSession (lib/auth.ts) — mandat
+// "Ajouter Badges au menu Secrétariat/Coordination" (2026-09-17) : l'entrée
+// de menu n'apparaissait que pour ADMIN_LEVEL alors que la page /admin/badges
+// acceptait déjà SECRETARIAT et COORDONNATEUR côté serveur depuis la mission
+// badges — la garde serveur n'a pas changé, seule la visibilité du menu est
+// alignée dessus.
+const BADGE_MANAGER_LEVEL: Role[] = ["ADMIN", "SUPER_ADMIN", "SECRETARIAT", "COORDONNATEUR"];
 
 const SIDEBAR_COLLAPSE_KEY = "cciga-admin-sidebar-collapsed";
 
@@ -55,7 +62,7 @@ const tabs: { href: string; label: string; roles: Role[]; icon: string; group: N
   { href: "/admin/demandes-parents", label: "Demandes parents", roles: DEMANDES_PARENTS_LEVEL, icon: "💬", group: "Administration" },
   { href: "/admin/recherche", label: "Recherche", roles: DEMANDES_PARENTS_LEVEL, icon: "🔍", group: "Outils" },
   { href: "/admin/personnel", label: "Personnel", roles: ADMIN_LEVEL, icon: "👥", group: "Vie scolaire" },
-  { href: "/admin/badges", label: "Badges", roles: ADMIN_LEVEL, icon: "🪪", group: "Vie scolaire" },
+  { href: "/admin/badges", label: "Badges", roles: BADGE_MANAGER_LEVEL, icon: "🪪", group: "Vie scolaire" },
   { href: "/admin/infirmerie", label: "Infirmerie", roles: ADMIN_LEVEL, icon: "🩺", group: "Vie scolaire" },
   { href: "/admin/psychosocial", label: "Suivi psychosocial", roles: PSYCHOSOCIAL_ACCESS_ROLES, icon: "🧠", group: "Vie scolaire" },
   { href: "/admin/bibliotheque", label: "Bibliothèque", roles: SECRETARIAT_LEVEL, icon: "📕", group: "Vie scolaire" },

@@ -199,6 +199,9 @@ export default function BadgeManager({ badges, candidates }: { badges: BadgeRow[
                 <Link href={`/admin/badges/${b.id}/print`} className="btn-secondary !min-h-0 !py-1 text-xs">
                   Imprimer
                 </Link>
+                <a href={`/api/badges/${b.id}/png?side=recto`} download className="btn-secondary !min-h-0 !py-1 text-xs">
+                  PNG
+                </a>
                 <select
                   className={`badge ${statusBadgeClass[b.status]} !border-0`}
                   value={b.status}
