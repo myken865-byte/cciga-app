@@ -6,7 +6,16 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = "C:\Users\Me. Alcide\Desktop\cciga app"
 $Adb = "C:\Android\sdk\platform-tools\adb.exe"
 $LogFile = Join-Path $ProjectRoot "test-builds\usb-install-log.csv"
-$Package = "ht.cciga.app"
+# Deux identites valides selon la provenance de l'APK trouve (mandat
+# "Correction du conflit Application ID", 2026-09-07) : l'artefact deja
+# valide sur appareil reel (test-builds\cciga-app-test-v1.1-2.apk) porte
+# l'identite historique "ht.cciga.app" (confirme via aapt2) ; un futur
+# rebuild debug frais (android\app\build\outputs\apk\debug\app-debug.apk)
+# portera desormais "ht.cciga.app.test" (applicationIdSuffix DEV/TEST,
+# android/app/build.gradle). Les deux restent acceptees ici plutot que de
+# casser l'une des deux voies.
+$ValidPackages = @("ht.cciga.app", "ht.cciga.app.test")
+$Package = $null
 
 function Write-Log($Device, $State, $Version, $Result) {
     $line = "{0},{1},{2},{3},{4}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Device, $State, $Version, $Result
@@ -132,9 +141,10 @@ if ($buildTools) {
         $pkgLine = $badging | Select-String "^package:" | Select-Object -First 1
         if ($pkgLine -match "name='([^']+)'") {
             $foundPkg = $matches[1]
-            if ($foundPkg -ne $Package) {
-                Fail "Le package de l'APK trouve ($foundPkg) ne correspond pas au package CCIGA App attendu ($Package). Installation annulee par securite." $serial $device.State
+            if ($foundPkg -notin $ValidPackages) {
+                Fail "Le package de l'APK trouve ($foundPkg) ne correspond a aucune identite CCIGA App attendue ($($ValidPackages -join ' ou ')). Installation annulee par securite." $serial $device.State
             }
+            $Package = $foundPkg
         }
         if ($pkgLine -match "versionName='([^']+)'") { $apkVersion = $matches[1] }
         Write-Host "   Package verifie : $Package - version $apkVersion"
@@ -149,6 +159,14 @@ if ($buildTools) {
     }
 } else {
     Write-Host "   (build-tools introuvable - verification package/signature ignoree, installation poursuivie)" -ForegroundColor Yellow
+}
+
+# Verification impossible (build-tools absent) : deduire l'identite du seul
+# indice fiable restant, le chemin de l'APK trouve, plutot que de laisser
+# $Package vide pour le lancement (etape 7-8 ci-dessous).
+if (-not $Package) {
+    $Package = if ($apkPath -like "*\debug\app-debug.apk") { "ht.cciga.app.test" } else { "ht.cciga.app" }
+    Write-Host "   (package deduit du chemin de l'APK, non verifie : $Package)" -ForegroundColor Yellow
 }
 
 # --- 6. Installer (remplace si deja installe, conserve les donnees) ---
